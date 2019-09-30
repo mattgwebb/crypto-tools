@@ -1,4 +1,7 @@
 {
+    "container-interop/container-interop": {
+        "version": "1.2.0"
+    },
     "doctrine/annotations": {
         "version": "1.0",
         "recipe": {
@@ -146,6 +149,18 @@
     },
     "swiftmailer/swiftmailer": {
         "version": "v6.2.1"
+    },
+    "symfony/apache-pack": {
+        "version": "1.0",
+        "recipe": {
+            "repo": "github.com/symfony/recipes-contrib",
+            "branch": "master",
+            "version": "1.0",
+            "ref": "c82bead70f9a4f656354a193df7bf0ca2114efa0"
+        },
+        "files": [
+            "./public/.htaccess"
+        ]
     },
     "symfony/asset": {
         "version": "v4.3.4"
@@ -508,10 +523,34 @@
     "webmozart/assert": {
         "version": "1.5.0"
     },
+    "x-fran/g-trends": {
+        "version": "2.0.0"
+    },
     "zendframework/zend-code": {
         "version": "3.3.2"
     },
+    "zendframework/zend-escaper": {
+        "version": "2.6.1"
+    },
     "zendframework/zend-eventmanager": {
         "version": "3.2.1"
+    },
+    "zendframework/zend-http": {
+        "version": "2.10.0"
+    },
+    "zendframework/zend-json": {
+        "version": "3.1.1"
+    },
+    "zendframework/zend-loader": {
+        "version": "2.6.1"
+    },
+    "zendframework/zend-stdlib": {
+        "version": "3.2.1"
+    },
+    "zendframework/zend-uri": {
+        "version": "2.7.0"
+    },
+    "zendframework/zend-validator": {
+        "version": "2.12.0"
     }
 }
