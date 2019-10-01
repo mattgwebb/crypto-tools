@@ -6,6 +6,7 @@ namespace App\Command;
 use App\Entity\Candle;
 use App\Entity\Currency;
 use App\Service\BinanceAPI;
+use App\Service\Indicators;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputInterface;
@@ -50,28 +51,56 @@ class ExternalDataCommand extends Command
 
         /** @var Currency $currency */
         foreach($currencies as $currency) {
+            //$this->loadNewCandles($currency, $output);
 
-            $totalCandles = 0;
+            $candles = $currency->getCandles()->toArray();
 
-            /** @var Candle $lastCandle */
-            $lastCandle = $this->entityManager
-                ->getRepository(Candle::class)
-                ->findLast($currency);
+            $indicators = new Indicators();
+            $data = $indicators->prepareData($candles);
 
-            $candles = $this->api->getCandles($currency, '4h', $lastCandle->getCloseTime() * 1000);
+            $bollingerResult = $indicators->bollingerBands($data);
+            $rsiResult = $indicators->rsi($data);
+            $macdResult = $indicators->macd($data);
 
-            /** @var Candle $candle */
-            foreach($candles as $candle) {
-                if($candle->getCloseTime() < time()) {
-                    $this->entityManager->persist($candle);
-                    $totalCandles ++;
-                }
-            }
-            $this->entityManager->flush();
             $output->writeln([
+                '****************************************',
                 $currency->getSymbol(),
-                "new candles: $totalCandles",
+                json_encode($bollingerResult),
+                json_encode($rsiResult),
+                json_encode($macdResult),
+                '****************************************',
             ]);
+
         }
+    }
+
+    /**
+     * @param Currency $currency
+     * @param OutputInterface $output
+     * @throws \Exception
+     */
+    private function loadNewCandles(Currency $currency, OutputInterface $output)
+    {
+        /** @var Candle $lastCandle */
+        $lastCandle = $this->entityManager
+            ->getRepository(Candle::class)
+            ->findLast($currency);
+
+        $totalCandles = 0;
+
+        $candles = $this->api->getCandles($currency, '4h', $lastCandle->getCloseTime() * 1000);
+
+        /** @var Candle $candle */
+        foreach($candles as $candle) {
+            if($candle->getCloseTime() < time()) {
+                $this->entityManager->persist($candle);
+                $totalCandles ++;
+            }
+        }
+        $this->entityManager->flush();
+        $output->writeln([
+            $currency->getSymbol(),
+            "new candles: $totalCandles",
+        ]);
     }
 }
