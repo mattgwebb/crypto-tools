@@ -5,8 +5,11 @@ namespace App\Command;
 
 use App\Entity\Candle;
 use App\Entity\Currency;
+use App\Entity\Exchange;
+use App\Entity\TimeFrames;
+use App\Service\ApiFactory;
+use App\Service\ApiInterface;
 use App\Service\BinanceAPI;
-use App\Service\Indicators;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputInterface;
@@ -16,9 +19,6 @@ class ExternalDataCommand extends Command
 {
     // the name of the command (the part after "bin/console")
     protected static $defaultName = 'app:get-data';
-
-    /** @var BinanceAPI */
-    private $api;
 
     /**
      * @var EntityManagerInterface
@@ -30,65 +30,52 @@ class ExternalDataCommand extends Command
      * @param BinanceAPI $api
      * @param EntityManagerInterface $entityManager
      */
-    public function __construct(BinanceAPI $api, EntityManagerInterface $entityManager)
+    public function __construct(EntityManagerInterface $entityManager)
     {
-        $this->api = $api;
         $this->entityManager = $entityManager;
 
         parent::__construct();
     }
 
-    protected function configure()
-    {
-        // ...
-    }
-
     protected function execute(InputInterface $input, OutputInterface $output)
     {
-        $currencies = $this->entityManager
-            ->getRepository(Currency::class)
+        $exchanges = $this->entityManager
+            ->getRepository(Exchange::class)
             ->findAll();
 
-        /** @var Currency $currency */
-        foreach($currencies as $currency) {
-            //$this->loadNewCandles($currency, $output);
+        /** @var Exchange $exchange */
+        foreach($exchanges as $exchange) {
+            $currencies = $exchange->getCurrencies();
+            $api = ApiFactory::getApi($exchange);
 
-            $candles = $currency->getCandles()->toArray();
-
-            $indicators = new Indicators();
-            $data = $indicators->prepareData($candles);
-
-            $bollingerResult = $indicators->bollingerBands($data);
-            $rsiResult = $indicators->rsi($data);
-            $macdResult = $indicators->macd($data);
-
-            $output->writeln([
-                '****************************************',
-                $currency->getSymbol(),
-                json_encode($bollingerResult),
-                json_encode($rsiResult),
-                json_encode($macdResult),
-                '****************************************',
-            ]);
-
+            /** @var Currency $currency */
+            foreach($currencies as $currency) {
+                $this->loadNewCandles($api, $currency, $output);
+            }
         }
     }
 
     /**
+     * @param ApiInterface $api
      * @param Currency $currency
      * @param OutputInterface $output
-     * @throws \Exception
      */
-    private function loadNewCandles(Currency $currency, OutputInterface $output)
+    private function loadNewCandles(ApiInterface $api, Currency $currency, OutputInterface $output)
     {
         /** @var Candle $lastCandle */
         $lastCandle = $this->entityManager
             ->getRepository(Candle::class)
             ->findLast($currency);
 
+        if(!$lastCandle) {
+            $lastTime = time() - 10368000; //100 days
+        } else {
+            $lastTime = $lastCandle->getCloseTime();
+        }
+
         $totalCandles = 0;
 
-        $candles = $this->api->getCandles($currency, '4h', $lastCandle->getCloseTime() * 1000);
+        $candles = $api->getCandles($currency, TimeFrames::TIMEFRAME_4H, $lastTime);
 
         /** @var Candle $candle */
         foreach($candles as $candle) {
@@ -99,6 +86,7 @@ class ExternalDataCommand extends Command
         }
         $this->entityManager->flush();
         $output->writeln([
+            get_class($api),
             $currency->getSymbol(),
             "new candles: $totalCandles",
         ]);

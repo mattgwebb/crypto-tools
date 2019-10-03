@@ -4,12 +4,26 @@
 namespace App\Service;
 
 use App\Entity\Candle;
+use App\Entity\TimeFrames;
 use Symfony\Component\HttpClient\HttpClient;
 use App\Entity\Currency;
 
 
-class BinanceAPI extends ApiInterface
+class KrakenAPI extends ApiInterface
 {
+
+    protected $timeFrames = [
+        TimeFrames::TIMEFRAME_5M => '5',
+        TimeFrames::TIMEFRAME_15M => '15',
+        TimeFrames::TIMEFRAME_30M => '30',
+        TimeFrames::TIMEFRAME_45M => '45',
+        TimeFrames::TIMEFRAME_1H => '60',
+        TimeFrames::TIMEFRAME_2H => '120',
+        TimeFrames::TIMEFRAME_3H => '180',
+        TimeFrames::TIMEFRAME_4H => '240',
+        TimeFrames::TIMEFRAME_1D > '1440',
+        TimeFrames::TIMEFRAME_1W => '10080'
+    ];
 
     /**
      * @param Currency $currency
@@ -24,18 +38,18 @@ class BinanceAPI extends ApiInterface
      */
     protected function getCandlesData(Currency $currency, $timeFrame, $startTime) : array
     {
-        $startTime = $startTime * 1000;
         $client = HttpClient::create();
 
         try {
-            $response = $client->request('GET', $this->getAPIBaseRoute()."klines",
+            $response = $client->request('GET', $this->getAPIBaseRoute()."OHLC",
                 ['query' => [
                         'interval' => $timeFrame,
-                        'symbol' => $currency->getSymbol(),
-                        'startTime' => $startTime
+                        'pair' => $currency->getSymbol(),
+                        'since' => $startTime
                     ]
                 ]);
-            $rawCandles = $response->toArray();
+            $response = $response->toArray();
+            $rawCandles = reset($response['result']);
         } catch (\Exception $e) {
             throw $e;
         }
@@ -48,7 +62,7 @@ class BinanceAPI extends ApiInterface
      */
     protected function getAPIBaseRoute() : string
     {
-        return "https://api.binance.com/api/v1/";
+        return "https://api.kraken.com/0/public/";
     }
 
     /**
@@ -59,13 +73,13 @@ class BinanceAPI extends ApiInterface
     protected function getCandleFromRawData(Currency $currency, $rawData): Candle
     {
         $candle = new Candle();
-        $candle->setOpenTime((int)($rawData[0]/1000));
+        $candle->setOpenTime($rawData[0]);
         $candle->setOpenPrice($rawData[1]);
         $candle->setHighPrice($rawData[2]);
         $candle->setLowPrice($rawData[3]);
         $candle->setClosePrice($rawData[4]);
-        $candle->setVolume($rawData[5]);
-        $candle->setCloseTime((int)($rawData[6]/1000));
+        $candle->setVolume($rawData[6]);
+        $candle->setCloseTime($rawData[0] + 14399);
         $candle->setCurrency($currency);
         return $candle;
     }

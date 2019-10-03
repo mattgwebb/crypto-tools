@@ -28,6 +28,11 @@ class Currency
      */
     private $candles;
 
+    /**
+     * @ORM\ManyToOne(targetEntity="App\Entity\Exchange", inversedBy="currencies")
+     */
+    private $exchange;
+
     public function __construct()
     {
         $this->candles = new ArrayCollection();
