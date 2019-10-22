@@ -83,4 +83,9 @@ class KrakenAPI extends ApiInterface
         $candle->setCurrency($currency);
         return $candle;
     }
+
+    public function getUserBalance(): array
+    {
+        return [];
+    }
 }

@@ -174,6 +174,14 @@ class Candle implements \JsonSerializable
     }
 
     /**
+     * @param mixed $volume
+     */
+    public function addToVolume($volume): void
+    {
+        $this->volume += $volume;
+    }
+
+    /**
      * @return mixed
      */
     public function getCurrency()

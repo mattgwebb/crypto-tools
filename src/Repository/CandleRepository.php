@@ -20,22 +20,24 @@ class CandleRepository extends ServiceEntityRepository
         parent::__construct($registry, Candle::class);
     }
 
-    // /**
-    //  * @return Candle[] Returns an array of Candle objects
-    //  */
-    /*
-    public function findByExampleField($value)
+    /**
+     * @param Currency $currency
+     * @param $from
+     * @return Candle[] Returns an array of Candle objects
+     */
+
+    public function getByCurrencyFromTime(Currency $currency, $from)
     {
         return $this->createQueryBuilder('c')
-            ->andWhere('c.exampleField = :val')
-            ->setParameter('val', $value)
-            ->orderBy('c.id', 'ASC')
-            ->setMaxResults(10)
+            ->andWhere('c.currency = :currency')
+            ->andWhere('c.openTime >= :time')
+            ->setParameter('currency', $currency)
+            ->setParameter('time', $from)
+            ->orderBy('c.openTime', 'ASC')
             ->getQuery()
             ->getResult()
         ;
     }
-    */
 
     /**
      * @param Currency $currency
@@ -44,5 +46,14 @@ class CandleRepository extends ServiceEntityRepository
     public function findLast(Currency $currency): ?Candle
     {
         return $this->findOneBy(["currency" => $currency], ["openTime" => "desc"]);
+    }
+
+    /**
+     * @param Currency $currency
+     * @return Candle|null
+     */
+    public function findFirst(Currency $currency): ?Candle
+    {
+        return $this->findOneBy(["currency" => $currency], ["openTime" => "asc"]);
     }
 }

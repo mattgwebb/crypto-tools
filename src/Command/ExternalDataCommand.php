@@ -18,7 +18,7 @@ use Symfony\Component\Console\Output\OutputInterface;
 class ExternalDataCommand extends Command
 {
     // the name of the command (the part after "bin/console")
-    protected static $defaultName = 'app:get-data';
+    protected static $defaultName = 'app:get-latest-data';
 
     /**
      * @var EntityManagerInterface
@@ -27,7 +27,6 @@ class ExternalDataCommand extends Command
 
     /**
      * ExternalDataCommand constructor.
-     * @param BinanceAPI $api
      * @param EntityManagerInterface $entityManager
      */
     public function __construct(EntityManagerInterface $entityManager)
@@ -75,7 +74,7 @@ class ExternalDataCommand extends Command
 
         $totalCandles = 0;
 
-        $candles = $api->getCandles($currency, TimeFrames::TIMEFRAME_4H, $lastTime);
+        $candles = $api->getCandles($currency, TimeFrames::TIMEFRAME_5M, $lastTime);
 
         /** @var Candle $candle */
         foreach($candles as $candle) {

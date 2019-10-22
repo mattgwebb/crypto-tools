@@ -28,7 +28,8 @@
         "symfony/web-link": "4.3.*",
         "symfony/yaml": "4.3.*",
         "x-fran/g-trends": "2.0.0",
-        "ext-trader": "*"
+        "ext-trader": "*",
+        "ext-json": "*"
     },
     "require-dev": {
         "symfony/debug-pack": "*",

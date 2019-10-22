@@ -1,0 +1,70 @@
+{% extends 'base.html.twig' %}
+
+{% block stylesheets %}
+    {{ parent() }}
+    <link href="{{ asset('vendor/datatables/dataTables.bootstrap4.min.css') }}" rel="stylesheet">
+{% endblock %}
+{% block body %}
+    <div class="card shadow mb-4">
+        <div class="card-header py-3">
+            <a href="{{ path('new_algo_form') }}" class="btn btn-primary btn-icon-split">
+                    <span class="icon text-white-50">
+                      <i class="fas fa-flag"></i>
+                    </span>
+                <span class="text">New Algo Test</span>
+            </a>
+        </div>
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-bordered" id="dataTable" width="100%" cellspacing="0">
+                    <thead>
+                    <tr>
+                        <th>Currency</th>
+                        <th>Time Frame</th>
+                        <th>Strategy</th>
+                        <th>Stop Loss</th>
+                        <th>Take Profit</th>
+                        <th>Observations</th>
+                        <th>Actions</th>
+                    </tr>
+                    </thead>
+                    <tfoot>
+                    <tr>
+                        <th>Currency</th>
+                        <th>Time Frame</th>
+                        <th>Strategy</th>
+                        <th>Stop Loss</th>
+                        <th>Take Profit</th>
+                        <th>Observations</th>
+                        <th>Actions</th>
+                    </tr>
+                    </tfoot>
+                    <tbody>
+                    {% for algo in algos  %}
+                        <tr>
+                            <td>{{ algo.currency.symbol }}</td>
+                            <td>{{ algo.timeFrame }}</td>
+                            <td>{{ algo.strategy }}</td>
+                            <td>{{ algo.stopLoss }}</td>
+                            <td>{{ algo.takeProfit }}</td>
+                            <td>{{ algo.observations }}</td>
+                            <td><a href="{{ path('run_algo_test', {id : algo.id}) }}" class="btn btn-primary btn-circle">
+                                    <i class="fas fa-check"></i>
+                                </a></td>
+                        </tr>
+                    {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+    {% block javascripts %}
+        {{ parent() }}
+        <script src="{{ asset('vendor/datatables/jquery.dataTables.min.js') }}"></script>
+        <script src="{{ asset('vendor/datatables/dataTables.bootstrap4.min.js') }}"></script>
+
+        <!-- Page level custom scripts -->
+        <script src="{{ asset('js/demo/datatables-demo.js') }}"></script>
+    {% endblock %}
+
+{% endblock %}

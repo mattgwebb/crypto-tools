@@ -64,6 +64,8 @@ abstract class ApiInterface
      */
     protected abstract function getCandleFromRawData(Currency $currency, $rawData) : Candle;
 
+    public abstract function getUserBalance() : array;
+
     /**
      * @param $timeFrame
      * @return string

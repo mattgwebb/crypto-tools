@@ -1,0 +1,33 @@
+{% extends 'base.html.twig' %}
+
+{% block body %}
+    <a href="{{ path('new_algo_form') }}" class="btn btn-primary btn-icon-split">
+                    <span class="icon text-white-50">
+                      <i class="fas fa-flag"></i>
+                    </span>
+        <span class="text">New Algo Test</span>
+    </a>
+    {% block javascripts %}
+        {{ parent() }}
+        <script type="text/javascript" src="https://s3.tradingview.com/tv.js"></script>
+        <script type="text/javascript">
+            new TradingView.widget(
+                {
+                    "width": 980,
+                    "height": 410,
+                    "symbol": "BINANCE:BTCUSDT",
+                    "interval": "240",
+                    "timezone": "Etc/UTC",
+                    "theme": "Light",
+                    "style": "1",
+                    "locale": "en",
+                    "toolbar_bg": "#f1f3f6",
+                    "enable_publishing": false,
+                    "allow_symbol_change": true,
+                    "container_id": "tradingview_39945"
+                }
+            );
+        </script>
+    {% endblock %}
+
+{% endblock %}

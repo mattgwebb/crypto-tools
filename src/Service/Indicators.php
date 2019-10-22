@@ -3,7 +3,7 @@
 namespace App\Service;
 
 use App\Entity\Candle;
-use App\Entity\IndicatorResult;
+use App\Entity\StrategyResult;
 
 /**
  * Class Indicators
@@ -36,11 +36,12 @@ class Indicators
     const MACD_TYPE = 'macd';
 
     /**
-     * @param string $pair
-     * @param null   $data
-     * @param int    $period
+     * @param array $data
+     * @param int $period
+     * @param int $devup
+     * @param int $devdn
      *
-     * @return IndicatorResult
+     * @return array
      *
      * This algorithm uses the talib Bollinger Bands function to determine entry entry
      * points for long and sell/short positions.
@@ -66,10 +67,6 @@ class Indicators
 
     public function bollingerBands($data, $period=20, $devup=2, $devdn=2)
     {
-        $data2 = $data;
-        #$prev_close = array_pop($data2['close']); #[count($data['close']) - 2]; // prior close
-        $current = array_pop($data2['close']); #[count($data['close']) - 1];    // we assume this is current
-
         # array $real [, integer $timePeriod [, float $nbDevUp [, float $nbDevDn [, integer $mAType ]]]]
         $bbands = trader_bbands($data['close'], $period, $devup, $devdn, 0);
         $upper  = $bbands[0];
@@ -79,27 +76,14 @@ class Indicators
         $lowerLastBand = array_pop($lower);
         $higherLastBand = array_pop($upper);
 
-        $result = new IndicatorResult(self::BOLLINGER_TYPE);
-        $result->setExtraData(["lowerBand" => $lowerLastBand, "higherBand" => $higherLastBand, "current" => $current]);
-
-        # If price is below the recent lower band
-        if ($current <= $lowerLastBand) {
-            $result->setTradeResult(IndicatorResult::TRADE_LONG); // buy long
-            # If price is above the recent upper band
-        } elseif ($current >= $higherLastBand) {
-            $result->setTradeResult(IndicatorResult::TRADE_SHORT); // sell (or short)
-        } else {
-            $result->setTradeResult(IndicatorResult::NO_TRADE); // no trade
-        }
-        return $result;
+        return [$higherLastBand, $lowerLastBand];
     }
 
     /**
-     * @param string $pair
-     * @param null   $data
-     * @param int    $period
+     * @param array $data
+     * @param int $period
      *
-     * @return IndicatorResult
+     * @return float
      * Relative Strength Index indicator as a buy/sell signal.
      *
      * Similar to the stochastic in that it indicates overbought and oversold conditions.
@@ -110,37 +94,18 @@ class Indicators
      */
     public function rsi($data, $period=14)
     {
-        $LOW_RSI  = 30;
-        $HIGH_RSI = 70;
-
-        #$data2 = $data;
-        #$current = array_pop($data2['close']); #$data['close'][count($data['close']) - 1];    // we assume this is current
-        #$prev_close = array_pop($data2['close']); #$data['close'][count($data['close']) - 2]; // prior close
-
         $rsi = trader_rsi ($data['close'], $period);
         $rsi = array_pop($rsi);
-
-        $result = new IndicatorResult(self::RSI_TYPE);
-        $result->setValue($rsi);
-
-        # RSI is above 70 and we own, sell
-        if ($rsi > $HIGH_RSI) {
-            $result->setTradeResult(IndicatorResult::TRADE_SHORT);
-            # RSI is below 30, buy
-        } elseif ($rsi < $LOW_RSI) {
-            $result->setTradeResult(IndicatorResult::TRADE_LONG);
-        } else {
-            $result->setTradeResult(IndicatorResult::NO_TRADE);
-        }
-        return $result;
+        return $rsi;
     }
 
     /**
-     * @param string $pair
-     * @param null   $data
-     * @param int    $period
+     * @param array $data
+     * @param int $period1
+     * @param int $period2
+     * @param int $period3
      *
-     * @return IndicatorResult
+     * @return float
      *
      * Moving Average Crossover Divergence (MACD) indicator as a buy/sell signal.
      * When the MACD signal less than 0, the price is trending down and it's time to sell.
@@ -167,29 +132,15 @@ class Indicators
         $signal   = $macd[1];
         $hist     = $macd[2];
 
-        $result = new IndicatorResult(self::MACD_TYPE);
 
         //If not enough Elements for the Function to complete
         if(!$macd || !$macd_raw){
-            $result->setTradeResult(IndicatorResult::NO_TRADE);
-            return $result;
+            return 0;
         }
 
         #$macd = $macd_raw[count($macd_raw)-1] - $signal[count($signal)-1];
         $macd = (array_pop($macd_raw) - array_pop($signal));
-
-        $result->setValue($macd);
-
-        # Close position for the pair when the MACD signal is negative
-        if ($macd < 0) {
-            $result->setTradeResult(IndicatorResult::TRADE_SHORT);
-            # Enter the position for the pair when the MACD signal is positive
-        } elseif ($macd > 0) {
-            $result->setTradeResult(IndicatorResult::TRADE_LONG);
-        } else {
-            $result->setTradeResult(IndicatorResult::NO_TRADE);
-        }
-        return $result;
+        return $macd;
     }
 
     /**

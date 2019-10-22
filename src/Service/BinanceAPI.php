@@ -32,7 +32,8 @@ class BinanceAPI extends ApiInterface
                 ['query' => [
                         'interval' => $timeFrame,
                         'symbol' => $currency->getSymbol(),
-                        'startTime' => $startTime
+                        'startTime' => $startTime,
+                        'limit' => 1000
                     ]
                 ]);
             $rawCandles = $response->toArray();
@@ -48,7 +49,7 @@ class BinanceAPI extends ApiInterface
      */
     protected function getAPIBaseRoute() : string
     {
-        return "https://api.binance.com/api/v1/";
+        return "https://api.binance.com/api/v3/";
     }
 
     /**
@@ -68,5 +69,50 @@ class BinanceAPI extends ApiInterface
         $candle->setCloseTime((int)($rawData[6]/1000));
         $candle->setCurrency($currency);
         return $candle;
+    }
+
+    /**
+     * @return array
+     * @throws \Symfony\Contracts\HttpClient\Exception\ClientExceptionInterface
+     * @throws \Symfony\Contracts\HttpClient\Exception\DecodingExceptionInterface
+     * @throws \Symfony\Contracts\HttpClient\Exception\RedirectionExceptionInterface
+     * @throws \Symfony\Contracts\HttpClient\Exception\ServerExceptionInterface
+     * @throws \Symfony\Contracts\HttpClient\Exception\TransportExceptionInterface
+     */
+    public function getUserBalance(): array
+    {
+        $client = HttpClient::create();
+
+        $secret = $_ENV['BINANCE_SECRET'];
+        $key = $_ENV['BINANCE_KEY'];
+
+        $timestamp = time() * 1000;
+
+        $totalParams = "timestamp=$timestamp";
+        $hash = hash_hmac ( "sha256", $totalParams, $secret);
+
+        try {
+            $response = $client->request('GET', $this->getAPIBaseRoute()."account",
+                [
+                    'query' => [
+                        'timestamp' => $timestamp,
+                        'signature' => $hash
+                    ],
+                    'headers' => [
+                        'X-MBX-APIKEY' => $key,
+                    ],
+                ]);
+            $data = $response->toArray();
+        } catch (\Exception $e) {
+            throw $e;
+        }
+
+        $balance = [];
+        if(isset($data['balances'])) {
+            foreach($data['balances'] as $currencyBalance) {
+                $balance[$currencyBalance['asset']] = $currencyBalance['free'];
+            }
+        }
+        return $balance;
     }
 }
