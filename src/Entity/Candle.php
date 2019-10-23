@@ -17,9 +17,9 @@ class Candle implements \JsonSerializable
     private $id;
 
     /**
-     * @ORM\ManyToOne(targetEntity="App\Entity\Currency", inversedBy="candles")
+     * @ORM\ManyToOne(targetEntity="App\Entity\CurrencyPair", inversedBy="candles")
      */
-    private $currency;
+    private $currencyPair;
 
     /**
      * @ORM\Column(type="integer")
@@ -184,17 +184,17 @@ class Candle implements \JsonSerializable
     /**
      * @return mixed
      */
-    public function getCurrency()
+    public function getCurrencyPair()
     {
-        return $this->currency;
+        return $this->currencyPair;
     }
 
     /**
-     * @param mixed $currency
+     * @param mixed $currencyPair
      */
-    public function setCurrency($currency): void
+    public function setCurrencyPair($currencyPair): void
     {
-        $this->currency = $currency;
+        $this->currencyPair = $currencyPair;
     }
 
     /**

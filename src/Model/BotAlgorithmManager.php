@@ -6,9 +6,8 @@ namespace App\Model;
 
 use App\Entity\BotAlgorithm;
 use App\Entity\StrategyResult;
-use App\Entity\TimeFrames;
 use App\Repository\BotAlgorithmRepository;
-use App\Repository\CurrencyRepository;
+use App\Repository\CurrencyPairRepository;
 use App\Service\Strategies;
 
 class BotAlgorithmManager
@@ -19,9 +18,9 @@ class BotAlgorithmManager
     private $botAlgorithmRepo;
 
     /**
-     * @var CurrencyRepository
+     * @var CurrencyPairRepository
      */
-    private $currencyRepo;
+    private $currencyPairRepo;
 
     /**
      * @var Strategies
@@ -31,13 +30,13 @@ class BotAlgorithmManager
     /**
      * BotAlgorithmManager constructor.
      * @param BotAlgorithmRepository $botAlgorithmRepo
-     * @param CurrencyRepository $currencyRepo
+     * @param CurrencyPairRepository $currencyRepo
      * @param Strategies $strategies
      */
-    public function __construct(BotAlgorithmRepository $botAlgorithmRepo, CurrencyRepository $currencyRepo, Strategies $strategies)
+    public function __construct(BotAlgorithmRepository $botAlgorithmRepo, CurrencyPairRepository $currencyRepo, Strategies $strategies)
     {
         $this->botAlgorithmRepo = $botAlgorithmRepo;
-        $this->currencyRepo = $currencyRepo;
+        $this->currencyPairRepo = $currencyRepo;
         $this->strategies = $strategies;
     }
 
@@ -48,7 +47,7 @@ class BotAlgorithmManager
      */
     public function runTest(BotAlgorithm $algo)
     {
-        $candles = $this->currencyRepo->getCandlesByTimeFrame($algo->getCurrency(), $algo->getTimeFrame(), 1560700800);
+        $candles = $this->currencyPairRepo->getCandlesByTimeFrame($algo->getCurrencyPair()->getFirstCurrency(), $algo->getTimeFrame(), 1560700800);
 
         $openTradePrice = 0;
         $totalPercentage = 0;

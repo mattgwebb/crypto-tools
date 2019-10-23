@@ -45,9 +45,9 @@ class TrendLine
     private $endTime;
 
     /**
-     * @ORM\ManyToOne(targetEntity="App\Entity\Currency", inversedBy="trendLines")
+     * @ORM\ManyToOne(targetEntity="App\Entity\CurrencyPair", inversedBy="trendLines")
      */
-    private $currency;
+    private $currencyPair;
 
     public function getId(): ?int
     {
@@ -137,16 +137,16 @@ class TrendLine
     /**
      * @return mixed
      */
-    public function getCurrency()
+    public function getCurrencyPair()
     {
-        return $this->currency;
+        return $this->currencyPair;
     }
 
     /**
-     * @param mixed $currency
+     * @param mixed $currencyPair
      */
-    public function setCurrency($currency): void
+    public function setCurrencyPair($currencyPair): void
     {
-        $this->currency = $currency;
+        $this->currencyPair = $currencyPair;
     }
 }

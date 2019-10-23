@@ -4,12 +4,11 @@
 namespace App\Command;
 
 use App\Entity\Candle;
-use App\Entity\Currency;
+use App\Entity\CurrencyPair;
 use App\Entity\Exchange;
 use App\Entity\TimeFrames;
 use App\Service\ApiFactory;
 use App\Service\ApiInterface;
-use App\Service\BinanceAPI;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputArgument;
@@ -32,9 +31,9 @@ class LoadHistoricalDataCommand extends Command
     private $firstCandle;
 
     /**
-     * @var Currency
+     * @var CurrencyPair
      */
-    private $currency;
+    private $currencyPair;
 
     /**
      * @var int
@@ -61,20 +60,20 @@ class LoadHistoricalDataCommand extends Command
     {
         $this
             // ...
-            ->addArgument('currency_id', InputArgument::REQUIRED, 'Currency id')
+            ->addArgument('currency_pair_id', InputArgument::REQUIRED, 'Currency pair id')
             ->addArgument('start_time', InputArgument::REQUIRED, 'Data start time')
         ;
     }
 
     protected function execute(InputInterface $input, OutputInterface $output)
     {
-        $this->currencyID = $input->getArgument('currency_id');
+        $this->currencyID = $input->getArgument('currency_pair_id');
 
         try {
             $this->loadData();
 
             /** @var Exchange $exchange */
-            $exchange = $this->currency->getExchange();
+            $exchange = $this->currencyPair->getFirstCurrency()->getExchange();
             $api = ApiFactory::getApi($exchange);
             $this->loadCandles($api, $input->getArgument('start_time'), $output);
 
@@ -106,7 +105,7 @@ class LoadHistoricalDataCommand extends Command
         $continueLoading = true;
 
         while($continueLoading) {
-            $candles = $api->getCandles($this->currency, TimeFrames::TIMEFRAME_5M, $startTime);
+            $candles = $api->getCandles($this->currencyPair, TimeFrames::TIMEFRAME_5M, $startTime);
 
             if($candles->isEmpty()) {
                 $output->writeln([
@@ -124,7 +123,7 @@ class LoadHistoricalDataCommand extends Command
                         break;
                     }
                     if($candle->getCloseTime() < time()) {
-                        $candle->setCurrency($this->currency);
+                        $candle->setCurrencyPair($this->currencyPair);
                         $this->entityManager->persist($candle);
                         $totalCandles ++;
 
@@ -143,7 +142,7 @@ class LoadHistoricalDataCommand extends Command
         $this->entityManager->clear();
         $output->writeln([
             get_class($api),
-            $this->currency->getSymbol(),
+            $this->currencyPair->getSymbol(),
             "new candles: $totalCandles",
         ]);
     }
@@ -153,18 +152,18 @@ class LoadHistoricalDataCommand extends Command
      */
     private function loadData()
     {
-        $this->currency = $this->entityManager
-            ->getRepository(Currency::class)
+        $this->currencyPair = $this->entityManager
+            ->getRepository(CurrencyPair::class)
             ->find($this->currencyID);
 
-        if(!$this->currency) {
-            throw new \Exception("Currency doen´t exist");
+        if(!$this->currencyPair) {
+            throw new \Exception("Currency pair doen´t exist");
         }
 
         if(!$this->firstCandleID) {
             $this->firstCandle = $this->entityManager
                 ->getRepository(Candle::class)
-                ->findFirst($this->currency);
+                ->findFirst($this->currencyPair);
             $this->firstCandleID = $this->firstCandle->getId();
         } else {
             $this->firstCandle = $this->entityManager

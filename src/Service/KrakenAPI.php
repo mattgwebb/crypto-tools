@@ -4,9 +4,9 @@
 namespace App\Service;
 
 use App\Entity\Candle;
+use App\Entity\CurrencyPair;
 use App\Entity\TimeFrames;
 use Symfony\Component\HttpClient\HttpClient;
-use App\Entity\Currency;
 
 
 class KrakenAPI extends ApiInterface
@@ -26,7 +26,7 @@ class KrakenAPI extends ApiInterface
     ];
 
     /**
-     * @param Currency $currency
+     * @param CurrencyPair $currencyPair
      * @param $timeFrame
      * @param $startTime
      * @return array
@@ -36,7 +36,7 @@ class KrakenAPI extends ApiInterface
      * @throws \Symfony\Contracts\HttpClient\Exception\ServerExceptionInterface
      * @throws \Symfony\Contracts\HttpClient\Exception\TransportExceptionInterface
      */
-    protected function getCandlesData(Currency $currency, $timeFrame, $startTime) : array
+    protected function getCandlesData(CurrencyPair $currencyPair, $timeFrame, $startTime) : array
     {
         $client = HttpClient::create();
 
@@ -44,7 +44,7 @@ class KrakenAPI extends ApiInterface
             $response = $client->request('GET', $this->getAPIBaseRoute()."OHLC",
                 ['query' => [
                         'interval' => $timeFrame,
-                        'pair' => $currency->getSymbol(),
+                        'pair' => $currencyPair->getSymbol(),
                         'since' => $startTime
                     ]
                 ]);
@@ -66,11 +66,11 @@ class KrakenAPI extends ApiInterface
     }
 
     /**
-     * @param Currency $currency
+     * @param CurrencyPair $currencyPair
      * @param $rawData
      * @return Candle
      */
-    protected function getCandleFromRawData(Currency $currency, $rawData): Candle
+    protected function getCandleFromRawData(CurrencyPair $currencyPair, $rawData): Candle
     {
         $candle = new Candle();
         $candle->setOpenTime($rawData[0]);
@@ -80,7 +80,7 @@ class KrakenAPI extends ApiInterface
         $candle->setClosePrice($rawData[4]);
         $candle->setVolume($rawData[6]);
         $candle->setCloseTime($rawData[0] + 14399);
-        $candle->setCurrency($currency);
+        $candle->setCurrencyPair($currencyPair);
         return $candle;
     }
 

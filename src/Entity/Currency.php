@@ -24,16 +24,6 @@ class Currency
     private $symbol;
 
     /**
-     * @ORM\OneToMany(targetEntity="App\Entity\Candle", mappedBy="currency")
-     */
-    private $candles;
-
-    /**
-     * @ORM\OneToMany(targetEntity="App\Entity\TrendLine", mappedBy="currency")
-     */
-    private $trendLines;
-
-    /**
      * @ORM\Column(type="float")
      */
     private $balance;
@@ -43,18 +33,11 @@ class Currency
      */
     private $exchange;
 
-    public function __construct()
-    {
-        $this->candles = new ArrayCollection();
-    }
-
     /**
-     * @return Collection|Candle[]
+     * @ORM\OneToMany(targetEntity="App\Entity\CurrencyPair", mappedBy="firstCurrency")
      */
-    public function getCandles(): Collection
-    {
-        return $this->candles;
-    }
+    private $pairs;
+
 
     public function getId(): ?int
     {
@@ -80,22 +63,6 @@ class Currency
     /**
      * @return mixed
      */
-    public function getTrendLines()
-    {
-        return $this->trendLines;
-    }
-
-    /**
-     * @param mixed $trendLines
-     */
-    public function setTrendLines($trendLines): void
-    {
-        $this->trendLines = $trendLines;
-    }
-
-    /**
-     * @return mixed
-     */
     public function getExchange()
     {
         return $this->exchange;
@@ -107,11 +74,6 @@ class Currency
     public function setExchange($exchange): void
     {
         $this->exchange = $exchange;
-    }
-
-    public function __toString()
-    {
-        return $this->getId().".".$this->getSymbol();
     }
 
     /**
@@ -128,5 +90,26 @@ class Currency
     public function setBalance($balance): void
     {
         $this->balance = $balance;
+    }
+
+    /**
+     * @return mixed
+     */
+    public function getPairs()
+    {
+        return $this->pairs;
+    }
+
+    /**
+     * @param mixed $pairs
+     */
+    public function setPairs($pairs): void
+    {
+        $this->pairs = $pairs;
+    }
+
+    public function __toString()
+    {
+        return $this->getId().".".$this->getSymbol();
     }
 }

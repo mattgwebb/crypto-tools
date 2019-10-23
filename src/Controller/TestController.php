@@ -3,14 +3,11 @@
 namespace App\Controller;
 
 use App\Entity\BotAlgorithm;
-use App\Entity\Currency;
-use App\Entity\StrategyResult;
+use App\Entity\CurrencyPair;
 use App\Entity\TimeFrames;
 use App\Model\BotAlgorithmManager;
 use App\Service\BinanceAPI;
-use App\Service\Indicators;
 use App\Service\Strategies;
-use Google\GTrends;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
@@ -51,8 +48,8 @@ class TestController extends AbstractController
      */
     public function newAlgo()
     {
-        $currencies = $this->getDoctrine()
-            ->getRepository(Currency::class)
+        $currencyPairs = $this->getDoctrine()
+            ->getRepository(CurrencyPair::class)
             ->findAll();
 
         $timeFrames = [
@@ -69,7 +66,7 @@ class TestController extends AbstractController
         ];
 
         return $this->render('algoform.html.twig', [
-            "currencies" => $currencies,
+            "currencies" => $currencyPairs,
             "time_frames" => $timeFrames,
             "strategies" => $this->strategies->getStrategiesList()
         ]);
@@ -98,15 +95,15 @@ class TestController extends AbstractController
      */
     public function processNewAlgo(Request $request)
     {
-        $currencyID = $request->request->get('currency');
+        $currencyPairID = $request->request->get('currency');
 
-        $currency = $this->getDoctrine()
-            ->getRepository(Currency::class)
-            ->find($currencyID);
+        $currencyPair = $this->getDoctrine()
+            ->getRepository(CurrencyPair::class)
+            ->find($currencyPairID);
 
-        if($currency) {
+        if($currencyPair) {
             $algo = new BotAlgorithm();
-            $algo->setCurrency($currency);
+            $algo->setCurrencyPair($currencyPair);
             $algo->setTimeFrame($request->request->get('time_frame'));
             $algo->setStrategy($request->request->get('strategy'));
             $algo->setStopLoss($request->request->get('stop_loss'));
@@ -141,7 +138,7 @@ class TestController extends AbstractController
             ]);
         }
         $api = new BinanceAPI();
-        $test = $api->getUserBalance();
+        //$test =  $api->getUserBalance();
 
         //$trades = $this->manager->runTest($algo);
 
@@ -154,7 +151,7 @@ class TestController extends AbstractController
                         ];
 
         return $this->render('test.html.twig', [
-            "symbol" => $algo->getCurrency()->getSymbol(),
+            "symbol" => $algo->getCurrencyPair()->getSymbol(),
             "trades" => $mockTrades,
             "result" => ["percentage" => 0.18455486978368, "investment" => 1189.9999]
         ]);

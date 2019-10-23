@@ -5,11 +5,13 @@ namespace App\Command;
 
 use App\Entity\Candle;
 use App\Entity\Currency;
+use App\Entity\CurrencyPair;
 use App\Entity\Exchange;
 use App\Entity\TimeFrames;
 use App\Service\ApiFactory;
 use App\Service\ApiInterface;
 use App\Service\BinanceAPI;
+use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputInterface;
@@ -46,25 +48,41 @@ class ExternalDataCommand extends Command
         foreach($exchanges as $exchange) {
             $currencies = $exchange->getCurrencies();
             $api = ApiFactory::getApi($exchange);
+            $this->loadBalances($api, $currencies);
 
             /** @var Currency $currency */
             foreach($currencies as $currency) {
-                $this->loadNewCandles($api, $currency, $output);
+                foreach ($currency->getPairs() as $pair) {
+                    $this->loadNewCandles($api, $pair, $output);
+                }
+            }
+        }
+    }
+
+    private function loadBalances(ApiInterface $api, $currencies)
+    {
+        $rawBalances = $api->getUserBalance();
+
+        /** @var Currency $currency */
+        foreach($currencies as $currency) {
+            if(isset($rawBalances[$currency->getSymbol()])) {
+                $currency->setBalance($rawBalances[$currency->getSymbol()]);
+                $this->entityManager->persist($currency);
             }
         }
     }
 
     /**
      * @param ApiInterface $api
-     * @param Currency $currency
+     * @param CurrencyPair $pair
      * @param OutputInterface $output
      */
-    private function loadNewCandles(ApiInterface $api, Currency $currency, OutputInterface $output)
+    private function loadNewCandles(ApiInterface $api, CurrencyPair $pair, OutputInterface $output)
     {
         /** @var Candle $lastCandle */
         $lastCandle = $this->entityManager
             ->getRepository(Candle::class)
-            ->findLast($currency);
+            ->findLast($pair);
 
         if(!$lastCandle) {
             $lastTime = time() - 10368000; //100 days
@@ -74,7 +92,7 @@ class ExternalDataCommand extends Command
 
         $totalCandles = 0;
 
-        $candles = $api->getCandles($currency, TimeFrames::TIMEFRAME_5M, $lastTime);
+        $candles = $api->getCandles($pair, TimeFrames::TIMEFRAME_5M, $lastTime);
 
         /** @var Candle $candle */
         foreach($candles as $candle) {
@@ -86,7 +104,7 @@ class ExternalDataCommand extends Command
         $this->entityManager->flush();
         $output->writeln([
             get_class($api),
-            $currency->getSymbol(),
+            $pair->getSymbol(),
             "new candles: $totalCandles",
         ]);
     }

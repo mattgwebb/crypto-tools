@@ -50,47 +50,4 @@ class CurrencyRepository extends ServiceEntityRepository
         ;
     }
     */
-
-    /**
-     * @param $timeFrame
-     * @return Candle[]
-     * TODO change to query to not have to load all candles
-     */
-    public function getCandlesByTimeFrame(Currency $currency, $timeFrame, $fromTime)
-    {
-        $groupAmount = $timeFrame / TimeFrames::TIMEFRAME_5M;
-        $candles = [];
-        $i = 1;
-        $aux = new Candle();
-
-        /** @var CandleRepository $candleRepo */
-        $candleRepo = $this->getEntityManager()->getRepository(Candle::class);
-        $allCandles = $candleRepo->getByCurrencyFromTime($currency, $fromTime);
-
-        /** @var Candle $candle */
-        foreach($allCandles as $candle) {
-            if($i == 1) {
-                $aux = $candle;
-            } else {
-                if($candle->getHighPrice() > $aux->getHighPrice()) {
-                    $aux->setHighPrice($candle->getHighPrice());
-                }
-
-                if($candle->getLowPrice() < $aux->getLowPrice()) {
-                    $aux->setLowPrice($candle->getLowPrice());
-                }
-
-                $aux->addToVolume($candle->getVolume());
-
-                if($i == $groupAmount) {
-                    $aux->setCloseTime($candle->getCloseTime());
-                    $aux->setClosePrice($candle->getClosePrice());
-                    $candles[] = $aux;
-                    $i = 0;
-                }
-            }
-            $i++;
-        }
-        return $candles;
-    }
 }

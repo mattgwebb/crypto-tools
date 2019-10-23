@@ -5,7 +5,7 @@ namespace App\Service;
 
 
 use App\Entity\Candle;
-use App\Entity\Currency;
+use App\Entity\CurrencyPair;
 use App\Entity\TimeFrames;
 use Doctrine\Common\Collections\ArrayCollection;
 
@@ -25,19 +25,19 @@ abstract class ApiInterface
     ];
 
     /**
-     * @param Currency $currency
+     * @param CurrencyPair $currencyPair
      * @param $timeFrame
      * @param $startTime
      * @return ArrayCollection
      */
-    public function getCandles(Currency $currency, $timeFrame, $startTime) : ArrayCollection
+    public function getCandles(CurrencyPair $currencyPair, $timeFrame, $startTime) : ArrayCollection
     {
         $specificTimeFrame = $this->getCorrectTimeFrame($timeFrame);
-        $rawData = $this->getCandlesData($currency, $specificTimeFrame, $startTime);
+        $rawData = $this->getCandlesData($currencyPair, $specificTimeFrame, $startTime);
         $candles = new ArrayCollection();
 
         foreach($rawData as $rawCandle) {
-            $candle = $this->getCandleFromRawData($currency, $rawCandle);
+            $candle = $this->getCandleFromRawData($currencyPair, $rawCandle);
             $candles->add($candle);
         }
 
@@ -50,19 +50,19 @@ abstract class ApiInterface
     protected abstract function getAPIBaseRoute() : string;
 
     /**
-     * @param Currency $currency
+     * @param CurrencyPair $currencyPair
      * @param $timeFrame
      * @param $startTime
      * @return ArrayCollection
      */
-    protected abstract function getCandlesData(Currency $currency, $timeFrame, $startTime) : array;
+    protected abstract function getCandlesData(CurrencyPair $currencyPair, $timeFrame, $startTime) : array;
 
     /**
-     * @param Currency $currency
+     * @param CurrencyPair $currencyPair
      * @param $rawData
      * @return Candle
      */
-    protected abstract function getCandleFromRawData(Currency $currency, $rawData) : Candle;
+    protected abstract function getCandleFromRawData(CurrencyPair $currencyPair, $rawData) : Candle;
 
     public abstract function getUserBalance() : array;
 

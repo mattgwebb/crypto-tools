@@ -4,6 +4,7 @@ namespace App\Repository;
 
 use App\Entity\Candle;
 use App\Entity\Currency;
+use App\Entity\CurrencyPair;
 use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
 use Doctrine\Common\Persistence\ManagerRegistry;
 
@@ -21,17 +22,17 @@ class CandleRepository extends ServiceEntityRepository
     }
 
     /**
-     * @param Currency $currency
+     * @param CurrencyPair $currencyPair
      * @param $from
      * @return Candle[] Returns an array of Candle objects
      */
 
-    public function getByCurrencyFromTime(Currency $currency, $from)
+    public function getByCurrencyFromTime(CurrencyPair $currencyPair, $from)
     {
         return $this->createQueryBuilder('c')
             ->andWhere('c.currency = :currency')
             ->andWhere('c.openTime >= :time')
-            ->setParameter('currency', $currency)
+            ->setParameter('currencyPair', $currencyPair)
             ->setParameter('time', $from)
             ->orderBy('c.openTime', 'ASC')
             ->getQuery()
@@ -40,20 +41,20 @@ class CandleRepository extends ServiceEntityRepository
     }
 
     /**
-     * @param Currency $currency
+     * @param CurrencyPair $currencyPair
      * @return Candle|null
      */
-    public function findLast(Currency $currency): ?Candle
+    public function findLast(CurrencyPair $currencyPair): ?Candle
     {
-        return $this->findOneBy(["currency" => $currency], ["openTime" => "desc"]);
+        return $this->findOneBy(["currencyPair" => $currencyPair], ["openTime" => "desc"]);
     }
 
     /**
-     * @param Currency $currency
+     * @param CurrencyPair $currencyPair
      * @return Candle|null
      */
-    public function findFirst(Currency $currency): ?Candle
+    public function findFirst(CurrencyPair $currencyPair): ?Candle
     {
-        return $this->findOneBy(["currency" => $currency], ["openTime" => "asc"]);
+        return $this->findOneBy(["currencyPair" => $currencyPair], ["openTime" => "asc"]);
     }
 }
