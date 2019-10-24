@@ -24,12 +24,12 @@ class CurrencyPair
     private $symbol;
 
     /**
-     * @ORM\OneToMany(targetEntity="App\Entity\Candle", mappedBy="currency")
+     * @ORM\OneToMany(targetEntity="App\Entity\Candle", mappedBy="currencyPair")
      */
     private $candles;
 
     /**
-     * @ORM\OneToMany(targetEntity="App\Entity\TrendLine", mappedBy="currency")
+     * @ORM\OneToMany(targetEntity="App\Entity\TrendLine", mappedBy="currencyPair")
      */
     private $trendLines;
 
