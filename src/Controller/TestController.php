@@ -8,6 +8,7 @@ use App\Entity\TimeFrames;
 use App\Model\BotAlgorithmManager;
 use App\Service\BinanceAPI;
 use App\Service\Strategies;
+use App\Service\TelegramBot;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
@@ -137,8 +138,6 @@ class TestController extends AbstractController
                 "error" => "Algo not found.",
             ]);
         }
-        $api = new BinanceAPI();
-        //$test =  $api->getUserBalance();
 
         //$trades = $this->manager->runTest($algo);
 
