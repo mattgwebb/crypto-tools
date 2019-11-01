@@ -6,6 +6,7 @@ namespace App\Service;
 use App\Entity\Candle;
 use App\Entity\CurrencyPair;
 use App\Entity\TimeFrames;
+use App\Entity\Trade;
 use Symfony\Component\HttpClient\HttpClient;
 
 
@@ -87,5 +88,16 @@ class KrakenAPI extends ApiInterface
     public function getUserBalance(): array
     {
         return [];
+    }
+
+    /**
+     * @param CurrencyPair $currencyPair
+     * @param int $side
+     * @param float $quantity
+     * @return Trade
+     */
+    public function marketTrade(CurrencyPair $currencyPair, int $side, float $quantity): Trade
+    {
+        return new Trade();
     }
 }

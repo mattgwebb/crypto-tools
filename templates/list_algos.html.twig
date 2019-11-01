@@ -50,7 +50,11 @@
                             <td>{{ algo.observations }}</td>
                             <td><a href="{{ path('run_algo_test', {id : algo.id}) }}" class="btn btn-primary btn-circle">
                                     <i class="fas fa-check"></i>
-                                </a></td>
+                                </a>
+                                <a href="{{ path('edit_algo_form', {id : algo.id}) }}" class="btn btn-primary btn-circle">
+                                    <i class="fas fa-edit"></i>
+                                </a>
+                            </td>
                         </tr>
                     {% endfor %}
                     </tbody>

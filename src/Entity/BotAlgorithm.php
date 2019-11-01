@@ -7,7 +7,7 @@ use Doctrine\ORM\Mapping as ORM;
 /**
  * @ORM\Entity(repositoryClass="App\Repository\BotAlgorithmRepository")
  */
-class BotAlgorithm
+class BotAlgorithm implements \JsonSerializable
 {
     /**
      * @ORM\Id()
@@ -145,5 +145,24 @@ class BotAlgorithm
     public function setObservations($observations): void
     {
         $this->observations = $observations;
+    }
+
+    /**
+     * Specify data which should be serialized to JSON
+     * @link https://php.net/manual/en/jsonserializable.jsonserialize.php
+     * @return mixed data which can be serialized by <b>json_encode</b>,
+     * which is a value of any type other than a resource.
+     * @since 5.4.0
+     */
+    public function jsonSerialize()
+    {
+        return [
+            "id" => $this->getId(),
+            "symbol" => $this->getCurrencyPair()->getSymbol(),
+            "time_frame" => $this->getTimeFrame(),
+            "strategy" => $this->getStrategy(),
+            "stop_loss" => $this->getStopLoss(),
+            "take_profit" => $this->getTakeProfit()
+        ];
     }
 }

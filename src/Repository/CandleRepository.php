@@ -30,7 +30,7 @@ class CandleRepository extends ServiceEntityRepository
     public function getByCurrencyFromTime(CurrencyPair $currencyPair, $from)
     {
         return $this->createQueryBuilder('c')
-            ->andWhere('c.currency = :currency')
+            ->andWhere('c.currencyPair = :currencyPair')
             ->andWhere('c.openTime >= :time')
             ->setParameter('currencyPair', $currencyPair)
             ->setParameter('time', $from)

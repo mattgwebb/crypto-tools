@@ -1,5 +1,11 @@
 monolog:
+    channels: ["algos"]
     handlers:
+        algos:
+            level:    debug
+            type:     stream
+            path:     '%kernel.logs_dir%/algos.log'
+            channels: algos
         main:
             type: stream
             path: "%kernel.logs_dir%/%kernel.environment%.log"

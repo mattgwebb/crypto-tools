@@ -7,6 +7,7 @@ namespace App\Service;
 use App\Entity\Candle;
 use App\Entity\CurrencyPair;
 use App\Entity\TimeFrames;
+use App\Entity\Trade;
 use Doctrine\Common\Collections\ArrayCollection;
 
 abstract class ApiInterface
@@ -64,7 +65,18 @@ abstract class ApiInterface
      */
     protected abstract function getCandleFromRawData(CurrencyPair $currencyPair, $rawData) : Candle;
 
+    /**
+     * @return array
+     */
     public abstract function getUserBalance() : array;
+
+    /**
+     * @param CurrencyPair $currencyPair
+     * @param int $side
+     * @param float $quantity
+     * @return Trade
+     */
+    public abstract function marketTrade(CurrencyPair $currencyPair, int $side, float $quantity) : Trade;
 
     /**
      * @param $timeFrame

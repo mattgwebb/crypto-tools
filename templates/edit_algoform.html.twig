@@ -1,0 +1,46 @@
+{% extends 'base.html.twig' %}
+
+{% block body %}
+    <div class="container">
+        <div class="row">
+            <form role="form" class="col-md-9 go-right" action="{{ path('edit_algo', {id : algo.id}) }}" method="post">
+                <h2>Edit {{ algo.currencyPair.symbol }} Test</h2>
+                <div class="form-group">
+                    <label for="time_frame">Time frame</label>
+                    <select id="time_frame" name="time_frame" class="form-control" required>
+                        {% for minutes,time_frame in time_frames  %}
+                            <option value="{{ minutes }}" {% if algo.timeFrame == minutes %} selected {% endif %}>{{ time_frame }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="strategy">Strategy</label>
+                    <select id="strategy" name="strategy" class="form-control" required>
+                        {% for strategy in strategies  %}
+                            <option value="{{ strategy }}" {% if algo.strategy == strategy %} selected {% endif %}>{{ strategy }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="stop_loss">Stop loss %</label>
+                    <input type="number" id="stop_loss" name="stop_loss" class="form-control" value="{{ algo.stopLoss }}">
+                </div>
+                <div class="form-group">
+                    <label for="take_profit">Take profit %</label>
+                    <input type="number" id="take_profit" name="take_profit" class="form-control" value="{{ algo.takeProfit }}">
+                </div>
+                <div class="form-group">
+                    <label for="observations">Observations</label>
+                    <textarea id="observations" name="observations" class="form-control">{{ algo.observations }}</textarea>
+                </div>
+                <button class="btn btn-primary btn-icon-split">
+                    <span class="icon text-white-50">
+                      <i class="fas fa-flag"></i>
+                    </span>
+                    <span class="text">Save</span>
+                </button>
+            </form>
+        </div>
+    </div>
+
+{% endblock %}

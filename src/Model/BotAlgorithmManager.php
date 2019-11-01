@@ -9,6 +9,7 @@ use App\Entity\StrategyResult;
 use App\Repository\BotAlgorithmRepository;
 use App\Repository\CurrencyPairRepository;
 use App\Service\Strategies;
+use Psr\Log\LoggerInterface;
 
 class BotAlgorithmManager
 {
@@ -28,16 +29,23 @@ class BotAlgorithmManager
     private $strategies;
 
     /**
+     * @var LoggerInterface
+     */
+    private $logger;
+
+    /**
      * BotAlgorithmManager constructor.
      * @param BotAlgorithmRepository $botAlgorithmRepo
      * @param CurrencyPairRepository $currencyRepo
      * @param Strategies $strategies
+     * @param LoggerInterface $algosLogger
      */
-    public function __construct(BotAlgorithmRepository $botAlgorithmRepo, CurrencyPairRepository $currencyRepo, Strategies $strategies)
+    public function __construct(BotAlgorithmRepository $botAlgorithmRepo, CurrencyPairRepository $currencyRepo, Strategies $strategies, LoggerInterface $algosLogger)
     {
         $this->botAlgorithmRepo = $botAlgorithmRepo;
         $this->currencyPairRepo = $currencyRepo;
         $this->strategies = $strategies;
+        $this->logger = $algosLogger;
     }
 
     /**
@@ -47,7 +55,9 @@ class BotAlgorithmManager
      */
     public function runTest(BotAlgorithm $algo)
     {
-        $candles = $this->currencyPairRepo->getCandlesByTimeFrame($algo->getCurrencyPair()->getFirstCurrency(), $algo->getTimeFrame(), 1560700800);
+        $this->logger->info("********************* New test  ************************");
+        $this->logger->info(json_encode($algo));
+        $candles = $this->currencyPairRepo->getCandlesByTimeFrame($algo->getCurrencyPair(), $algo->getTimeFrame());
 
         $openTradePrice = 0;
         $totalPercentage = 0;
@@ -85,7 +95,10 @@ class BotAlgorithmManager
                 $openTradePrice = $currentCandle->getClosePrice();
                 $date = new \DateTime('@' .$currentCandle->getCloseTime());
                 $date->setTimezone(new \DateTimeZone("Europe/Madrid"));
-                $trades[] = json_encode(["trade" => "long", "time" => date_format($date, 'D M j G:i:s'), "price" => $openTradePrice]);
+                $trade = json_encode(["trade" => "long", "time" => date_format($date, 'D M j G:i:s'), "price" => $openTradePrice]);
+                $trades[] = $trade;
+
+                $this->logger->info($trade);
 
             }
             if(($result->getTradeResult() == StrategyResult::TRADE_SHORT || $short) && $openTradePrice > 0) {
@@ -94,19 +107,24 @@ class BotAlgorithmManager
                 $initialInvestment *= ($percentage + 1);
                 $date = new \DateTime('@' .$currentCandle->getCloseTime());
                 $date->setTimezone(new \DateTimeZone("Europe/Madrid"));
-                $trades[] = json_encode(["trade" => "short",
+                $trade = json_encode(["trade" => "short",
                     "time" => date_format($date, 'D M j G:i:s'),
                     "price" => $currentCandle->getClosePrice(),
                     "percentage" => $percentage,
                     "stopLoss/takeProfit" => $short]);
+                $trades[] = $trade;
 
+                $this->logger->info($trade);
                 $openTradePrice = 0;
             }
 
 
         }
 
-        $trades[] = "percentage $totalPercentage investment $initialInvestment";
+        $percentage = (($initialInvestment / 1000) - 1) * 100;
+        $trade = "percentage $percentage";
+        $trades[] = $trade;
+        $this->logger->info($trade);
 
         return $trades;
     }

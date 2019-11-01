@@ -5,10 +5,29 @@ namespace App\Service;
 
 use App\Entity\Candle;
 use App\Entity\CurrencyPair;
+use App\Entity\Trade;
+use App\Entity\TradeTypes;
 use Symfony\Component\HttpClient\HttpClient;
 
 class BinanceAPI extends ApiInterface
 {
+
+    const MIN_QUANTITY_TRADE = 0.0011;
+
+    private $tradeTypes = [
+        TradeTypes::LIMIT => 'LIMIT',
+        TradeTypes::MARKET => 'MARKET',
+        TradeTypes::STOP_LOSS => 'STOP_LOSS',
+        TradeTypes::STOP_LOSS_LIMIT => 'STOP_LOSS_LIMIT',
+        TradeTypes::TAKE_PROFIT => 'TAKE_PROFIT',
+        TradeTypes::TAKE_PROFIT_LIMIT => 'TAKE_PROFIT_LIMIT',
+        TradeTypes::LIMIT_MAKER => 'LIMIT_MAKER'
+    ];
+
+    private $tradeSides = [
+        TradeTypes::TRADE_BUY => 'BUY',
+        TradeTypes::TRADE_SELL => 'SELL'
+    ];
 
     /**
      * @param CurrencyPair $currencyPair
@@ -82,24 +101,19 @@ class BinanceAPI extends ApiInterface
     {
         $client = HttpClient::create();
 
-        $secret = $_ENV['BINANCE_SECRET'];
-        $key = $_ENV['BINANCE_KEY'];
-
         $timestamp = time() * 1000;
 
-        $totalParams = "timestamp=$timestamp";
-        $hash = hash_hmac ( "sha256", $totalParams, $secret);
+        $query = [
+            'timestamp' => $timestamp
+        ];
+
+        $query = $this->addSignature($query);
 
         try {
             $response = $client->request('GET', $this->getAPIBaseRoute()."account",
                 [
-                    'query' => [
-                        'timestamp' => $timestamp,
-                        'signature' => $hash
-                    ],
-                    'headers' => [
-                        'X-MBX-APIKEY' => $key,
-                    ],
+                    'query' => $query,
+                    'headers' => $this->getKeyHeader()
                 ]);
             $data = $response->toArray();
         } catch (\Exception $e) {
@@ -113,5 +127,70 @@ class BinanceAPI extends ApiInterface
             }
         }
         return $balance;
+    }
+
+    /**
+     * @param CurrencyPair $currencyPair
+     * @param int $side
+     * @param float $quantity
+     * @return Trade
+     * @throws \Symfony\Contracts\HttpClient\Exception\ClientExceptionInterface
+     * @throws \Symfony\Contracts\HttpClient\Exception\DecodingExceptionInterface
+     * @throws \Symfony\Contracts\HttpClient\Exception\RedirectionExceptionInterface
+     * @throws \Symfony\Contracts\HttpClient\Exception\ServerExceptionInterface
+     * @throws \Symfony\Contracts\HttpClient\Exception\TransportExceptionInterface
+     */
+    public function marketTrade(CurrencyPair $currencyPair, int $side, float $quantity): Trade
+    {
+        $client = HttpClient::create();
+
+        $type = $this->tradeTypes[TradeTypes::MARKET];
+        $side = $this->tradeSides[$side];
+        $timestamp = time() * 1000;
+
+        $query = [
+            'symbol' => $currencyPair->getSymbol(),
+            'side' => $side,
+            'type' => $type,
+            'quantity' => $quantity,
+            'timestamp' => $timestamp,
+        ];
+
+        $query = $this->addSignature($query);
+
+        try {
+            $response = $client->request('POST', $this->getAPIBaseRoute()."order/test",
+                [
+                    'query' => $query,
+                    'headers' => $this->getKeyHeader(),
+                ]);
+            $data = $response->toArray();
+            $test = 0;
+        } catch (\Exception $e) {
+            throw $e;
+        }
+        return new Trade();
+    }
+
+    /**
+     * @param array $query
+     * @return array
+     */
+    private function addSignature(array $query)
+    {
+        $secret = $_ENV['BINANCE_SECRET'];
+        $totalParams = http_build_query($query);
+        $query['signature'] = hash_hmac("sha256", $totalParams, $secret);
+        return $query;
+    }
+
+    /**
+     * @return array
+     */
+    private function getKeyHeader()
+    {
+        return  [
+            'X-MBX-APIKEY' => $_ENV['BINANCE_KEY']
+        ];
     }
 }
