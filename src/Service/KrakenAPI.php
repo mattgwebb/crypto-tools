@@ -7,7 +7,6 @@ use App\Entity\Candle;
 use App\Entity\CurrencyPair;
 use App\Entity\TimeFrames;
 use App\Entity\Trade;
-use Symfony\Component\HttpClient\HttpClient;
 
 
 class KrakenAPI extends ApiInterface
@@ -39,10 +38,8 @@ class KrakenAPI extends ApiInterface
      */
     protected function getCandlesData(CurrencyPair $currencyPair, $timeFrame, $startTime) : array
     {
-        $client = HttpClient::create();
-
         try {
-            $response = $client->request('GET', $this->getAPIBaseRoute()."OHLC",
+            $response = $this->httpClient->request('GET', $this->getAPIBaseRoute()."OHLC",
                 ['query' => [
                         'interval' => $timeFrame,
                         'pair' => $currencyPair->getSymbol(),
@@ -97,6 +94,17 @@ class KrakenAPI extends ApiInterface
      * @return Trade
      */
     public function marketTrade(CurrencyPair $currencyPair, int $side, float $quantity): Trade
+    {
+        return new Trade();
+    }
+
+    /**
+     * @param CurrencyPair $currencyPair
+     * @param float $quantity
+     * @param float $price
+     * @return Trade
+     */
+    public function stopLossTrade(CurrencyPair $currencyPair, float $quantity, float $price): Trade
     {
         return new Trade();
     }

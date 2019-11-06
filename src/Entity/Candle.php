@@ -207,10 +207,11 @@ class Candle implements \JsonSerializable
     public function jsonSerialize()
     {
         return [
-            "open" => $this->getOpenPrice(),
-            "openTime" => $this->getOpenTime(),
-            "close" => $this->getClosePrice(),
-            "closeTime" => $this->getCloseTime()
+            $this->getOpenTime() * 1000,
+            $this->getOpenPrice(),
+            $this->getHighPrice(),
+            $this->getLowPrice(),
+            $this->getClosePrice()
         ];
     }
 }

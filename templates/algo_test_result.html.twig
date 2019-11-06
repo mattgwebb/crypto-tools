@@ -1,0 +1,69 @@
+{% extends 'base.html.twig' %}
+
+{% block body %}
+    {% block javascripts %}
+        {{ parent() }}
+        <script src="https://code.highcharts.com/stock/highstock.js"></script>
+        <script src="https://code.highcharts.com/stock/modules/data.js"></script>
+        <script src="https://code.highcharts.com/stock/modules/exporting.js"></script>
+        <script>
+            Highcharts.getJSON('http://localhost/crypto-tools/public/charts/chart_{{ pair.id }}.json', function (data) {
+
+                // create the chart
+                Highcharts.stockChart('container', {
+
+
+                    title: {
+                        text: '{{ pair.symbol }}'
+                    },
+
+                    rangeSelector: {
+                        buttons: [{
+                            type: 'hour',
+                            count: 1,
+                            text: '1h'
+                        }, {
+                            type: 'day',
+                            count: 1,
+                            text: '1D'
+                        }, {
+                            type: 'all',
+                            count: 1,
+                            text: 'All'
+                        }],
+                        selected: 1,
+                        inputEnabled: false
+                    },
+
+                    series: [{
+                        name: 'AAPL',
+                        type: 'candlestick',
+                        id: 'candlestick_data',
+                        data: data,
+                        tooltip: {
+                            valueDecimals: 2
+                        }
+                    }, {
+                        type: 'flags',
+                        data: [
+                            {% for trade in trades %}
+                            {
+                                x: {{ trade.timestamp }},
+                                title: '{% if trade.percentage is defined %} {{ trade.percentage }}% {% else %} BUY{% endif %}',
+                                text: '{{ trade.price }} {% if trade.stopLoss_takeProfit is defined and trade.stopLoss_takeProfit %} Stop loss/take profit {% endif %}',
+                                color: '{% if trade.percentage is defined %} {% if trade.percentage > 0 %} #00cc44 {% else %} #ff0000 {% endif %} {% else %} #4da6ff {% endif %}',
+                            },
+                            {% endfor %}
+                        ],
+                        onSeries: 'candlestick_data',
+                        shape: 'squarepin'
+                    }]
+                });
+            });
+
+        </script>
+    {% endblock %}
+
+    <div id="container" style="height: 400px; min-width: 310px"></div>
+
+{% endblock %}

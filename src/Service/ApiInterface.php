@@ -9,6 +9,7 @@ use App\Entity\CurrencyPair;
 use App\Entity\TimeFrames;
 use App\Entity\Trade;
 use Doctrine\Common\Collections\ArrayCollection;
+use Symfony\Component\HttpClient\HttpClient;
 
 abstract class ApiInterface
 {
@@ -24,6 +25,20 @@ abstract class ApiInterface
         TimeFrames::TIMEFRAME_1D > '1d',
         TimeFrames::TIMEFRAME_1W => '1w'
     ];
+
+    /**
+     * @var \Symfony\Contracts\HttpClient\HttpClientInterface
+     */
+    protected $httpClient;
+
+    /**
+     * ApiInterface constructor.
+     */
+    public function __construct()
+    {
+        $this->httpClient = HttpClient::create();
+    }
+
 
     /**
      * @param CurrencyPair $currencyPair
@@ -77,6 +92,14 @@ abstract class ApiInterface
      * @return Trade
      */
     public abstract function marketTrade(CurrencyPair $currencyPair, int $side, float $quantity) : Trade;
+
+    /**
+     * @param CurrencyPair $currencyPair
+     * @param float $quantity
+     * @param float $price
+     * @return Trade
+     */
+    public abstract function stopLossTrade(CurrencyPair $currencyPair, float $quantity, float $price) : Trade;
 
     /**
      * @param $timeFrame

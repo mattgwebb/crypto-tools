@@ -43,10 +43,9 @@ class BinanceAPI extends ApiInterface
     protected function getCandlesData(CurrencyPair $currencyPair, $timeFrame, $startTime) : array
     {
         $startTime = $startTime * 1000;
-        $client = HttpClient::create();
 
         try {
-            $response = $client->request('GET', $this->getAPIBaseRoute()."klines",
+            $response = $this->httpClient->request('GET', $this->getAPIBaseRoute()."klines",
                 ['query' => [
                         'interval' => $timeFrame,
                         'symbol' => $currencyPair->getSymbol(),
@@ -99,8 +98,6 @@ class BinanceAPI extends ApiInterface
      */
     public function getUserBalance(): array
     {
-        $client = HttpClient::create();
-
         $timestamp = time() * 1000;
 
         $query = [
@@ -110,7 +107,7 @@ class BinanceAPI extends ApiInterface
         $query = $this->addSignature($query);
 
         try {
-            $response = $client->request('GET', $this->getAPIBaseRoute()."account",
+            $response = $this->httpClient->request('GET', $this->getAPIBaseRoute()."account",
                 [
                     'query' => $query,
                     'headers' => $this->getKeyHeader()
@@ -142,8 +139,6 @@ class BinanceAPI extends ApiInterface
      */
     public function marketTrade(CurrencyPair $currencyPair, int $side, float $quantity): Trade
     {
-        $client = HttpClient::create();
-
         $type = $this->tradeTypes[TradeTypes::MARKET];
         $side = $this->tradeSides[$side];
         $timestamp = time() * 1000;
@@ -156,20 +151,65 @@ class BinanceAPI extends ApiInterface
             'timestamp' => $timestamp,
         ];
 
-        $query = $this->addSignature($query);
+        $result = $this->newOrder($query);
+        /** TODO read data and create new trade */
+        return new Trade();
+    }
 
+
+    /**
+     * @param CurrencyPair $currencyPair
+     * @param float $quantity
+     * @param float $price
+     * @return Trade
+     * @throws \Symfony\Contracts\HttpClient\Exception\ClientExceptionInterface
+     * @throws \Symfony\Contracts\HttpClient\Exception\DecodingExceptionInterface
+     * @throws \Symfony\Contracts\HttpClient\Exception\RedirectionExceptionInterface
+     * @throws \Symfony\Contracts\HttpClient\Exception\ServerExceptionInterface
+     * @throws \Symfony\Contracts\HttpClient\Exception\TransportExceptionInterface
+     */
+    public function stopLossTrade(CurrencyPair $currencyPair, float $quantity, float $price): Trade
+    {
+        $type = $this->tradeTypes[TradeTypes::STOP_LOSS];
+        $timestamp = time() * 1000;
+
+        $query = [
+            'symbol' => $currencyPair->getSymbol(),
+            'type' => $type,
+            'side' => $this->tradeSides[TradeTypes::TRADE_SELL],
+            'quantity' => $quantity,
+            'stopPrice' => $price,
+            'timestamp' => $timestamp,
+        ];
+
+        $result = $this->newOrder($query);
+        /** TODO read data and create new trade */
+        return new Trade();
+    }
+
+    /**
+     * @param array $query
+     * @return array
+     * @throws \Symfony\Contracts\HttpClient\Exception\ClientExceptionInterface
+     * @throws \Symfony\Contracts\HttpClient\Exception\DecodingExceptionInterface
+     * @throws \Symfony\Contracts\HttpClient\Exception\RedirectionExceptionInterface
+     * @throws \Symfony\Contracts\HttpClient\Exception\ServerExceptionInterface
+     * @throws \Symfony\Contracts\HttpClient\Exception\TransportExceptionInterface
+     */
+    private function newOrder(array $query)
+    {
+        $query = $this->addSignature($query);
         try {
-            $response = $client->request('POST', $this->getAPIBaseRoute()."order/test",
+            $response = $this->httpClient->request('POST', $this->getAPIBaseRoute()."order/test",
                 [
                     'query' => $query,
-                    'headers' => $this->getKeyHeader(),
+                    'headers' => $this->getKeyHeader()
                 ]);
-            $data = $response->toArray();
+            $data = $response->getContent(false);
+        } catch (\Exception $exception) {
             $test = 0;
-        } catch (\Exception $e) {
-            throw $e;
         }
-        return new Trade();
+       return $response->toArray();
     }
 
     /**

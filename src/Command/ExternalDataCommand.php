@@ -16,6 +16,7 @@ use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
+use Symfony\Component\DependencyInjection\ParameterBag\ParameterBagInterface;
 
 class ExternalDataCommand extends Command
 {
@@ -28,12 +29,18 @@ class ExternalDataCommand extends Command
     private $entityManager;
 
     /**
+     * @var ParameterBagInterface
+     */
+    private $parameterBag;
+
+    /**
      * ExternalDataCommand constructor.
      * @param EntityManagerInterface $entityManager
      */
-    public function __construct(EntityManagerInterface $entityManager)
+    public function __construct(EntityManagerInterface $entityManager, ParameterBagInterface $parameterBag)
     {
         $this->entityManager = $entityManager;
+        $this->parameterBag = $parameterBag;
 
         parent::__construct();
     }
@@ -48,7 +55,7 @@ class ExternalDataCommand extends Command
         foreach($exchanges as $exchange) {
             $currencies = $exchange->getCurrencies();
             $api = ApiFactory::getApi($exchange);
-            $this->loadBalances($api, $currencies);
+            //$this->loadBalances($api, $currencies);
 
             /** @var Currency $currency */
             foreach($currencies as $currency) {
@@ -79,6 +86,8 @@ class ExternalDataCommand extends Command
      */
     private function loadNewCandles(ApiInterface $api, CurrencyPair $pair, OutputInterface $output)
     {
+        $json = $this->initializeJSON($pair);
+
         /** @var Candle $lastCandle */
         $lastCandle = $this->entityManager
             ->getRepository(Candle::class)
@@ -97,15 +106,45 @@ class ExternalDataCommand extends Command
         /** @var Candle $candle */
         foreach($candles as $candle) {
             if($candle->getCloseTime() < time()) {
-                $this->entityManager->persist($candle);
+                //$this->entityManager->persist($candle);
+                fwrite($json, json_encode($candle).",");
                 $totalCandles ++;
             }
         }
-        $this->entityManager->flush();
+        //$this->entityManager->flush();
         $output->writeln([
             get_class($api),
             $pair->getSymbol(),
             "new candles: $totalCandles",
         ]);
+        $this->closeJSON($json);
+    }
+
+    /**
+     * @param CurrencyPair $pair
+     * @return bool|resource
+     */
+    private function initializeJSON(CurrencyPair $pair)
+    {
+        $json = fopen($this->parameterBag->get('kernel.project_dir').'/public/charts/chart_'.$pair->getId().".json", 'a');
+
+        $stat = fstat($json);
+        $size = $stat['size'];
+
+        if($size == 0) {
+            fwrite($json, "[");
+        } else {
+            ftruncate($json, $stat['size']-1);
+        }
+        return $json;
+    }
+
+    /**
+     * @param resource $json
+     */
+    private function closeJSON($json)
+    {
+        fwrite($json, "]");
+        fclose($json);
     }
 }

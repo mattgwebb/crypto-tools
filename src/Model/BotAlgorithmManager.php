@@ -95,10 +95,13 @@ class BotAlgorithmManager
                 $openTradePrice = $currentCandle->getClosePrice();
                 $date = new \DateTime('@' .$currentCandle->getCloseTime());
                 $date->setTimezone(new \DateTimeZone("Europe/Madrid"));
-                $trade = json_encode(["trade" => "long", "time" => date_format($date, 'D M j G:i:s'), "price" => $openTradePrice]);
+                $trade = ["trade" => "long",
+                    "time" => date_format($date, 'D M j G:i:s'),
+                    "timestamp"=> $currentCandle->getCloseTime() * 1000,
+                    "price" => $openTradePrice];
                 $trades[] = $trade;
 
-                $this->logger->info($trade);
+                $this->logger->info(json_encode($trade));
 
             }
             if(($result->getTradeResult() == StrategyResult::TRADE_SHORT || $short) && $openTradePrice > 0) {
@@ -107,14 +110,15 @@ class BotAlgorithmManager
                 $initialInvestment *= ($percentage + 1);
                 $date = new \DateTime('@' .$currentCandle->getCloseTime());
                 $date->setTimezone(new \DateTimeZone("Europe/Madrid"));
-                $trade = json_encode(["trade" => "short",
+                $trade = ["trade" => "short",
                     "time" => date_format($date, 'D M j G:i:s'),
+                    "timestamp"=> $currentCandle->getCloseTime() * 1000,
                     "price" => $currentCandle->getClosePrice(),
-                    "percentage" => $percentage,
-                    "stopLoss/takeProfit" => $short]);
+                    "percentage" => round($percentage * 100, 2),
+                    "stopLoss_takeProfit" => $short];
                 $trades[] = $trade;
 
-                $this->logger->info($trade);
+                $this->logger->info(json_encode($trade));
                 $openTradePrice = 0;
             }
 
@@ -123,7 +127,7 @@ class BotAlgorithmManager
 
         $percentage = (($initialInvestment / 1000) - 1) * 100;
         $trade = "percentage $percentage";
-        $trades[] = $trade;
+        //$trades[] = $trade;
         $this->logger->info($trade);
 
         return $trades;
