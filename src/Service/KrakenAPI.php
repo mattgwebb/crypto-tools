@@ -108,4 +108,16 @@ class KrakenAPI extends ApiInterface
     {
         return new Trade();
     }
+
+    /**
+     * @param CurrencyPair $currencyPair
+     * @param float $quantity
+     * @param float $price
+     * @param float $stopPrice
+     * @return Trade
+     */
+    public function stopLossLimitTrade(CurrencyPair $currencyPair, float $quantity, float $price, float $stopPrice): Trade
+    {
+        return new Trade();
+    }
 }

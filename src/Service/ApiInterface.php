@@ -102,6 +102,15 @@ abstract class ApiInterface
     public abstract function stopLossTrade(CurrencyPair $currencyPair, float $quantity, float $price) : Trade;
 
     /**
+     * @param CurrencyPair $currencyPair
+     * @param float $quantity
+     * @param float $price
+     * @param float $stopPrice
+     * @return Trade
+     */
+    public abstract function stopLossLimitTrade(CurrencyPair $currencyPair, float $quantity, float $price, float $stopPrice) : Trade;
+
+    /**
      * @param $timeFrame
      * @return string
      */

@@ -12,8 +12,6 @@ use Symfony\Component\HttpClient\HttpClient;
 class BinanceAPI extends ApiInterface
 {
 
-    const MIN_QUANTITY_TRADE = 0.0011;
-
     private $tradeTypes = [
         TradeTypes::LIMIT => 'LIMIT',
         TradeTypes::MARKET => 'MARKET',
@@ -188,6 +186,39 @@ class BinanceAPI extends ApiInterface
     }
 
     /**
+     * @param CurrencyPair $currencyPair
+     * @param float $quantity
+     * @param float $price
+     * @param float $stopPrice
+     * @return Trade
+     * @throws \Symfony\Contracts\HttpClient\Exception\ClientExceptionInterface
+     * @throws \Symfony\Contracts\HttpClient\Exception\DecodingExceptionInterface
+     * @throws \Symfony\Contracts\HttpClient\Exception\RedirectionExceptionInterface
+     * @throws \Symfony\Contracts\HttpClient\Exception\ServerExceptionInterface
+     * @throws \Symfony\Contracts\HttpClient\Exception\TransportExceptionInterface
+     */
+    public function stopLossLimitTrade(CurrencyPair $currencyPair, float $quantity, float $price, float $stopPrice): Trade
+    {
+        $type = $this->tradeTypes[TradeTypes::STOP_LOSS_LIMIT];
+        $timestamp = time() * 1000;
+
+        $query = [
+            'symbol' => $currencyPair->getSymbol(),
+            'type' => $type,
+            'side' => $this->tradeSides[TradeTypes::TRADE_SELL],
+            'quantity' => $quantity,
+            'stopPrice' => $stopPrice,
+            'price' => $price,
+            'timestamp' => $timestamp,
+            'timeInForce' => 'GTC'
+        ];
+
+        $result = $this->newOrder($query);
+        /** TODO read data and create new trade */
+        return new Trade();
+    }
+
+    /**
      * @param array $query
      * @return array
      * @throws \Symfony\Contracts\HttpClient\Exception\ClientExceptionInterface
@@ -199,17 +230,13 @@ class BinanceAPI extends ApiInterface
     private function newOrder(array $query)
     {
         $query = $this->addSignature($query);
-        try {
-            $response = $this->httpClient->request('POST', $this->getAPIBaseRoute()."order/test",
+        $response = $this->httpClient->request('POST', $this->getAPIBaseRoute()."order/test",
                 [
                     'query' => $query,
                     'headers' => $this->getKeyHeader()
                 ]);
-            $data = $response->getContent(false);
-        } catch (\Exception $exception) {
-            $test = 0;
-        }
-       return $response->toArray();
+        $data = $response->getContent(false);
+        return $response->toArray();
     }
 
     /**
