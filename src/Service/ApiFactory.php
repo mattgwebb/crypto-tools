@@ -9,6 +9,7 @@ use App\Entity\Exchange;
 class ApiFactory
 {
     /**
+     * TODO return static instance from container, not new instance every time
      * @param Exchange $exchange
      * @return ApiInterface|bool
      */
