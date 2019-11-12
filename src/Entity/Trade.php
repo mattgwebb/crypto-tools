@@ -17,7 +17,7 @@ class Trade
     private $id;
 
     /**
-     * @ORM\Column(type="int")
+     * @ORM\Column(type="integer")
      */
     private $orderId;
 
@@ -37,7 +37,7 @@ class Trade
     private $price;
 
     /**
-     * @ORM\Column(type="int")
+     * @ORM\Column(type="integer")
      */
     private $timeStamp;
 
@@ -49,7 +49,7 @@ class Trade
     /**
      * @ORM\Column(type="smallint")
      */
-    private $status;
+    private $status = TradeTypes::TRADE_SELL;
 
     public function getId(): ?int
     {

@@ -52,6 +52,11 @@ class BotAlgorithm implements \JsonSerializable
     private $observations;
 
     /**
+     * @ORM\Column(type="smallint")
+     */
+    private $tradeStatus;
+
+    /**
      * @return mixed
      */
     public function getCurrencyPair()
@@ -137,6 +142,32 @@ class BotAlgorithm implements \JsonSerializable
     public function getObservations()
     {
         return $this->observations;
+    }
+
+    /**
+     * @return bool
+     */
+    public function isLong()
+    {
+        return $this->getTradeStatus() == TradeTypes::TRADE_BUY;
+    }
+
+    /**
+     * @return bool
+     */
+    public function isShort()
+    {
+        return $this->getTradeStatus() == TradeTypes::TRADE_SELL;
+    }
+
+    public function setLong()
+    {
+        $this->tradeStatus = TradeTypes::TRADE_BUY;
+    }
+
+    public function setShort()
+    {
+        $this->tradeStatus = TradeTypes::TRADE_SELL;
     }
 
     /**

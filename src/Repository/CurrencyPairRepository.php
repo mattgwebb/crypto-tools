@@ -24,11 +24,12 @@ class CurrencyPairRepository extends ServiceEntityRepository
     /**
      * @param CurrencyPair $currencyPair
      * @param $timeFrame
-     * @param $fromTime
+     * @param int $fromTime
+     * @param int $toTime
      * @return Candle[]
      * TODO change to query to not have to load all candles
      */
-    public function getCandlesByTimeFrame(CurrencyPair $currencyPair, $timeFrame, $fromTime = 0)
+    public function getCandlesByTimeFrame(CurrencyPair $currencyPair, $timeFrame, $fromTime = 0, $toTime = 0)
     {
         //$groupAmount = $timeFrame / TimeFrames::TIMEFRAME_5M;
         $timeFrameSeconds = $timeFrame * 60;
@@ -38,7 +39,7 @@ class CurrencyPairRepository extends ServiceEntityRepository
 
         /** @var CandleRepository $candleRepo */
         $candleRepo = $this->getEntityManager()->getRepository(Candle::class);
-        $allCandles = $candleRepo->getByCurrencyFromTime($currencyPair, $fromTime);
+        $allCandles = $candleRepo->getByCurrencyFromTime($currencyPair, $fromTime, $toTime);
 
         /** @var Candle $candle */
         foreach($allCandles as $candle) {

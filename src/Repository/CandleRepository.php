@@ -23,21 +23,47 @@ class CandleRepository extends ServiceEntityRepository
 
     /**
      * @param CurrencyPair $currencyPair
-     * @param $from
+     * @param int $from
+     * @param int $to
      * @return Candle[] Returns an array of Candle objects
      */
 
-    public function getByCurrencyFromTime(CurrencyPair $currencyPair, $from)
+    public function getByCurrencyFromTime(CurrencyPair $currencyPair, int $from, int $to)
     {
-        return $this->createQueryBuilder('c')
+        $queryBuilder = $this->createQueryBuilder('c')
             ->andWhere('c.currencyPair = :currencyPair')
-            ->andWhere('c.openTime >= :time')
+            ->andWhere('c.openTime >= :from')
             ->setParameter('currencyPair', $currencyPair)
-            ->setParameter('time', $from)
-            ->orderBy('c.openTime', 'ASC')
+            ->setParameter('from', $from)
+            ->orderBy('c.openTime', 'ASC');
+
+        if($to > 0) {
+            $queryBuilder
+                ->andWhere('c.openTime < :to')
+                ->setParameter('to', $to);
+        }
+
+        return $queryBuilder
             ->getQuery()
             ->getResult()
         ;
+    }
+
+    /**
+     * @param CurrencyPair $currencyPair
+     * @param int $limit
+     * @return Candle[] Returns an array of Candle objects
+     */
+
+    public function getByCurrencyLimit(CurrencyPair $currencyPair, int $limit)
+    {
+        return $this->createQueryBuilder('c')
+            ->andWhere('c.currencyPair = :currencyPair')
+            ->setParameter('currencyPair', $currencyPair)
+            ->orderBy('c.openTime', 'ASC')
+            ->setMaxResults($limit)
+            ->getQuery()
+            ->getResult();
     }
 
     /**

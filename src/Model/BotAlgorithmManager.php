@@ -5,6 +5,7 @@ namespace App\Model;
 
 
 use App\Entity\BotAlgorithm;
+use App\Entity\Candle;
 use App\Entity\StrategyResult;
 use App\Repository\BotAlgorithmRepository;
 use App\Repository\CurrencyPairRepository;
@@ -131,5 +132,16 @@ class BotAlgorithmManager
         $this->logger->info($trade);
 
         return $trades;
+    }
+
+    /**
+     * @param BotAlgorithm $algo
+     * @param Candle[] $candles
+     * @return StrategyResult|bool
+     */
+    public function runAlgo(BotAlgorithm $algo, $candles)
+    {
+        $this->strategies->setData($candles);
+        return $this->strategies->runStrategy($algo->getStrategy());
     }
 }

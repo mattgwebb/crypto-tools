@@ -78,7 +78,7 @@ class ExternalDataService
             foreach($currencies as $currency) {
                 /** @var CurrencyPair $pair */
                 foreach ($currency->getPairs() as $pair) {
-                    $newCandles = $this->loadNewCandles($api, $pair);
+                    list($newCandles, $lastCandle, $lastPrice) = $this->loadNewCandles($api, $pair);
                     $updatedPairs[$pair->getSymbol()] = $newCandles;
                 }
             }
@@ -87,9 +87,21 @@ class ExternalDataService
     }
 
     /**
+     * @param CurrencyPair $pair
+     * @return array
+     */
+    public function loadPairNewCandles(CurrencyPair $pair)
+    {
+        /** @var Exchange $exchange */
+        $exchange = $pair->getFirstCurrency()->getExchange();
+        $api = ApiFactory::getApi($exchange);
+        return $this->loadNewCandles($api, $pair);
+    }
+
+    /**
      * @param ApiInterface $api
      * @param CurrencyPair $pair
-     * @return int
+     * @return array
      */
     private function loadNewCandles(ApiInterface $api, CurrencyPair $pair)
     {
@@ -110,18 +122,21 @@ class ExternalDataService
 
         $candles = $api->getCandles($pair, TimeFrames::TIMEFRAME_5M, $lastTime);
 
+        $lastCandle = new Candle();
+
         /** @var Candle $candle */
         foreach($candles as $candle) {
             if($candle->getCloseTime() < time()) {
                 $this->entityManager->persist($candle);
                 fwrite($json, json_encode($candle).",");
                 $totalCandles ++;
+                $lastCandle = $candle;
             }
         }
         $this->entityManager->flush();
         $this->closeJSON($json);
 
-        return $totalCandles;
+        return [$totalCandles, $lastCandle, $candle->getClosePrice()];
     }
 
     /**
