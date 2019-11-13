@@ -44,6 +44,16 @@ class Strategies
         $this->indicators = $indicators;
     }
 
+    /**
+     * @param float $currentPrice
+     */
+    public function setCurrentPrice(float $currentPrice): void
+    {
+        $this->currentPrice = $currentPrice;
+    }
+
+
+
     public function rsiAndBollinger() : StrategyResult
     {
         list($highBand, $lowBand) = $this->indicators->bollingerBands($this->data);
@@ -102,7 +112,7 @@ class Strategies
     {
         $result = new StrategyResult();
 
-        $stopLossPrice = $tradePrice * (1-$percentage);
+        $stopLossPrice = $tradePrice * (1-($percentage/100));
         if($this->currentPrice <= $stopLossPrice) {
             $result->setTradeResult(StrategyResult::TRADE_SHORT);
         }
@@ -118,7 +128,7 @@ class Strategies
     {
         $result = new StrategyResult();
 
-        $takeProfitPrice = $tradePrice * (1+$percentage);
+        $takeProfitPrice = $tradePrice * (1+($percentage/100));
         if($this->currentPrice >= $takeProfitPrice) {
             $result->setTradeResult(StrategyResult::TRADE_SHORT);
         }

@@ -61,6 +61,22 @@ class ExternalDataService
     }
 
     /**
+     * @param Currency $currency
+     * @return float
+     */
+    public function loadBalance(Currency $currency)
+    {
+        $balance = 0.00;
+        $api = ApiFactory::getApi($currency->getExchange());
+
+        $rawBalances = $api->getUserBalance();
+        if(isset($rawBalances[$currency->getSymbol()])) {
+            $balance = $rawBalances[$currency->getSymbol()];
+        }
+        return $balance;
+    }
+
+    /**
      * @return array
      */
     public function loadAllNewCandles()

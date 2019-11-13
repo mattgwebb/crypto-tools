@@ -94,8 +94,10 @@ class BotCommand extends Command
         /** @var int $lastPrice */
         list($newCandles, $lastCandle, $lastPrice) = $this->dataService->loadPairNewCandles($algo->getCurrencyPair());
 
-        /** TODO check stop loss/ take profit always on new price update (every execution) */
-        /** TODO stop loss or take profit programmed (only possible 1 of 2) or created on the fly? */
+        if($this->algoManager->checkStopLossAndTakeProfit($algo, $lastPrice)->getTradeResult() == StrategyResult::TRADE_SHORT) {
+            $this->newOrder($algo, TradeTypes::TRADE_SELL, $lastPrice);
+            return;
+        }
 
         if($newCandles > 0) {
             $timeFrameSeconds = $algo->getTimeFrame() * 60;
@@ -111,9 +113,9 @@ class BotCommand extends Command
                 $result = $this->algoManager->runAlgo($algo, $lastCandles);
 
                 if($algo->isLong() && $result->getTradeResult() == StrategyResult::TRADE_SHORT) {
-                    $this->newOrder($algo, TradeTypes::TRADE_SELL);
+                    $this->newOrder($algo, TradeTypes::TRADE_SELL, $lastPrice);
                 } else if($algo->isShort() && $result->getTradeResult() == StrategyResult::TRADE_LONG) {
-                    $this->newOrder($algo, TradeTypes::TRADE_BUY);
+                    $this->newOrder($algo, TradeTypes::TRADE_BUY, $lastPrice);
                 }
             }
         }
@@ -122,19 +124,40 @@ class BotCommand extends Command
     /**
      * @param BotAlgorithm $algo
      * @param int $tradeType
+     * @param float $currentPrice
      */
-    private function newOrder(BotAlgorithm $algo, int $tradeType)
+    private function newOrder(BotAlgorithm $algo, int $tradeType, float $currentPrice)
     {
         if($tradeType == TradeTypes::TRADE_BUY) {
+            $currencyToUse = $algo->getCurrencyPair()->getSecondCurrency();
             $algo->setLong();
         } else if($tradeType == TradeTypes::TRADE_SELL) {
+            $currencyToUse = $algo->getCurrencyPair()->getFirstCurrency();
             $algo->setShort();
         } else return;
 
-        //$this->tradeService->newMarketTrade($algo->getCurrencyPair(), $tradeType, 0.1);
+        $balance = $this->dataService->loadBalance($currencyToUse);
+        $quantity = $this->calculateQuantity($tradeType, $currentPrice, $balance);
+        /** TODO it´s possible that the price changes and the balance is not enough to buy the amount, the trade needs to be created again */
+        $this->tradeService->newMarketTrade($algo->getCurrencyPair(), $tradeType, $quantity);
 
         $this->entityManager->persist($algo);
         $this->entityManager->flush();
+    }
+
+    /**
+     * @param int $tradeType
+     * @param float $price
+     * @param float $balance
+     * @return float
+     */
+    private function calculateQuantity(int $tradeType, float $price, float $balance)
+    {
+        if($tradeType == TradeTypes::TRADE_BUY) {
+            return round($balance/$price, 5, PHP_ROUND_HALF_DOWN);
+        } else {
+            return $balance;
+        }
     }
 
     /**

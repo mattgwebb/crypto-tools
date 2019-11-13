@@ -9,7 +9,9 @@ use App\Entity\Candle;
 use App\Entity\StrategyResult;
 use App\Repository\BotAlgorithmRepository;
 use App\Repository\CurrencyPairRepository;
+use App\Repository\TradeRepository;
 use App\Service\Strategies;
+use Doctrine\ORM\NonUniqueResultException;
 use Psr\Log\LoggerInterface;
 
 class BotAlgorithmManager
@@ -35,18 +37,26 @@ class BotAlgorithmManager
     private $logger;
 
     /**
+     * @var TradeRepository
+     */
+    private $tradeRepository;
+
+    /**
      * BotAlgorithmManager constructor.
      * @param BotAlgorithmRepository $botAlgorithmRepo
      * @param CurrencyPairRepository $currencyRepo
      * @param Strategies $strategies
      * @param LoggerInterface $algosLogger
+     * @param TradeRepository $tradeRepository
      */
-    public function __construct(BotAlgorithmRepository $botAlgorithmRepo, CurrencyPairRepository $currencyRepo, Strategies $strategies, LoggerInterface $algosLogger)
+    public function __construct(BotAlgorithmRepository $botAlgorithmRepo, CurrencyPairRepository $currencyRepo,
+                                Strategies $strategies, LoggerInterface $algosLogger, TradeRepository $tradeRepository)
     {
         $this->botAlgorithmRepo = $botAlgorithmRepo;
         $this->currencyPairRepo = $currencyRepo;
         $this->strategies = $strategies;
         $this->logger = $algosLogger;
+        $this->tradeRepository = $tradeRepository;
     }
 
     /**
@@ -143,5 +153,37 @@ class BotAlgorithmManager
     {
         $this->strategies->setData($candles);
         return $this->strategies->runStrategy($algo->getStrategy());
+    }
+
+    /**
+     * @param BotAlgorithm $algo
+     * @param float $currentPrice
+     * @return StrategyResult
+     */
+    public function checkStopLossAndTakeProfit(BotAlgorithm $algo, float $currentPrice)
+    {
+        $result = new StrategyResult();
+
+        try {
+            $lastPrice = $this->tradeRepository->getAlgoLastBuyTradePrice($algo);
+        } catch (NonUniqueResultException $e) {
+            return $result;
+        }
+
+        if(!$lastPrice) {
+            return $result;
+        }
+
+        if($algo->isLong() ) {
+            $this->strategies->setCurrentPrice($currentPrice);
+
+            if($algo->getStopLoss() != 0) {
+                $result = $this->strategies->stopLosses($lastPrice, $algo->getStopLoss());
+            }
+            if($result->getTradeResult() != StrategyResult::TRADE_SHORT && $algo->getTakeProfit() != 0) {
+                $result = $this->strategies->takeProfit($lastPrice, $algo->getTakeProfit());
+            }
+        }
+        return $result;
     }
 }
