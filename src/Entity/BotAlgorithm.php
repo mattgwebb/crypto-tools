@@ -149,7 +149,7 @@ class BotAlgorithm implements \JsonSerializable
      */
     public function isLong()
     {
-        return $this->getTradeStatus() == TradeTypes::TRADE_BUY;
+        return $this->tradeStatus == TradeTypes::TRADE_BUY;
     }
 
     /**
@@ -157,7 +157,7 @@ class BotAlgorithm implements \JsonSerializable
      */
     public function isShort()
     {
-        return $this->getTradeStatus() == TradeTypes::TRADE_SELL;
+        return $this->tradeStatus == TradeTypes::TRADE_SELL;
     }
 
     public function setLong()
