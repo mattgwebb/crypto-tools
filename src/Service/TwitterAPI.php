@@ -5,9 +5,24 @@ namespace App\Service;
 
 
 use Symfony\Component\HttpClient\HttpClient;
+use Symfony\Contracts\HttpClient\HttpClientInterface;
 
 class TwitterAPI
 {
+
+    /**
+     * @var HttpClientInterface
+     */
+    private $httpClient;
+
+    /**
+     * TwitterAPI constructor.
+     */
+    public function __construct()
+    {
+        $this->httpClient = HttpClient::create();
+    }
+
 
     /**
      * @param string $query
@@ -20,11 +35,10 @@ class TwitterAPI
      */
     public function searchTweets(string $query)
     {
-        $client = HttpClient::create();
         $token = $_ENV['TWITTER_ACCESS_TOKEN'];
 
         try {
-            $response = $client->request('GET', $this->getAPIBaseRoute(),
+            $response = $this->httpClient->request('GET', $this->getAPIBaseRoute(),
                 [
                     'query' => [
                         'query' => $query
