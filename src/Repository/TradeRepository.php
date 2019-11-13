@@ -2,7 +2,9 @@
 
 namespace App\Repository;
 
+use App\Entity\BotAlgorithm;
 use App\Entity\Trade;
+use App\Entity\TradeTypes;
 use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
 use Doctrine\Common\Persistence\ManagerRegistry;
 
@@ -19,32 +21,23 @@ class TradeRepository extends ServiceEntityRepository
         parent::__construct($registry, Trade::class);
     }
 
-    // /**
-    //  * @return Trade[] Returns an array of Trade objects
-    //  */
-    /*
-    public function findByExampleField($value)
+    /**
+     * @param BotAlgorithm $algo
+     * @param int $tradeSide
+     * @return mixed
+     * @throws \Doctrine\ORM\NonUniqueResultException
+     */
+    public function getAlgoLastBuyTradePrice(BotAlgorithm $algo)
     {
-        return $this->createQueryBuilder('t')
-            ->andWhere('t.exampleField = :val')
-            ->setParameter('val', $value)
-            ->orderBy('t.id', 'ASC')
-            ->setMaxResults(10)
+        return $this->createQueryBuilder('c')
+            ->select('c.price')
+            ->where('c.algo = :algo')
+            ->andWhere('c.type = :type')
+            ->setParameter('algo', $algo)
+            ->setParameter('type', TradeTypes::TRADE_BUY)
+            ->orderBy('c.timeStamp', 'DESC')
+            ->setMaxResults(1)
             ->getQuery()
-            ->getResult()
-        ;
+            ->getSingleScalarResult();
     }
-    */
-
-    /*
-    public function findOneBySomeField($value): ?Trade
-    {
-        return $this->createQueryBuilder('t')
-            ->andWhere('t.exampleField = :val')
-            ->setParameter('val', $value)
-            ->getQuery()
-            ->getOneOrNullResult()
-        ;
-    }
-    */
 }

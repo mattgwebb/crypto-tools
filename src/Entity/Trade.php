@@ -22,9 +22,9 @@ class Trade
     private $orderId;
 
     /**
-     * @ORM\ManyToOne(targetEntity="App\Entity\CurrencyPair")
+     * @ORM\ManyToOne(targetEntity="App\Entity\BotAlgorithm")
      */
-    private $currencyPair;
+    private $algo;
 
     /**
      * @ORM\Column(type="float")
