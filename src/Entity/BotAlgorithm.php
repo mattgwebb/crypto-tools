@@ -52,6 +52,11 @@ class BotAlgorithm implements \JsonSerializable
     private $observations;
 
     /**
+     * @ORM\Column(type="string")
+     */
+    private $name;
+
+    /**
      * @ORM\Column(type="smallint")
      */
     private $tradeStatus;
@@ -168,6 +173,22 @@ class BotAlgorithm implements \JsonSerializable
     public function setShort()
     {
         $this->tradeStatus = TradeTypes::TRADE_SELL;
+    }
+
+    /**
+     * @return mixed
+     */
+    public function getName()
+    {
+        return $this->name;
+    }
+
+    /**
+     * @param mixed $name
+     */
+    public function setName($name): void
+    {
+        $this->name = $name;
     }
 
     /**
