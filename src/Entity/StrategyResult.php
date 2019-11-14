@@ -23,6 +23,30 @@ class StrategyResult implements \JsonSerializable
     }
 
     /**
+     * @return bool
+     */
+    public function isLong()
+    {
+        return $this->tradeResult == self::TRADE_LONG;
+    }
+
+    /**
+     * @return bool
+     */
+    public function isShort()
+    {
+        return $this->tradeResult == self::TRADE_SHORT;
+    }
+
+    /**
+     * @return bool
+     */
+    public function noTrade()
+    {
+        return $this->tradeResult == self::NO_TRADE;
+    }
+
+    /**
      * @param mixed $tradeResult
      */
     public function setTradeResult($tradeResult): void

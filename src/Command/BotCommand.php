@@ -106,7 +106,7 @@ class BotCommand extends Command
         /** @var int $lastPrice */
         list($newCandles, $lastCandle, $lastPrice) = $this->dataService->loadPairNewCandles($algo->getCurrencyPair());
 
-        if($this->algoManager->checkStopLossAndTakeProfit($algo, $lastPrice)->getTradeResult() == StrategyResult::TRADE_SHORT) {
+        if($this->algoManager->checkStopLossAndTakeProfit($algo, $lastPrice)->isShort()) {
             $this->newOrder($algo, TradeTypes::TRADE_SELL, $lastPrice);
             return;
         }
@@ -137,9 +137,9 @@ class BotCommand extends Command
             ->getCandlesByTimeFrame($algo->getCurrencyPair(), $algo->getTimeFrame(), $loadFrom, $lastOpen);
         $result = $this->algoManager->runAlgo($algo, $lastCandles);
 
-        if($algo->isLong() && $result->getTradeResult() == StrategyResult::TRADE_SHORT) {
+        if($algo->isLong() && $result->isShort()) {
             $this->newOrder($algo, TradeTypes::TRADE_SELL, $lastPrice);
-        } else if($algo->isShort() && $result->getTradeResult() == StrategyResult::TRADE_LONG) {
+        } else if($algo->isShort() && $result->isLong()) {
             $this->newOrder($algo, TradeTypes::TRADE_BUY, $lastPrice);
         }
     }

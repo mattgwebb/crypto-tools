@@ -144,7 +144,7 @@ class Strategies
         $linesMetResult = $this->supportAndResistanceLinesMet($trendLines);
         $breakoutsResult = $this->supportAndResistanceLinesBreakouts($trendLines);
 
-        if($breakoutsResult->getTradeResult() != StrategyResult::NO_TRADE) {
+        if(!$breakoutsResult->noTrade()) {
             return $breakoutsResult;
         } else {
             return $linesMetResult;

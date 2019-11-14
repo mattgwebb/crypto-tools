@@ -86,12 +86,12 @@ class BotAlgorithmManager
 
             if($openTradePrice > 0) {
                 if($algo->getStopLoss()) {
-                    $stopLoss = $this->strategies->stopLosses($openTradePrice, $algo->getStopLoss())->getTradeResult() == StrategyResult::TRADE_SHORT;
+                    $stopLoss = $this->strategies->stopLosses($openTradePrice, $algo->getStopLoss())->isShort();
                 } else {
                     $stopLoss = false;
                 }
                 if($algo->getTakeProfit()) {
-                    $takeProfit = $this->strategies->takeProfit($openTradePrice, $algo->getTakeProfit())->getTradeResult() == StrategyResult::TRADE_SHORT;
+                    $takeProfit = $this->strategies->takeProfit($openTradePrice, $algo->getTakeProfit())->isShort();
                 } else {
                     $takeProfit = false;
                 }
@@ -101,7 +101,7 @@ class BotAlgorithmManager
                 $short = false;
             }
 
-            if(($result->getTradeResult() == StrategyResult::TRADE_LONG)
+            if(($result->isLong())
                 && $openTradePrice == 0) {
                 $openTradePrice = $currentCandle->getClosePrice();
                 $date = new \DateTime('@' .$currentCandle->getCloseTime());
@@ -115,7 +115,7 @@ class BotAlgorithmManager
                 $this->logger->info(json_encode($trade));
 
             }
-            if(($result->getTradeResult() == StrategyResult::TRADE_SHORT || $short) && $openTradePrice > 0) {
+            if(($result->isShort() || $short) && $openTradePrice > 0) {
                 $percentage = ($currentCandle->getClosePrice()/$openTradePrice) - 1;
                 $totalPercentage += $percentage;
                 $initialInvestment *= ($percentage + 1);
@@ -180,7 +180,7 @@ class BotAlgorithmManager
             if($algo->getStopLoss() != 0) {
                 $result = $this->strategies->stopLosses($lastPrice, $algo->getStopLoss());
             }
-            if($result->getTradeResult() != StrategyResult::TRADE_SHORT && $algo->getTakeProfit() != 0) {
+            if($result->isShort() && $algo->getTakeProfit() != 0) {
                 $result = $this->strategies->takeProfit($lastPrice, $algo->getTakeProfit());
             }
         }
