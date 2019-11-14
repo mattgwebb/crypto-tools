@@ -3,6 +3,9 @@
 
 namespace App\Service;
 
+use App\Entity\BotAlgorithm;
+use App\Entity\Trade;
+use App\Entity\TradeTypes;
 use Http\Adapter\Guzzle6\Client;
 use Http\Factory\Guzzle\RequestFactory;
 use Http\Factory\Guzzle\StreamFactory;
@@ -42,5 +45,24 @@ class TelegramBot
         } catch (\Exception $exception) {
             $test = 0;
         }
+    }
+
+    /**
+     * @param $userID
+     * @param BotAlgorithm $algo
+     * @param Trade $trade
+     */
+    public function sendNewTradeMessage($userID, BotAlgorithm $algo, Trade $trade)
+    {
+        $symbol = $algo->getCurrencyPair()->getSymbol();
+
+        $tradeType = $trade->getType() == TradeTypes::TRADE_BUY ? "BUY" : "SELL";
+        $message = "NEW SIGNAL \n";
+        $message .= "Symbol: $symbol \n";
+        $message .= "Signal type: $tradeType \n";
+        $message .= "Price: {$trade->getPrice()} \n";
+        $message .= "Algo: {$algo->getName()} \n";
+
+        $this->send($userID, $message);
     }
 }

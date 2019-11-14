@@ -9,10 +9,12 @@ use App\Entity\Candle;
 use App\Entity\CurrencyPair;
 use App\Entity\StrategyResult;
 use App\Entity\TimeFrames;
+use App\Entity\Trade;
 use App\Entity\TradeTypes;
 use App\Model\BotAlgorithmManager;
 use App\Repository\CurrencyPairRepository;
 use App\Service\ExternalDataService;
+use App\Service\TelegramBot;
 use App\Service\TradeService;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Component\Console\Command\Command;
@@ -47,19 +49,27 @@ class BotCommand extends Command
     private $algoManager;
 
     /**
+     * @var TelegramBot
+     */
+    private $telegramBot;
+
+    /**
      * BotCommand constructor.
      * @param EntityManagerInterface $entityManager
      * @param TradeService $tradeService
      * @param ExternalDataService $dataService
      * @param BotAlgorithmManager $algoManager
+     * @param TelegramBot $telegramBot
      */
     public function __construct(EntityManagerInterface $entityManager, TradeService $tradeService,
-                                ExternalDataService $dataService, BotAlgorithmManager $algoManager)
+                                ExternalDataService $dataService, BotAlgorithmManager $algoManager,
+                                TelegramBot $telegramBot)
     {
         $this->entityManager = $entityManager;
         $this->tradeService = $tradeService;
         $this->dataService = $dataService;
         $this->algoManager = $algoManager;
+        $this->telegramBot = $telegramBot;
 
         parent::__construct();
     }
@@ -70,9 +80,11 @@ class BotCommand extends Command
     }
 
     /**
+     * TODO log bot actions (new channel)
      * @param InputInterface $input
      * @param OutputInterface $output
      * @return int|void|null
+     * @throws \Exception
      */
     protected function execute(InputInterface $input, OutputInterface $output)
     {
@@ -102,22 +114,33 @@ class BotCommand extends Command
         if($newCandles > 0) {
             $timeFrameSeconds = $algo->getTimeFrame() * 60;
             if($this->checkTimeFrameClose($lastCandle->getCloseTime(), $timeFrameSeconds)) {
-                $lastOpen = $this->getLastOpen($timeFrameSeconds);
-                $loadFrom = $this->getTimestampToLoadFrom($lastOpen, $timeFrameSeconds);
-
-                /** @var CurrencyPairRepository $currencyPairRepo */
-                $currencyPairRepo =  $this->entityManager->getRepository(CurrencyPair::class);
-
-                $lastCandles = $currencyPairRepo
-                    ->getCandlesByTimeFrame($algo->getCurrencyPair(), $algo->getTimeFrame(), $loadFrom, $lastOpen);
-                $result = $this->algoManager->runAlgo($algo, $lastCandles);
-
-                if($algo->isLong() && $result->getTradeResult() == StrategyResult::TRADE_SHORT) {
-                    $this->newOrder($algo, TradeTypes::TRADE_SELL, $lastPrice);
-                } else if($algo->isShort() && $result->getTradeResult() == StrategyResult::TRADE_LONG) {
-                    $this->newOrder($algo, TradeTypes::TRADE_BUY, $lastPrice);
-                }
+                $this->checkForNewTrade($algo, $timeFrameSeconds, $lastPrice);
             }
+        }
+    }
+
+    /**
+     * @param BotAlgorithm $algo
+     * @param int $timeFrameSeconds
+     * @param float $lastPrice
+     * @throws \Exception
+     */
+    private function checkForNewTrade(BotAlgorithm $algo, int $timeFrameSeconds, float $lastPrice)
+    {
+        $lastOpen = $this->getLastOpen($timeFrameSeconds);
+        $loadFrom = $this->getTimestampToLoadFrom($lastOpen, $timeFrameSeconds);
+
+        /** @var CurrencyPairRepository $currencyPairRepo */
+        $currencyPairRepo =  $this->entityManager->getRepository(CurrencyPair::class);
+
+        $lastCandles = $currencyPairRepo
+            ->getCandlesByTimeFrame($algo->getCurrencyPair(), $algo->getTimeFrame(), $loadFrom, $lastOpen);
+        $result = $this->algoManager->runAlgo($algo, $lastCandles);
+
+        if($algo->isLong() && $result->getTradeResult() == StrategyResult::TRADE_SHORT) {
+            $this->newOrder($algo, TradeTypes::TRADE_SELL, $lastPrice);
+        } else if($algo->isShort() && $result->getTradeResult() == StrategyResult::TRADE_LONG) {
+            $this->newOrder($algo, TradeTypes::TRADE_BUY, $lastPrice);
         }
     }
 
@@ -125,6 +148,7 @@ class BotCommand extends Command
      * @param BotAlgorithm $algo
      * @param int $tradeType
      * @param float $currentPrice
+     * @throws \Exception
      */
     private function newOrder(BotAlgorithm $algo, int $tradeType, float $currentPrice)
     {
@@ -138,9 +162,12 @@ class BotCommand extends Command
 
         $balance = $this->dataService->loadBalance($currencyToUse);
         $quantity = $this->calculateQuantity($tradeType, $currentPrice, $balance);
-        /** TODO it´s possible that the price changes and the balance is not enough to buy the amount, the trade needs to be created again */
-        $this->tradeService->newMarketTrade($algo->getCurrencyPair(), $tradeType, $quantity);
 
+        /** TODO it´s possible that the price changes and the balance is not enough to buy the amount, the trade needs to be created again */
+        $trade = $this->tradeService->newMarketTrade($algo->getCurrencyPair(), $tradeType, $quantity);
+
+        /** TODO check order has been filled before */
+        $this->telegramBot->sendNewTradeMessage($_ENV['TELEGRAM_USER_ID'], $algo, $trade);
         $this->entityManager->persist($algo);
         $this->entityManager->flush();
     }
