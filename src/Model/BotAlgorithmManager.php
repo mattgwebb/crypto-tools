@@ -61,14 +61,16 @@ class BotAlgorithmManager
 
     /**
      * @param BotAlgorithm $algo
+     * @param int $from
+     * @param int $to
      * @return array
      * @throws \Exception
      */
-    public function runTest(BotAlgorithm $algo)
+    public function runTest(BotAlgorithm $algo, int $from = 0, int $to = 0)
     {
         $this->logger->info("********************* New test  ************************");
         $this->logger->info(json_encode($algo));
-        $candles = $this->currencyPairRepo->getCandlesByTimeFrame($algo->getCurrencyPair(), $algo->getTimeFrame());
+        $candles = $this->currencyPairRepo->getCandlesByTimeFrame($algo->getCurrencyPair(), $algo->getTimeFrame(), $from, $to);
 
         $openTradePrice = 0;
         $totalPercentage = 0;

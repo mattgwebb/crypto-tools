@@ -184,7 +184,6 @@ class Strategies
      */
     private function supportAndResistanceLinesBreakouts($trendLines)
     {
-        /** TODO add volume and possibly earlier price movement to confirm breakout */
         $result = new StrategyResult();
         foreach($trendLines as $trendLine) {
             if(!$this->checkTrendLineTime($trendLine)) {
