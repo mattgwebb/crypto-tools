@@ -204,6 +204,7 @@ class TestController extends AbstractController
         if($currencyPair) {
             $algo = new BotAlgorithm();
             $algo->setCurrencyPair($currencyPair);
+            $algo->setName($request->request->get('name'));
             $algo->setTimeFrame($request->request->get('time_frame'));
             $algo->setStrategy($request->request->get('strategy'));
             $algo->setStopLoss($request->request->get('stop_loss'));
@@ -236,7 +237,7 @@ class TestController extends AbstractController
                 "error" => "Algo not found.",
             ]);
         }
-
+        $algo->setName($request->request->get('name'));
         $algo->setTimeFrame($request->request->get('time_frame'));
         $algo->setStrategy($request->request->get('strategy'));
         $algo->setStopLoss($request->request->get('stop_loss'));

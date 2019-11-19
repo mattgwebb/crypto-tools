@@ -59,7 +59,7 @@ class BotAlgorithm implements \JsonSerializable
     /**
      * @ORM\Column(type="smallint")
      */
-    private $tradeStatus;
+    private $tradeStatus = TradeTypes::TRADE_SELL;
 
     /**
      * @return mixed

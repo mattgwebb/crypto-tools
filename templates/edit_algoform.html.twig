@@ -6,6 +6,10 @@
             <form role="form" class="col-md-9 go-right" action="{{ path('edit_algo', {id : algo.id}) }}" method="post">
                 <h2>Edit {{ algo.currencyPair.symbol }} Test</h2>
                 <div class="form-group">
+                    <label for="name">Name</label>
+                    <input type="text" id="name" name="name" class="form-control" required value="{{ algo.name }}">
+                </div>
+                <div class="form-group">
                     <label for="time_frame">Time frame</label>
                     <select id="time_frame" name="time_frame" class="form-control" required>
                         {% for minutes,time_frame in time_frames  %}

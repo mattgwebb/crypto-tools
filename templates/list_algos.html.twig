@@ -19,6 +19,7 @@
                 <table class="table table-bordered" id="dataTable" width="100%" cellspacing="0">
                     <thead>
                     <tr>
+                        <th>Name</th>
                         <th>Currency</th>
                         <th>Time Frame</th>
                         <th>Strategy</th>
@@ -30,6 +31,7 @@
                     </thead>
                     <tfoot>
                     <tr>
+                        <th>Name</th>
                         <th>Currency</th>
                         <th>Time Frame</th>
                         <th>Strategy</th>
@@ -42,6 +44,7 @@
                     <tbody>
                     {% for algo in algos  %}
                         <tr>
+                            <td>{{ algo.name }}</td>
                             <td>{{ algo.currencyPair.symbol }}</td>
                             <td>{{ algo.timeFrame }}</td>
                             <td>{{ algo.strategy }}</td>
