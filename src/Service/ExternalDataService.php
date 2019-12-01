@@ -121,7 +121,7 @@ class ExternalDataService
      */
     private function loadNewCandles(ApiInterface $api, CurrencyPair $pair)
     {
-        $json = $this->initializeJSON($pair);
+        //$json = $this->initializeJSON($pair);
 
         /** @var Candle $lastCandle */
         $lastCandle = $this->entityManager
@@ -144,13 +144,13 @@ class ExternalDataService
         foreach($candles as $candle) {
             if($candle->getCloseTime() < time()) {
                 $this->entityManager->persist($candle);
-                fwrite($json, json_encode($candle).",");
+                //fwrite($json, json_encode($candle).",");
                 $totalCandles ++;
                 $lastCandle = $candle;
             }
         }
         $this->entityManager->flush();
-        $this->closeJSON($json);
+        //$this->closeJSON($json);
 
         return [$totalCandles, $lastCandle, $candle->getClosePrice()];
     }
