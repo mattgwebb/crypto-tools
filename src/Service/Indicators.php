@@ -35,6 +35,8 @@ class Indicators
     const BOLLINGER_TYPE = 'bollinger';
     const MACD_TYPE = 'macd';
 
+    const FIB_RETRACEMENT_LEVELS = [0.786, 0.618, 0.500, 0.382, 0.236];
+
     /**
      * @param array $data
      * @param int $period
@@ -100,6 +102,17 @@ class Indicators
     }
 
     /**
+     * @param $data
+     * @param int $period
+     * @return mixed
+     */
+    public function rsiPeriod($data, $period=14)
+    {
+        $rsi = trader_rsi ($data['close'], $period);
+        return $rsi;
+    }
+
+    /**
      * @param array $data
      * @param int $period1
      * @param int $period2
@@ -141,6 +154,30 @@ class Indicators
         #$macd = $macd_raw[count($macd_raw)-1] - $signal[count($signal)-1];
         $macd = (array_pop($macd_raw) - array_pop($signal));
         return $macd;
+    }
+
+    /**
+     * TODO volume increase percentage over number of candles
+     * @param $data
+     * @param int $period
+     * @param float $percentage
+     * @return float
+     */
+    public function volumeIncrease($data, int $period = 10)
+    {
+        return 10.00;
+    }
+
+    /**
+     * TODO increment percentage of average volume over period
+     * @param $data
+     * @param int $period
+     * @param float $percentage
+     * @return bool
+     */
+    public function volumePercentage($data, int $period = 10)
+    {
+        return 10.00;
     }
 
     /**
