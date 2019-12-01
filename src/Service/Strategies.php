@@ -5,15 +5,24 @@ namespace App\Service;
 
 
 use App\Entity\Candle;
+use App\Entity\DivergenceLine;
+use App\Entity\IndicatorPoint;
+use App\Entity\IndicatorPointList;
 use App\Entity\StrategyResult;
 use App\Entity\TrendLine;
 use Doctrine\Common\Collections\ArrayCollection;
+use phpDocumentor\Reflection\Types\Self_;
 use Symfony\Bundle\MakerBundle\Str;
 
 class Strategies
 {
 
-    const STRATEGY_LIST = ["rsiAndBollinger", "rsiAndMacd", "supportAndResistance"];
+    const STRATEGY_LIST = ["rsiAndBollinger", "rsiAndMacd", "supportAndResistance", "rsiDivergence"];
+
+    /**
+     * Minumum candle difference for line divergences (so we don´t draw lines between two adjacent points)
+     */
+    const MIN_CANDLE_DIFFERENCE_DIVERGENCE = 2;
 
     /**
      * @var Indicators
@@ -54,7 +63,7 @@ class Strategies
 
 
 
-    public function rsiAndBollinger() : StrategyResult
+    public function rsiAndBollinger(float $rsiSell = 70.00, float $rsiBuy = 30.00) : StrategyResult
     {
         list($highBand, $lowBand) = $this->indicators->bollingerBands($this->data);
 
@@ -68,9 +77,9 @@ class Strategies
 
         $rsi = $this->indicators->rsi($this->data);
 
-        if($rsi < 30) {
+        if($rsi < $rsiBuy) {
             $rsiResult = StrategyResult::TRADE_LONG;
-        } else if($rsi > 70) {
+        } else if($rsi > $rsiSell) {
             $rsiResult = StrategyResult::TRADE_SHORT;
         } else {
             $rsiResult = StrategyResult::NO_TRADE;
@@ -87,20 +96,83 @@ class Strategies
         return $result;
     }
 
-    public function rsiAndMacd() : StrategyResult
+    public function rsiAndMacd(float $rsiSell = 70.00, float $rsiBuy = 30.00) : StrategyResult
     {
         $macd = $this->indicators->macd($this->data);
         $rsi = $this->indicators->rsi($this->data);
 
         $result = new StrategyResult();
 
-        if($rsi < 30 && $macd > 0) {
+        if($rsi < $rsiBuy && $macd > 0) {
             $result->setTradeResult(StrategyResult::TRADE_LONG);
-        } else if($rsi > 70 && $macd < 0) {
+        } else if($rsi > $rsiSell && $macd < 0) {
             $result->setTradeResult(StrategyResult::TRADE_SHORT);
         }
 
         return $result;
+    }
+
+    public function rsiDivergence(int $previousCandles = 10): StrategyResult
+    {
+        $result = new StrategyResult();
+
+        $rsiPeriod = $this->indicators->rsiPeriod($this->data);
+
+        $rsiPeriod = array_values($rsiPeriod);
+        $rsiPeriod = array_slice($rsiPeriod, $previousCandles * (-1));
+        $rsiPeriod = array_reverse($rsiPeriod);
+        $rsiPoints = new IndicatorPointList($rsiPeriod);
+
+        $orderedRSIPointsAsc = $rsiPoints->getOrderedList();
+
+        $lastCloses = array_slice($this->data['close'], $previousCandles * (-1));
+        $lastCloses = array_reverse($lastCloses);
+
+        foreach($orderedRSIPointsAsc as $lowPoint) {
+            if($lowPoint->getPeriod() >= self::MIN_CANDLE_DIFFERENCE_DIVERGENCE) {
+                $line = $rsiPoints->getValidLine($lowPoint->getPeriod(), true);
+                if($line) {
+                    $this->checkDivergence($line, true, $lastCloses);
+                }
+            }
+        }
+
+        $orderedRSIPointsDesc = $rsiPoints->getOrderedList(true);
+
+        foreach($orderedRSIPointsDesc as $highPoint) {
+            if($highPoint->getPeriod() >= self::MIN_CANDLE_DIFFERENCE_DIVERGENCE) {
+                $line = $rsiPoints->getValidLine($highPoint->getPeriod(), false);
+                if($line) {
+                    $this->checkDivergence($line, false, $lastCloses);
+                }
+            }
+        }
+
+        return $result;
+    }
+
+    private function checkDivergence(DivergenceLine $line, bool $lower, array $lastCloses)
+    {
+        /** TODO implement method */
+    }
+
+
+    /**
+     * TODO buy/sell after downtrend/uptrend with high volume when volume decreases
+     * @return StrategyResult
+     */
+    public function volumeSwings()
+    {
+        return new StrategyResult();
+    }
+
+    /**
+     * TODO buy after consecutive higher volumes, sell after consecutive lower volumes
+     * @return StrategyResult
+     */
+    public function volumeBreakout()
+    {
+        return new StrategyResult();
     }
 
     /**

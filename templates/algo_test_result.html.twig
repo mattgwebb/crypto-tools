@@ -6,6 +6,8 @@
         <script src="https://code.highcharts.com/stock/highstock.js"></script>
         <script src="https://code.highcharts.com/stock/modules/data.js"></script>
         <script src="https://code.highcharts.com/stock/modules/exporting.js"></script>
+        <script src="https://code.highcharts.com/stock/indicators/indicators.js"></script>
+        <script src="https://code.highcharts.com/stock/indicators/rsi.js"></script>
         <script>
             Highcharts.getJSON('http://localhost/crypto-tools/public/charts/chart_{{ pair.id }}.json', function (data) {
 
@@ -17,23 +19,12 @@
                         text: '{{ pair.symbol }}'
                     },
 
-                    rangeSelector: {
-                        buttons: [{
-                            type: 'hour',
-                            count: 1,
-                            text: '1h'
-                        }, {
-                            type: 'day',
-                            count: 1,
-                            text: '1D'
-                        }, {
-                            type: 'all',
-                            count: 1,
-                            text: 'All'
-                        }],
-                        selected: 1,
-                        inputEnabled: false
-                    },
+                    yAxis: [{
+                        height: '58%'
+                    }, {
+                        height: '48%',
+                        top: '52%'
+                    }],
 
                     series: [{
                         name: 'AAPL',
@@ -57,7 +48,11 @@
                         ],
                         onSeries: 'candlestick_data',
                         shape: 'squarepin'
-                    }]
+                    }, {
+                            yAxis: 1,
+                            type: 'rsi',
+                            linkedTo: 'candlestick_data'
+                        }]
                 });
             });
 

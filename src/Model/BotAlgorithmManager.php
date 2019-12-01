@@ -70,6 +70,8 @@ class BotAlgorithmManager
     {
         $this->logger->info("********************* New test  ************************");
         $this->logger->info(json_encode($algo));
+
+        $from -= 99 * ($algo->getTimeFrame() * 60);
         $candles = $this->currencyPairRepo->getCandlesByTimeFrame($algo->getCurrencyPair(), $algo->getTimeFrame(), $from, $to);
 
         $openTradePrice = 0;
@@ -78,8 +80,12 @@ class BotAlgorithmManager
         $initialInvestment = 1000;
 
         $trades = [];
-        for($i=50; $i < count($candles); $i++) {
-            $auxData = array_slice($candles, 0, $i);
+        for($i=99; $i < count($candles); $i++) {
+            $auxData = array_slice($candles, $i - 99, 100);
+            /** TODO delete candles from array after using them
+             * TODO for some reason it doesn´t calculate indicators properly
+             */
+            //array_shift($candles);
 
             $currentCandle = $auxData[count($auxData) - 1];
 
