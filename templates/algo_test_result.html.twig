@@ -9,7 +9,7 @@
         <script src="https://code.highcharts.com/stock/indicators/indicators.js"></script>
         <script src="https://code.highcharts.com/stock/indicators/rsi.js"></script>
         <script>
-            Highcharts.getJSON('http://localhost/crypto-tools/public/charts/chart_{{ pair.id }}.json', function (data) {
+            Highcharts.getJSON('http://localhost/crypto-tools/public/charts/chart_{{ pair.id }}.json?'+Date.now(), function (data) {
 
                 // create the chart
                 Highcharts.stockChart('container', {

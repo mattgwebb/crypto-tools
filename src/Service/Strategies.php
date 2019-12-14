@@ -6,6 +6,7 @@ namespace App\Service;
 
 use App\Entity\Candle;
 use App\Entity\DivergenceLine;
+use App\Entity\DivergenceTypes;
 use App\Entity\IndicatorPoint;
 use App\Entity\IndicatorPointList;
 use App\Entity\StrategyResult;
@@ -128,11 +129,16 @@ class Strategies
         $lastCloses = array_slice($this->data['close'], $previousCandles * (-1));
         $lastCloses = array_reverse($lastCloses);
 
+        $divergenceLines = [];
+
         foreach($orderedRSIPointsAsc as $lowPoint) {
             if($lowPoint->getPeriod() >= self::MIN_CANDLE_DIFFERENCE_DIVERGENCE) {
                 $line = $rsiPoints->getValidLine($lowPoint->getPeriod(), true);
                 if($line) {
-                    $this->checkDivergence($line, true, $lastCloses);
+                    $this->checkDivergence($line, $lastCloses, true);
+                    if($line->getType() != DivergenceTypes::NO_DIVERGENCE) {
+                        $divergenceLines[] = $line;
+                    }
                 }
             }
         }
@@ -143,17 +149,69 @@ class Strategies
             if($highPoint->getPeriod() >= self::MIN_CANDLE_DIFFERENCE_DIVERGENCE) {
                 $line = $rsiPoints->getValidLine($highPoint->getPeriod(), false);
                 if($line) {
-                    $this->checkDivergence($line, false, $lastCloses);
+                    $this->checkDivergence($line, $lastCloses, false);
+                    if($line->getType() != DivergenceTypes::NO_DIVERGENCE) {
+                        $divergenceLines[] = $line;
+                    }
                 }
             }
         }
+        $finalLine = [];
+
+        if($divergenceLines) {
+            if(count($divergenceLines) > 1) {
+                usort($divergenceLines, function(DivergenceLine $a, DivergenceLine $b)
+                { return($a->getPercentageDivergenceWithPrice() < $b->getPercentageDivergenceWithPrice()); });
+            }
+            /** @var DivergenceLine $finalLine */
+            $finalLine = $divergenceLines[0];
+
+            if($finalLine->hasBullishDivergence()) {
+                $result->setTradeResult(StrategyResult::TRADE_LONG);
+            } else if($finalLine->hasBearishDivergence()) {
+                $result->setTradeResult(StrategyResult::TRADE_SHORT);
+            }
+        }
+        $result->setExtraData(['divergence_line' => $finalLine]);
 
         return $result;
     }
 
-    private function checkDivergence(DivergenceLine $line, bool $lower, array $lastCloses)
+    /**
+     * @param DivergenceLine $line
+     * @param array $lastCloses
+     * @param $lower
+     */
+    private function checkDivergence(DivergenceLine $line, array $lastCloses, $lower)
     {
-        /** TODO implement method */
+        $firstPeriod = $line->getFirstPoint()->getPeriod();
+        $secondPeriod = $line->getSecondPoint()->getPeriod();
+
+        $firstPeriodClose = $lastCloses[$firstPeriod];
+        $secondPeriodClose = $lastCloses[$secondPeriod];
+
+        $priceClosePercentageChange = ($secondPeriodClose / $firstPeriodClose) * 100;
+        $indicatorPercentageChange = $line->getPercentageChange();
+
+        $indicatorUpPriceDown = $indicatorPercentageChange < 100 && $priceClosePercentageChange > 100;
+        $indicatorDownPriceUp = $indicatorPercentageChange > 100 && $priceClosePercentageChange < 100;
+
+        $line->setPercentageDivergenceWithPrice(abs($priceClosePercentageChange - $indicatorPercentageChange));
+        if($line->getPercentageDivergenceWithPrice() > 10) {
+            if($lower) {
+                if($indicatorDownPriceUp) {
+                    $line->setType(DivergenceTypes::BULLISH_HIDDEN_DIVERGENCE);
+                } else if($indicatorUpPriceDown) {
+                    $line->setType(DivergenceTypes::BULLISH_REGULAR_DIVERGENCE);
+                }
+            } else {
+                if($indicatorDownPriceUp) {
+                    $line->setType(DivergenceTypes::BEARISH_REGULAR_DIVERGENCE);
+                } else if($indicatorUpPriceDown) {
+                    $line->setType(DivergenceTypes::BEARISH_HIDDEN_DIVERGENCE);
+                }
+            }
+        }
     }
 
 

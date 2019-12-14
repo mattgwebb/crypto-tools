@@ -22,9 +22,24 @@ class DivergenceLine
     private $differencePerPeriod;
 
     /**
+     * @var float
+     */
+    private $percentageChange;
+
+    /**
+     * @var float
+     */
+    private $percentageDivergenceWithPrice;
+
+    /**
      * @var int
      */
     private $length;
+
+    /**
+     * @var int
+     */
+    private $type = DivergenceTypes::NO_DIVERGENCE;
 
     /**
      * DivergenceLine constructor.
@@ -50,6 +65,17 @@ class DivergenceLine
     }
 
     /**
+     * @return float
+     */
+    public function getPercentageChange() : float
+    {
+        if(is_null($this->percentageChange)) {
+            $this->percentageChange = ($this->secondPoint->getValue() / $this->firstPoint->getValue()) * 100;
+        }
+        return $this->percentageChange;
+    }
+
+    /**
      * @return int
      */
     public function getLength(): int
@@ -60,4 +86,67 @@ class DivergenceLine
         return $this->length;
     }
 
+    /**
+     * @return IndicatorPoint
+     */
+    public function getFirstPoint(): IndicatorPoint
+    {
+        return $this->firstPoint;
+    }
+
+    /**
+     * @return IndicatorPoint
+     */
+    public function getSecondPoint(): IndicatorPoint
+    {
+        return $this->secondPoint;
+    }
+
+    /**
+     * @return float
+     */
+    public function getPercentageDivergenceWithPrice(): float
+    {
+        return $this->percentageDivergenceWithPrice;
+    }
+
+    /**
+     * @param float $percentageDivergenceWithPrice
+     */
+    public function setPercentageDivergenceWithPrice(float $percentageDivergenceWithPrice): void
+    {
+        $this->percentageDivergenceWithPrice = $percentageDivergenceWithPrice;
+    }
+
+    /**
+     * @return int
+     */
+    public function getType(): int
+    {
+        return $this->type;
+    }
+
+    /**
+     * @param int $type
+     */
+    public function setType(int $type): void
+    {
+        $this->type = $type;
+    }
+
+    /**
+     * @return bool
+     */
+    public function hasBullishDivergence(): bool {
+        return in_array($this->getType(),
+            [DivergenceTypes::BULLISH_REGULAR_DIVERGENCE, DivergenceTypes::BULLISH_HIDDEN_DIVERGENCE]);
+    }
+
+    /**
+     * @return bool
+     */
+    public function hasBearishDivergence(): bool {
+        return in_array($this->getType(),
+            [DivergenceTypes::BEARISH_REGULAR_DIVERGENCE, DivergenceTypes::BEARISH_HIDDEN_DIVERGENCE]);
+    }
 }
