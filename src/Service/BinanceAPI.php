@@ -3,6 +3,8 @@
 
 namespace App\Service;
 
+use App\Entity\BookOrder;
+use App\Entity\BookOrderTypes;
 use App\Entity\Candle;
 use App\Entity\CurrencyPair;
 use App\Entity\Trade;
@@ -216,6 +218,47 @@ class BinanceAPI extends ApiInterface
         $result = $this->newOrder($query);
         /** TODO read data and create new trade */
         return new Trade();
+    }
+
+    /**
+     * @param CurrencyPair $currencyPair
+     * @param int $limit
+     * @return array
+     * @throws \Symfony\Contracts\HttpClient\Exception\ClientExceptionInterface
+     * @throws \Symfony\Contracts\HttpClient\Exception\DecodingExceptionInterface
+     * @throws \Symfony\Contracts\HttpClient\Exception\RedirectionExceptionInterface
+     * @throws \Symfony\Contracts\HttpClient\Exception\ServerExceptionInterface
+     * @throws \Symfony\Contracts\HttpClient\Exception\TransportExceptionInterface
+     */
+    public function getOrderBook(CurrencyPair $currencyPair, int $limit = 100): array
+    {
+        try {
+            $response = $this->httpClient->request('GET', $this->getAPIBaseRoute()."depth",
+                ['query' => [
+                    'symbol' => $currencyPair->getSymbol(),
+                    'limit' => $limit
+                ]
+                ]);
+            $rawOrders = $response->toArray();
+
+            $rawBids = $rawOrders['bids'];
+            $rawAsks = $rawOrders['asks'];
+            $bids = $asks = [];
+
+            foreach ($rawBids as $rawBid) {
+                $bid = new BookOrder($currencyPair, BookOrderTypes::BID, $rawBid[0], $rawBid[1]);
+                $bids[] = $bid;
+            }
+            foreach ($rawAsks as $rawAsk) {
+                $ask = new BookOrder($currencyPair, BookOrderTypes::ASK, $rawAsk[0], $rawAsk[1]);
+                $asks[] = $ask;
+            }
+
+            return [$bids, $asks];
+
+        } catch (\Exception $e) {
+            throw $e;
+        }
     }
 
     /**

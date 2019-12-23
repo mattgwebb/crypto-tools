@@ -4,6 +4,7 @@
 namespace App\Service;
 
 
+use App\Entity\BookOrder;
 use App\Entity\Candle;
 use App\Entity\CurrencyPair;
 use App\Entity\TimeFrames;
@@ -109,6 +110,13 @@ abstract class ApiInterface
      * @return Trade
      */
     public abstract function stopLossLimitTrade(CurrencyPair $currencyPair, float $quantity, float $price, float $stopPrice) : Trade;
+
+    /**
+     * @param CurrencyPair $currencyPair
+     * @param int $limit
+     * @return array
+     */
+    public abstract function getOrderBook(CurrencyPair $currencyPair, int $limit = 100) : array;
 
     /**
      * @param $timeFrame

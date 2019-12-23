@@ -84,6 +84,7 @@ class KrakenAPI extends ApiInterface
 
     public function getUserBalance(): array
     {
+        // TODO: Implement getUserBalance() method.
         return [];
     }
 
@@ -95,6 +96,7 @@ class KrakenAPI extends ApiInterface
      */
     public function marketTrade(CurrencyPair $currencyPair, int $side, float $quantity): Trade
     {
+        // TODO: Implement marketTrade() method.
         return new Trade();
     }
 
@@ -106,6 +108,7 @@ class KrakenAPI extends ApiInterface
      */
     public function stopLossTrade(CurrencyPair $currencyPair, float $quantity, float $price): Trade
     {
+        // TODO: Implement stopLossTrade() method.
         return new Trade();
     }
 
@@ -118,6 +121,18 @@ class KrakenAPI extends ApiInterface
      */
     public function stopLossLimitTrade(CurrencyPair $currencyPair, float $quantity, float $price, float $stopPrice): Trade
     {
+        // TODO: Implement stopLossLimitTrade() method.
         return new Trade();
+    }
+
+    /**
+     * @param CurrencyPair $currencyPair
+     * @param int $limit
+     * @return array
+     */
+    public function getOrderBook(CurrencyPair $currencyPair, int $limit = 100): array
+    {
+        // TODO: Implement getOrderBook() method.
+        return [];
     }
 }
