@@ -66,6 +66,43 @@ class BotAlgorithmManager
      * @return array
      * @throws \Exception
      */
+    public function runDivergenceTest(BotAlgorithm $algo, int $from = 0, int $to = 0)
+    {
+        $this->logger->info("********************* New test  ************************");
+        $this->logger->info(json_encode($algo));
+
+        $from -= 99 * ($algo->getTimeFrame() * 60);
+        $candles = $this->currencyPairRepo->getCandlesByTimeFrame($algo->getCurrencyPair(), $algo->getTimeFrame(), $from, $to);
+
+        $divergences = [];
+
+        for($i=99; $i < count($candles); $i++) {
+            $auxData = array_slice($candles, $i - 99, 100);
+            /** TODO delete candles from array after using them
+             * TODO for some reason it doesn´t calculate indicators properly
+             */
+            //array_shift($candles);
+
+            $currentCandle = $auxData[count($auxData) - 1];
+
+            $this->strategies->setData($auxData);
+            $result = $this->strategies->runStrategy($algo->getStrategy());
+
+            if(!$result->noTrade()) {
+                $divergences[] = $result->getExtraData()['divergence_line'];
+            }
+        }
+
+        return $divergences;
+    }
+
+    /**
+     * @param BotAlgorithm $algo
+     * @param int $from
+     * @param int $to
+     * @return array
+     * @throws \Exception
+     */
     public function runTest(BotAlgorithm $algo, int $from = 0, int $to = 0)
     {
         $this->logger->info("********************* New test  ************************");

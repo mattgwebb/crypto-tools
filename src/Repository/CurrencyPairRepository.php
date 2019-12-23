@@ -41,6 +41,10 @@ class CurrencyPairRepository extends ServiceEntityRepository
         $candleRepo = $this->getEntityManager()->getRepository(Candle::class);
         $allCandles = $candleRepo->getByCurrencyFromTime($currencyPair, $fromTime, $toTime);
 
+        if($timeFrame == TimeFrames::TIMEFRAME_5M) {
+            return $allCandles;
+        }
+
         /** @var Candle $candle */
         foreach($allCandles as $candle) {
             if($i == 1) {

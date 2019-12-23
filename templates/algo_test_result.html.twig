@@ -8,15 +8,25 @@
         <script src="https://code.highcharts.com/stock/modules/exporting.js"></script>
         <script src="https://code.highcharts.com/stock/indicators/indicators.js"></script>
         <script src="https://code.highcharts.com/stock/indicators/rsi.js"></script>
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.18.1/moment.min.js"></script>
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/moment-timezone/0.5.13/moment-timezone-with-data-2012-2022.min.js"></script>
         <script>
+            Highcharts.setOptions({
+                time: {
+                    timezone: 'Europe/Madrid'
+                }
+            });
             Highcharts.getJSON('http://localhost/crypto-tools/public/charts/chart_{{ pair.id }}.json?'+Date.now(), function (data) {
 
                 // create the chart
                 Highcharts.stockChart('container', {
 
-
                     title: {
                         text: '{{ pair.symbol }}'
+                    },
+
+                    xAxis: {
+                        range: 5 * 24 * 3600 * 1000 // 1 month
                     },
 
                     yAxis: [{
@@ -49,16 +59,39 @@
                         onSeries: 'candlestick_data',
                         shape: 'squarepin'
                     }, {
+                        id: 'indicator_data',
+                        yAxis: 1,
+                        type: 'rsi',
+                        linkedTo: 'candlestick_data',
+                        params: {
+                            period: 14,
+                            overbought: 70,
+                            oversold: 30
+                        }
+                    },
+                        {% for divergence in divergences  %}
+                        {
+                            type: 'line',
+                            data:  [[{{ divergence.secondPoint.timestamp * 1000 }}, {{ divergence.secondPoint.price }}],[{{ divergence.firstPoint.timestamp * 1000 }}, {{ divergence.firstPoint.price }}]],
+                            color: 'green',
+                            yAxis: 0,
+                        },
+                        {
+                            type: 'line',
+                            data:  [[{{ divergence.secondPoint.timestamp * 1000 }}, {{ divergence.secondPoint.value }}],[{{ divergence.firstPoint.timestamp * 1000 }}, {{ divergence.firstPoint.value }}]],
+                            color: 'green',
                             yAxis: 1,
-                            type: 'rsi',
-                            linkedTo: 'candlestick_data'
-                        }]
+                        },
+                        {% endfor %}
+                    ]
+                }, function(chart){
+
                 });
             });
 
         </script>
     {% endblock %}
 
-    <div id="container" style="height: 400px; min-width: 310px"></div>
+    <div id="container" style="height: 700px; min-width: 310px"></div>
 
 {% endblock %}

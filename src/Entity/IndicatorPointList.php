@@ -10,15 +10,18 @@ class IndicatorPointList extends ArrayCollection
 {
 
     /**
+     * TODO params unified as one array
      * IndicatorPointList constructor.
      * @param array $data
+     * @param array $openTimes
+     * @param array $lastCloses
      */
-    public function __construct(array $data = [])
+    public function __construct(array $data, array $openTimes, array $lastCloses)
     {
         parent::__construct();
 
         foreach($data as $period => $value) {
-            $this->set($period, new IndicatorPoint($period, $value));
+            $this->set($period, new IndicatorPoint($period, $value, $lastCloses[$period], $openTimes[$period]));
         }
 
     }
@@ -78,7 +81,7 @@ class IndicatorPointList extends ArrayCollection
             usort($array, function($a, $b) { return($a->getValue() > $b->getValue()); });
         }
 
-        $list = new IndicatorPointList();
+        $list = new IndicatorPointList([],[],[]);
         /** @var IndicatorPoint $point */
         foreach($array as $point) {
             $list->set($point->getPeriod(), $point);

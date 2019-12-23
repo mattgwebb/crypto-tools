@@ -17,14 +17,29 @@ class IndicatorPoint
     private $value;
 
     /**
+     * Open time
+     * @var int
+     */
+    private $timestamp;
+
+    /**
+     * @var float
+     */
+    private $price;
+
+    /**
      * IndicatorPoint constructor.
      * @param int $period
      * @param float $value
+     * @param float $price
+     * @param int $timestamp
      */
-    public function __construct(int $period, float $value)
+    public function __construct(int $period, float $value, float $price, int $timestamp)
     {
         $this->period = $period;
         $this->value = $value;
+        $this->price = $price;
+        $this->timestamp = $timestamp;
     }
 
     /**
@@ -43,4 +58,19 @@ class IndicatorPoint
         return $this->value;
     }
 
+    /**
+     * @return int
+     */
+    public function getTimestamp(): int
+    {
+        return $this->timestamp;
+    }
+
+    /**
+     * @return float
+     */
+    public function getPrice(): float
+    {
+        return $this->price;
+    }
 }

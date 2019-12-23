@@ -122,12 +122,16 @@ class Strategies
         $rsiPeriod = array_values($rsiPeriod);
         $rsiPeriod = array_slice($rsiPeriod, $previousCandles * (-1));
         $rsiPeriod = array_reverse($rsiPeriod);
-        $rsiPoints = new IndicatorPointList($rsiPeriod);
 
-        $orderedRSIPointsAsc = $rsiPoints->getOrderedList();
+        $lastOpenTimes = array_slice($this->data['open_time'], $previousCandles * (-1));
+        $lastOpenTimes = array_reverse($lastOpenTimes);
 
         $lastCloses = array_slice($this->data['close'], $previousCandles * (-1));
         $lastCloses = array_reverse($lastCloses);
+
+        $rsiPoints = new IndicatorPointList($rsiPeriod, $lastOpenTimes, $lastCloses);
+
+        $orderedRSIPointsAsc = $rsiPoints->getOrderedList();
 
         $divergenceLines = [];
 
@@ -197,7 +201,7 @@ class Strategies
         $indicatorDownPriceUp = $indicatorPercentageChange > 100 && $priceClosePercentageChange < 100;
 
         $line->setPercentageDivergenceWithPrice(abs($priceClosePercentageChange - $indicatorPercentageChange));
-        if($line->getPercentageDivergenceWithPrice() > 10) {
+        if($line->getPercentageDivergenceWithPrice() > 20) {
             if($lower) {
                 if($indicatorDownPriceUp) {
                     $line->setType(DivergenceTypes::BULLISH_HIDDEN_DIVERGENCE);
@@ -366,6 +370,8 @@ class Strategies
         foreach($candles as $candle) {
             $data['open'][] = $candle->getOpenPrice();
             $data['close'][] = $candle->getClosePrice();
+            $data['open_time'][] = $candle->getOpenTime();
+            $data['close_time'][] = $candle->getCloseTime();
         }
         $this->data = $data;
         $this->currentPrice = $candle->getClosePrice();

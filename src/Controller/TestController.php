@@ -58,7 +58,7 @@ class TestController extends AbstractController
         $currencyPair = $currencyPairRepo
             ->find($id);
 
-        $candles = $currencyPairRepo->getCandlesByTimeFrame($currencyPair, TimeFrames::TIMEFRAME_30M);
+        $candles = $currencyPairRepo->getCandlesByTimeFrame($currencyPair, TimeFrames::TIMEFRAME_1H);
         return new Response(json_encode($candles));
     }
 
@@ -168,6 +168,39 @@ class TestController extends AbstractController
 
         $trades = $this->manager->runTest($algo, $startTime, $endTime);
 
+        return $this->render('algo_test_result.html.twig', [
+            "pair" => $algo->getCurrencyPair(),
+            "trades" => $trades,
+            "divergences" => []
+        ]);
+    }
+
+    /**
+     * @Route("/algos/divergence/result", name="run_algo_divergence_test", methods={"POST"})
+     * @return Response
+     * @throws \Exception
+     */
+    public function runAlgoDivergenceTest(Request $request)
+    {
+        $id = $request->request->get('algo-id');
+        $startTime = $request->request->get('start-time');
+        $endTime = $request->request->get('end-time');
+
+        /** @var BotAlgorithm $algo */
+        $algo = $this->getDoctrine()
+            ->getRepository(BotAlgorithm::class)
+            ->find($id);
+
+        if(!$algo) {
+            return $this->render('error.html.twig', [
+                "error" => "Algo not found.",
+            ]);
+        }
+
+        //$trades = $this->manager->runTest($algo, $startTime, $endTime);
+        $trades = [];
+        $divergences = $this->manager->runDivergenceTest($algo, $startTime, $endTime);
+
         /*$mockTrades = [["trade"=>"long","time"=>"Thu Sep 6 13=>59=>59","timestamp"=>1536235199000,"price"=>6408.65],
             ["trade"=>"short","time"=>"Sat Sep 22 2=>59=>59","timestamp"=>1537577999000,"price"=>6802.95,"percentage"=>6.15,"stopLoss_takeProfit"=>false],
             ["trade"=>"long","time"=>"Tue Sep 25 20=>59=>59","timestamp"=>1537901999000,"price"=>6347.58],
@@ -185,6 +218,7 @@ class TestController extends AbstractController
         return $this->render('algo_test_result.html.twig', [
             "pair" => $algo->getCurrencyPair(),
             "trades" => $trades,
+            "divergences" => $divergences
         ]);
     }
 
