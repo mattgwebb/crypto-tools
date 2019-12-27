@@ -157,6 +157,20 @@ class Indicators
     }
 
     /**
+     * @param $data
+     * @param $period
+     * @param bool $prior
+     * @return float
+     */
+    public function ema($data, $period, $prior=false)
+    {
+        $emaArray = trader_ema($data, $period);
+        $ema = @array_pop($emaArray) ?? 0;
+        $ema_prior = @array_pop($emaArray) ?? 0;
+        return ($prior ? $ema_prior : $ema);
+    }
+
+    /**
      * TODO volume increase percentage over number of candles
      * @param $data
      * @param int $period

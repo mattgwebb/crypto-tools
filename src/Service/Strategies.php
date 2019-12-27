@@ -18,7 +18,14 @@ use Symfony\Bundle\MakerBundle\Str;
 class Strategies
 {
 
-    const STRATEGY_LIST = ["rsiAndBollinger", "rsiAndMacd", "supportAndResistance", "rsiDivergence"];
+    const STRATEGY_LIST = [
+        "rsiAndBollinger",
+        "rsiAndMacd",
+        "supportAndResistance",
+        "rsiDivergence",
+        "emaScalp",
+        "emaCrossover"
+    ];
 
     /**
      * Minumum candle difference for line divergences (so we don´t draw lines between two adjacent points)
@@ -110,6 +117,62 @@ class Strategies
             $result->setTradeResult(StrategyResult::TRADE_SHORT);
         }
 
+        return $result;
+    }
+
+    /**
+     * @return StrategyResult
+     */
+    public function emaScalp()
+    {
+        $result = new StrategyResult();
+        $red = $redp = $green = $greenp = [];
+
+        $e1 = [2,3,4,5,6,7,8,9,10,11,12,13,14,15];      // red
+        $e3 = [44,47,50,53,56,59,62,65,68,71,74];       // green
+        foreach ($e1 as $e) {
+            $red[] = $this->indicators->ema($this->data['close'], $e);
+            $redp[] = $this->indicators->ema($this->data['close'], $e, 1); // prior
+        }
+        $red_avg = (array_sum($red)/count($red));
+        $redp_avg = (array_sum($redp)/count($redp));
+
+
+        foreach ($e3 as $e) {
+            $green[] = $this->indicators->ema($this->data['close'], $e);
+        }
+        $green_avg = (array_sum($green)/count($green));
+
+        if ($red_avg < $green_avg && $redp_avg > $green_avg){
+            $result->setTradeResult(StrategyResult::TRADE_LONG);
+        }
+        if ($red_avg > $green_avg && $redp_avg < $green_avg){
+            $result->setTradeResult(StrategyResult::TRADE_SHORT);
+        }
+        return $result;
+    }
+
+    /**
+     * @param int $period1
+     * @param int $period2
+     * @return StrategyResult
+     */
+    public function emaCrossover($period1 = 10, $period2 = 20)
+    {
+        $result = new StrategyResult();
+
+        $period1EMA = $this->indicators->ema($this->data['close'], $period1);
+        $period1PriorEMA = $this->indicators->ema($this->data['close'], $period1, 1); // prior
+
+        $period2EMA = $this->indicators->ema($this->data['close'], $period2);
+        $period2PriorEMA = $this->indicators->ema($this->data['close'], $period2, 1); // prior
+
+        if($period1EMA > $period2EMA && $period1PriorEMA <= $period2PriorEMA){
+            $result->setTradeResult(StrategyResult::TRADE_LONG);
+        }
+        if($period1EMA < $period2EMA && $period1PriorEMA >= $period2PriorEMA){
+            $result->setTradeResult(StrategyResult::TRADE_SHORT);
+        }
         return $result;
     }
 
