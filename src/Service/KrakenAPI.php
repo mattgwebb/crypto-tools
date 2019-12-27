@@ -135,4 +135,14 @@ class KrakenAPI extends ApiInterface
         // TODO: Implement getOrderBook() method.
         return [];
     }
+
+    /**
+     * @param CurrencyPair $currencyPair
+     * @return float
+     */
+    public function getOpenInterest(CurrencyPair $currencyPair): float
+    {
+        // TODO: Implement getOpenInterest() method.
+        return 0.0;
+    }
 }

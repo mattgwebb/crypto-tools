@@ -70,6 +70,14 @@ class BinanceAPI extends ApiInterface
     }
 
     /**
+     * @return string
+     */
+    private function getFuturesAPIBaseRoute() : string
+    {
+        return "https://fapi.binance.com/fapi/v1/";
+    }
+
+    /**
      * @param CurrencyPair $currencyPair
      * @param $rawData
      * @return Candle
@@ -256,6 +264,30 @@ class BinanceAPI extends ApiInterface
 
             return [$bids, $asks];
 
+        } catch (\Exception $e) {
+            throw $e;
+        }
+    }
+
+    /**
+     * @param CurrencyPair $currencyPair
+     * @return float
+     * @throws \Symfony\Contracts\HttpClient\Exception\ClientExceptionInterface
+     * @throws \Symfony\Contracts\HttpClient\Exception\DecodingExceptionInterface
+     * @throws \Symfony\Contracts\HttpClient\Exception\RedirectionExceptionInterface
+     * @throws \Symfony\Contracts\HttpClient\Exception\ServerExceptionInterface
+     * @throws \Symfony\Contracts\HttpClient\Exception\TransportExceptionInterface
+     */
+    public function getOpenInterest(CurrencyPair $currencyPair): float
+    {
+        try {
+            $response = $this->httpClient->request('GET', $this->getFuturesAPIBaseRoute()."openInterest",
+                ['query' => [
+                    'symbol' => $currencyPair->getSymbol()
+                ]
+                ]);
+            $data = $response->toArray();
+            return $data['openInterest'];
         } catch (\Exception $e) {
             throw $e;
         }

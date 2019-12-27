@@ -4,15 +4,14 @@
 namespace App\Service;
 
 
-use App\Entity\BookOrder;
 use App\Entity\Candle;
 use App\Entity\CurrencyPair;
 use App\Entity\TimeFrames;
 use App\Entity\Trade;
 use Doctrine\Common\Collections\ArrayCollection;
-use Symfony\Component\HttpClient\HttpClient;
 
-abstract class ApiInterface
+
+abstract class ApiInterface extends ThirdPartyAPI
 {
     protected $timeFrames = [
         TimeFrames::TIMEFRAME_5M => '5m',
@@ -26,20 +25,6 @@ abstract class ApiInterface
         TimeFrames::TIMEFRAME_1D > '1d',
         TimeFrames::TIMEFRAME_1W => '1w'
     ];
-
-    /**
-     * @var \Symfony\Contracts\HttpClient\HttpClientInterface
-     */
-    protected $httpClient;
-
-    /**
-     * ApiInterface constructor.
-     */
-    public function __construct()
-    {
-        $this->httpClient = HttpClient::create();
-    }
-
 
     /**
      * @param CurrencyPair $currencyPair
@@ -117,6 +102,12 @@ abstract class ApiInterface
      * @return array
      */
     public abstract function getOrderBook(CurrencyPair $currencyPair, int $limit = 100) : array;
+
+    /**
+     * @param CurrencyPair $currencyPair
+     * @return float
+     */
+    public abstract function getOpenInterest(CurrencyPair $currencyPair) : float;
 
     /**
      * @param $timeFrame

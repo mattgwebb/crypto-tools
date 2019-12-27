@@ -4,25 +4,8 @@
 namespace App\Service;
 
 
-use Symfony\Component\HttpClient\HttpClient;
-use Symfony\Contracts\HttpClient\HttpClientInterface;
-
-class TwitterAPI
+class TwitterAPI extends ThirdPartyAPI
 {
-
-    /**
-     * @var HttpClientInterface
-     */
-    private $httpClient;
-
-    /**
-     * TwitterAPI constructor.
-     */
-    public function __construct()
-    {
-        $this->httpClient = HttpClient::create();
-    }
-
 
     /**
      * @param string $query

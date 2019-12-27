@@ -5,25 +5,10 @@ namespace App\Service;
 
 
 use App\Entity\Currency;
-use Symfony\Component\HttpClient\HttpClient;
-use Symfony\Contracts\HttpClient\HttpClientInterface;
 
-class WhaleAlertAPI
+
+class WhaleAlertAPI extends ThirdPartyAPI
 {
-
-    /**
-     * @var HttpClientInterface
-     */
-    private $httpClient;
-
-    /**
-     * TwitterAPI constructor.
-     */
-    public function __construct()
-    {
-        $this->httpClient = HttpClient::create();
-    }
-
 
     /**
      * @param Currency $currency
