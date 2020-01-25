@@ -54,6 +54,11 @@ class BotCommand extends Command
     private $telegramBot;
 
     /**
+     * @var OutputInterface
+     */
+    private $output;
+
+    /**
      * BotCommand constructor.
      * @param EntityManagerInterface $entityManager
      * @param TradeService $tradeService
@@ -88,25 +93,35 @@ class BotCommand extends Command
      */
     protected function execute(InputInterface $input, OutputInterface $output)
     {
+        $this->output = $output;
+
         /** @var BotAlgorithm $algo */
         $algo = $this->entityManager
             ->getRepository(BotAlgorithm::class)
             ->find($input->getArgument('algo_id'));
 
         if(!$algo) {
-            $output->writeln([
-                "ERROR",
-                "Algo not found"
-            ]);
+            $this->output->writeln(["ERROR: Algo not found"]);
             return;
         }
+
+        $now = new \DateTime();
+
+        $this->output->writeln([$now->format('d-m-Y H:i:s').": RUNNING BOT USING ALGO ".$algo->getId()." ".$algo->getName()]);
 
         /** @var int $newCandles */
         /** @var Candle $lastCandle */
         /** @var int $lastPrice */
         list($newCandles, $lastCandle, $lastPrice) = $this->dataService->loadPairNewCandles($algo->getCurrencyPair());
 
+        $this->output->writeln([
+            "NEW CANDLES: $newCandles",
+            "LATEST CANDLE: ".json_encode($lastCandle),
+            "LATEST PRICE: $lastPrice"
+        ]);
+
         if($this->algoManager->checkStopLossAndTakeProfit($algo, $lastPrice)->isShort()) {
+            $this->output->writeln(["NEW SHORT TRADE (STOP LOSS/TAKE PROFIT)"]);
             $this->newOrder($algo, TradeTypes::TRADE_SELL, $lastPrice);
             return;
         }
@@ -114,6 +129,7 @@ class BotCommand extends Command
         if($newCandles > 0) {
             $timeFrameSeconds = $algo->getTimeFrame() * 60;
             if($this->checkTimeFrameClose($lastCandle->getCloseTime(), $timeFrameSeconds)) {
+                $this->output->writeln(["CHECKING FOR NEW TRADE"]);
                 $this->checkForNewTrade($algo, $timeFrameSeconds, $lastPrice);
             }
         }
@@ -138,9 +154,13 @@ class BotCommand extends Command
         $result = $this->algoManager->runAlgo($algo, $lastCandles);
 
         if($algo->isLong() && $result->isShort()) {
+            $this->output->writeln(["NEW SHORT TRADE"]);
             $this->newOrder($algo, TradeTypes::TRADE_SELL, $lastPrice);
         } else if($algo->isShort() && $result->isLong()) {
+            $this->output->writeln(["NEW LONG TRADE"]);
             $this->newOrder($algo, TradeTypes::TRADE_BUY, $lastPrice);
+        } else {
+            $this->output->writeln(["NO NEW TRADE"]);
         }
     }
 
