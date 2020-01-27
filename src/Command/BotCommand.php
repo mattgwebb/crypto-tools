@@ -184,8 +184,11 @@ class BotCommand extends Command
         $quantity = $this->calculateQuantity($tradeType, $currentPrice, $balance);
 
         /** TODO it´s possible that the price changes and the balance is not enough to buy the amount, the trade needs to be created again */
-        $trade = $this->tradeService->newMarketTrade($algo->getCurrencyPair(), $tradeType, $quantity);
-
+        try {
+            $trade = $this->tradeService->newMarketTrade($algo->getCurrencyPair(), $tradeType, $quantity);
+        } catch (\Exception $exception) {
+            $this->output->writeln(["ERROR MAKING TRADE:".$exception->getMessage()]);
+        }
         /** TODO check order has been filled before */
         $this->telegramBot->sendNewTradeMessage($_ENV['TELEGRAM_USER_ID'], $algo, $trade);
         $this->entityManager->persist($algo);

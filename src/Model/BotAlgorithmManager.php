@@ -211,7 +211,7 @@ class BotAlgorithmManager
 
         try {
             $lastPrice = $this->tradeRepository->getAlgoLastBuyTradePrice($algo);
-        } catch (NonUniqueResultException $e) {
+        } catch (\Exception $e) {
             return $result;
         }
 
