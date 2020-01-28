@@ -10,6 +10,7 @@ use App\Entity\CurrencyPair;
 use App\Entity\StrategyResult;
 use App\Entity\TimeFrames;
 use App\Entity\Trade;
+use App\Entity\TradeStatusTypes;
 use App\Entity\TradeTypes;
 use App\Model\BotAlgorithmManager;
 use App\Repository\CurrencyPairRepository;
@@ -193,10 +194,16 @@ class BotCommand extends Command
         $trade = new Trade();
         $trade->setPrice($currentPrice);
         $trade->setType($tradeType);
+        $trade->setAlgo($algo);
+        $trade->setOrderId(999);
+        $trade->setAmount(0);
+        $trade->setTimeStamp(time());
+        $trade->setStatus(TradeStatusTypes::FILLED);
 
         /** TODO check order has been filled before */
         $this->telegramBot->sendNewTradeMessage($_ENV['TELEGRAM_USER_ID'], $algo, $trade);
         $this->entityManager->persist($algo);
+        $this->entityManager->persist($trade);
         $this->entityManager->flush();
     }
 
