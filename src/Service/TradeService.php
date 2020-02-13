@@ -4,9 +4,12 @@
 namespace App\Service;
 
 
+use App\Entity\BotAlgorithm;
 use App\Entity\CurrencyPair;
 use App\Entity\Trade;
+use App\Entity\TradeStatusTypes;
 use App\Entity\TradeTypes;
+use Doctrine\ORM\EntityManagerInterface;
 
 class TradeService
 {
@@ -16,12 +19,19 @@ class TradeService
     private $apiFactory;
 
     /**
+     * @var EntityManagerInterface
+     */
+    private $entityManager;
+
+    /**
      * TradeService constructor.
      * @param ApiFactory $apiFactory
+     * @param EntityManagerInterface $entityManager
      */
-    public function __construct(ApiFactory $apiFactory)
+    public function __construct(ApiFactory $apiFactory, EntityManagerInterface $entityManager)
     {
         $this->apiFactory = $apiFactory;
+        $this->entityManager = $entityManager;
     }
 
     /**
@@ -42,6 +52,33 @@ class TradeService
         }
 
         return $api->marketTrade($currencyPair, $side, $quantity);
+    }
+
+    /**
+     * @param BotAlgorithm $algo
+     * @param int $side
+     * @param float $currentPrice
+     * @return Trade
+     * @throws \Exception
+     */
+    public function newTestTrade(BotAlgorithm $algo, int $side, float $currentPrice)
+    {
+        if(!$this->checkSide($side)) {
+            throw new \Exception();
+        }
+        $trade = new Trade();
+        $trade->setPrice($currentPrice);
+        $trade->setType($side);
+        $trade->setAlgo($algo);
+        $trade->setOrderId(999);
+        $trade->setAmount(0);
+        $trade->setTimeStamp(time());
+        $trade->setStatus(TradeStatusTypes::FILLED);
+
+        $this->entityManager->persist($trade);
+        $this->entityManager->flush();
+
+        return $trade;
     }
 
     /**

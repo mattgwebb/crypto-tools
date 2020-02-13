@@ -7,27 +7,20 @@ namespace App\Command;
 use App\Entity\BotAlgorithm;
 use App\Entity\Candle;
 use App\Entity\CurrencyPair;
-use App\Entity\StrategyResult;
-use App\Entity\TimeFrames;
-use App\Entity\Trade;
-use App\Entity\TradeStatusTypes;
-use App\Entity\TradeTypes;
-use App\Model\BotAlgorithmManager;
-use App\Repository\CurrencyPairRepository;
 use App\Service\ExternalDataService;
-use App\Service\TelegramBot;
-use App\Service\TradeService;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputArgument;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
+use Symfony\Component\Debug\ErrorHandler;
+use Symfony\Component\Process\Process;
 
 
 class BotCommand extends Command
 {
     // the name of the command (the part after "bin/console")
-    protected static $defaultName = 'app:run-bot';
+    protected static $defaultName = 'app:run-bots-pair';
 
     /**
      * @var EntityManagerInterface
@@ -35,54 +28,26 @@ class BotCommand extends Command
     private $entityManager;
 
     /**
-     * @var TradeService
-     */
-    private $tradeService;
-
-    /**
      * @var ExternalDataService
      */
     private $dataService;
 
     /**
-     * @var BotAlgorithmManager
-     */
-    private $algoManager;
-
-    /**
-     * @var TelegramBot
-     */
-    private $telegramBot;
-
-    /**
-     * @var OutputInterface
-     */
-    private $output;
-
-    /**
      * BotCommand constructor.
      * @param EntityManagerInterface $entityManager
-     * @param TradeService $tradeService
      * @param ExternalDataService $dataService
-     * @param BotAlgorithmManager $algoManager
-     * @param TelegramBot $telegramBot
      */
-    public function __construct(EntityManagerInterface $entityManager, TradeService $tradeService,
-                                ExternalDataService $dataService, BotAlgorithmManager $algoManager,
-                                TelegramBot $telegramBot)
+    public function __construct(EntityManagerInterface $entityManager, ExternalDataService $dataService)
     {
-        $this->entityManager = $entityManager;
-        $this->tradeService = $tradeService;
+        $this->entityManager= $entityManager;
         $this->dataService = $dataService;
-        $this->algoManager = $algoManager;
-        $this->telegramBot = $telegramBot;
 
         parent::__construct();
     }
 
     protected function configure()
     {
-        $this->addArgument('algo_id', InputArgument::REQUIRED, 'Algo id');
+        $this->addArgument('currency_pair_id', InputArgument::REQUIRED, 'Currency pair id');
     }
 
     /**
@@ -94,162 +59,78 @@ class BotCommand extends Command
      */
     protected function execute(InputInterface $input, OutputInterface $output)
     {
-        $this->output = $output;
+        /** For some reason pthreads doesn´t work in Symfony commands, this is a workaround */
+        /*if ($phpHandler = set_exception_handler(function() {})) {
+            restore_exception_handler();
+            if (is_array($phpHandler) && $phpHandler[0] instanceof ErrorHandler) {
+                $phpHandler[0]->setExceptionHandler(null);
+            }
+        }*/
 
-        /** @var BotAlgorithm $algo */
-        $algo = $this->entityManager
-            ->getRepository(BotAlgorithm::class)
-            ->find($input->getArgument('algo_id'));
+        /** @var CurrencyPair $pair */
+        $pair = $this->entityManager
+            ->getRepository(CurrencyPair::class)
+            ->find($input->getArgument('currency_pair_id'));
 
-        if(!$algo) {
-            $this->output->writeln(["ERROR: Algo not found"]);
+        if(!$pair) {
+            $output->writeln(["ERROR: Pair not found"]);
             return;
         }
 
         $now = new \DateTime();
-
-        $this->output->writeln([$now->format('d-m-Y H:i:s').": RUNNING BOT USING ALGO ".$algo->getId()." ".$algo->getName()]);
+        $output->writeln([$now->format('d-m-Y H:i:s').": GETTING NEW CANDLES FOR ".$pair->getSymbol()]);
 
         /** @var int $newCandles */
         /** @var Candle $lastCandle */
         /** @var int $lastPrice */
-        list($newCandles, $lastCandle, $lastPrice) = $this->dataService->loadPairNewCandles($algo->getCurrencyPair());
+        list($newCandles, $lastCandle, $lastPrice) = $this->dataService->loadPairNewCandles($pair);
 
-        $this->output->writeln([
+        $output->writeln([
             "NEW CANDLES: $newCandles",
             "LATEST CANDLE: ".json_encode($lastCandle),
             "LATEST PRICE: $lastPrice"
         ]);
 
-        if($this->algoManager->checkStopLossAndTakeProfit($algo, $lastPrice)->isShort()) {
-            $this->output->writeln(["NEW SHORT TRADE (STOP LOSS/TAKE PROFIT)"]);
-            $this->newOrder($algo, TradeTypes::TRADE_SELL, $lastPrice);
-            return;
+        $algos = $pair->getAlgos();
+
+        $runningProcesses = [];
+
+        /** @var BotAlgorithm $algo */
+        foreach($algos as $algo) {
+            $process = new Process(["php", "bin\console", "app:run-bot", $algo->getId(), $lastPrice, "--no-debug"]);
+            $process->start();
+            $runningProcesses[] = $process;
         }
 
-        if($newCandles > 0) {
-            $timeFrameSeconds = $algo->getTimeFrame() * 60;
-            if($this->checkTimeFrameClose($lastCandle->getCloseTime(), $timeFrameSeconds)) {
-                $this->output->writeln(["CHECKING FOR NEW TRADE"]);
-                $this->checkForNewTrade($algo, $timeFrameSeconds, $lastPrice);
+        while (count($runningProcesses)) {
+            foreach ($runningProcesses as $i => $runningProcess) {
+                // specific process is finished, so we remove it
+                if (! $runningProcess->isRunning()) {
+                    unset($runningProcesses[$i]);
+                }
+
+                // check every second
+                sleep(1);
             }
         }
-    }
 
-    /**
-     * @param BotAlgorithm $algo
-     * @param int $timeFrameSeconds
-     * @param float $lastPrice
-     * @throws \Exception
-     */
-    private function checkForNewTrade(BotAlgorithm $algo, int $timeFrameSeconds, float $lastPrice)
-    {
-        $lastOpen = $this->getLastOpen($timeFrameSeconds);
-        $loadFrom = $this->getTimestampToLoadFrom($lastOpen, $timeFrameSeconds);
 
-        /** @var CurrencyPairRepository $currencyPairRepo */
-        $currencyPairRepo =  $this->entityManager->getRepository(CurrencyPair::class);
+        /*$algos = $pair->getAlgos();
+        $pool = new \Pool($algos->count());
 
-        $lastCandles = $currencyPairRepo
-            ->getCandlesByTimeFrame($algo->getCurrencyPair(), $algo->getTimeFrame(), $loadFrom, $lastOpen);
-        $result = $this->algoManager->runAlgo($algo, $lastCandles);
+        $lastCandleId = !$lastCandle->isEmpty() ? $lastCandle->getId() : 0;
 
-        if($algo->isLong() && $result->isShort()) {
-            $this->output->writeln(["NEW SHORT TRADE"]);
-            $this->newOrder($algo, TradeTypes::TRADE_SELL, $lastPrice);
-        } else if($algo->isShort() && $result->isLong()) {
-            $this->output->writeln(["NEW LONG TRADE"]);
-            $this->newOrder($algo, TradeTypes::TRADE_BUY, $lastPrice);
-        } else {
-            $this->output->writeln(["NO NEW TRADE"]);
+        $kernelEnv = $GLOBALS['kernel']->getEnvironment();
+        $kernelDebug = $GLOBALS['kernel']->isDebug();*/
+
+
+        /** @var BotAlgorithm $algo */
+        /*foreach($algos as $algo) {
+            $pool->submit(new BotProcess($algo->getId(), $lastPrice, $lastCandleId, $kernelEnv, $kernelDebug));
         }
-    }
 
-    /**
-     * @param BotAlgorithm $algo
-     * @param int $tradeType
-     * @param float $currentPrice
-     * @throws \Exception
-     */
-    private function newOrder(BotAlgorithm $algo, int $tradeType, float $currentPrice)
-    {
-        if($tradeType == TradeTypes::TRADE_BUY) {
-            $currencyToUse = $algo->getCurrencyPair()->getSecondCurrency();
-            $algo->setLong();
-        } else if($tradeType == TradeTypes::TRADE_SELL) {
-            $currencyToUse = $algo->getCurrencyPair()->getFirstCurrency();
-            $algo->setShort();
-        } else return;
+        while ($pool->collect());
 
-        $balance = $this->dataService->loadBalance($currencyToUse);
-        $quantity = $this->calculateQuantity($tradeType, $currentPrice, $balance);
-
-        /** TODO it´s possible that the price changes and the balance is not enough to buy the amount, the trade needs to be created again */
-        /*try {
-            $trade = $this->tradeService->newMarketTrade($algo->getCurrencyPair(), $tradeType, $quantity);
-        } catch (\Exception $exception) {
-            $this->output->writeln(["ERROR MAKING TRADE:".$exception->getMessage()]);
-        }*/
-
-        $trade = new Trade();
-        $trade->setPrice($currentPrice);
-        $trade->setType($tradeType);
-        $trade->setAlgo($algo);
-        $trade->setOrderId(999);
-        $trade->setAmount(0);
-        $trade->setTimeStamp(time());
-        $trade->setStatus(TradeStatusTypes::FILLED);
-
-        /** TODO check order has been filled before */
-        $this->telegramBot->sendNewTradeMessage($_ENV['TELEGRAM_USER_ID'], $algo, $trade);
-        $this->entityManager->persist($algo);
-        $this->entityManager->persist($trade);
-        $this->entityManager->flush();
-    }
-
-    /**
-     * @param int $tradeType
-     * @param float $price
-     * @param float $balance
-     * @return float
-     */
-    private function calculateQuantity(int $tradeType, float $price, float $balance)
-    {
-        if($tradeType == TradeTypes::TRADE_BUY) {
-            return round($balance/$price, 5, PHP_ROUND_HALF_DOWN);
-        } else {
-            return $balance;
-        }
-    }
-
-    /**
-     * @param int $close
-     * @param int $timeFrameSeconds
-     * @return bool
-     */
-    private function checkTimeFrameClose(int $close, int $timeFrameSeconds)
-    {
-        return ($close + 1) % $timeFrameSeconds == 0;
-    }
-
-    /**
-     * @param int $lastClose
-     * @param int $timeFrameSeconds
-     * @return int
-     */
-    private function getTimestampToLoadFrom(int $lastClose, int $timeFrameSeconds)
-    {
-        $timeRange = 50 * $timeFrameSeconds;
-        return $lastClose - $timeRange;
-    }
-
-    /**
-     * @param int $timeFrameSeconds
-     * @return int
-     */
-    private function getLastOpen(int $timeFrameSeconds)
-    {
-        $now = time();
-        return (int)(floor($now / $timeFrameSeconds) * $timeFrameSeconds);
+        $pool->shutdown();*/
     }
 }

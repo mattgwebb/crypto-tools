@@ -11,6 +11,7 @@ use App\Repository\BotAlgorithmRepository;
 use App\Repository\CurrencyPairRepository;
 use App\Repository\TradeRepository;
 use App\Service\Strategies;
+use Doctrine\ORM\EntityManagerInterface;
 use Doctrine\ORM\NonUniqueResultException;
 use Psr\Log\LoggerInterface;
 
@@ -42,21 +43,29 @@ class BotAlgorithmManager
     private $tradeRepository;
 
     /**
+     * @var EntityManagerInterface
+     */
+    private $entityManager;
+
+    /**
      * BotAlgorithmManager constructor.
      * @param BotAlgorithmRepository $botAlgorithmRepo
      * @param CurrencyPairRepository $currencyRepo
      * @param Strategies $strategies
      * @param LoggerInterface $algosLogger
      * @param TradeRepository $tradeRepository
+     * @param EntityManagerInterface $entityManager
      */
     public function __construct(BotAlgorithmRepository $botAlgorithmRepo, CurrencyPairRepository $currencyRepo,
-                                Strategies $strategies, LoggerInterface $algosLogger, TradeRepository $tradeRepository)
+                                Strategies $strategies, LoggerInterface $algosLogger, TradeRepository $tradeRepository,
+                                EntityManagerInterface $entityManager)
     {
         $this->botAlgorithmRepo = $botAlgorithmRepo;
         $this->currencyPairRepo = $currencyRepo;
         $this->strategies = $strategies;
         $this->logger = $algosLogger;
         $this->tradeRepository = $tradeRepository;
+        $this->entityManager = $entityManager;
     }
 
     /**
@@ -230,5 +239,22 @@ class BotAlgorithmManager
             }
         }
         return $result;
+    }
+
+    /**
+     * @param int $id
+     * @return BotAlgorithm|null
+     */
+    public function getAlgo(int $id)
+    {
+        return $this->botAlgorithmRepo->find($id);
+    }
+
+    /**
+     * @param BotAlgorithm $algo
+     */
+    public function saveAlgo(BotAlgorithm $algo)
+    {
+        $this->entityManager->persist($algo);
     }
 }

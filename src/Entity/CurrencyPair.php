@@ -43,6 +43,11 @@ class CurrencyPair
      */
     private $secondCurrency;
 
+    /**
+     * @ORM\OneToMany(targetEntity="App\Entity\BotAlgorithm", mappedBy="currencyPair")
+     */
+    private $algos;
+
 
     public function __construct()
     {
@@ -132,5 +137,21 @@ class CurrencyPair
     public function __toString()
     {
         return $this->getId().".".$this->getSymbol();
+    }
+
+    /**
+     * @return mixed
+     */
+    public function getAlgos()
+    {
+        return $this->algos;
+    }
+
+    /**
+     * @param mixed $algos
+     */
+    public function setAlgos($algos): void
+    {
+        $this->algos = $algos;
     }
 }
