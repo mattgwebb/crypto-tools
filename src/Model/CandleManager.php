@@ -5,6 +5,7 @@ namespace App\Model;
 
 
 use App\Entity\BotAlgorithm;
+use App\Repository\CandleRepository;
 use App\Repository\CurrencyPairRepository;
 
 class CandleManager
@@ -16,12 +17,19 @@ class CandleManager
     private $currencyPairRepo;
 
     /**
+     * @var CandleRepository
+     */
+    private $candleRepo;
+
+    /**
      * CandleManager constructor.
      * @param CurrencyPairRepository $currencyPairRepo
+     * @param CandleRepository $candleRepo
      */
-    public function __construct(CurrencyPairRepository $currencyPairRepo)
+    public function __construct(CurrencyPairRepository $currencyPairRepo, CandleRepository $candleRepo)
     {
         $this->currencyPairRepo = $currencyPairRepo;
+        $this->candleRepo = $candleRepo;
     }
 
 
@@ -39,10 +47,10 @@ class CandleManager
 
     /**
      * @param int $id
-     * @return \App\Entity\CurrencyPair|null
+     * @return \App\Entity\Candle|null
      */
     public function getCandle(int $id)
     {
-        return $this->currencyPairRepo->find($id);
+        return $this->candleRepo->find($id);
     }
 }

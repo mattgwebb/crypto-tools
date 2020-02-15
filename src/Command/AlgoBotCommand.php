@@ -106,7 +106,7 @@ class AlgoBotCommand extends Command
         $lastCandleId = (int)$input->getArgument('last_candle_id');
 
         try {
-            $this->log("RUNNING BOT USING ALGO ".$algo->getId()." ".$algo->getName());
+            $this->log($algo, "RUNNING BOT USING ALGO ".$algo->getId()." ".$algo->getName());
 
             /*if($this->algoManager->checkStopLossAndTakeProfit($algo, $lastPrice)->isShort()) {
                 $this->output->writeln(["NEW SHORT TRADE (STOP LOSS/TAKE PROFIT)"]);
@@ -120,7 +120,7 @@ class AlgoBotCommand extends Command
                 $timeFrameSeconds = $algo->getTimeFrame() * 60;
 
                 if($this->checkTimeFrameClose($lastCandle->getCloseTime(), $timeFrameSeconds)) {
-                    $this->log("CHECKING FOR NEW TRADE");
+                    $this->log($algo, "CHECKING FOR NEW TRADE");
 
                     $lastOpen = $this->getLastOpen($timeFrameSeconds);
                     $loadFrom = $this->getTimestampToLoadFrom($lastOpen, $timeFrameSeconds);
@@ -129,33 +129,34 @@ class AlgoBotCommand extends Command
                     $result = $this->algoManager->runAlgo($algo, $lastCandles);
 
                     if($algo->isLong() && $result->isShort()) {
-                        $this->log("NEW SHORT TRADE");
+                        $this->log($algo, "NEW SHORT TRADE");
                         $this->newOrder($algo, TradeTypes::TRADE_SELL, $lastPrice);
                     } else if($algo->isShort() && $result->isLong()) {
-                        $this->log("NEW LONG TRADE");
+                        $this->log($algo, "NEW LONG TRADE");
                         $this->newOrder($algo, TradeTypes::TRADE_BUY, $lastPrice);
                     } else {
-                        $this->log("NO NEW TRADE");
+                        $this->log($algo, "NO NEW TRADE");
                     }
                 }
             } else {
-                $this->log("NO NEW CANDLE");
+                $this->log($algo, "NO NEW CANDLE");
             }
         } catch (\Exception $exception) {
-            $this->log($exception->getMessage());
+            $this->log($algo, $exception->getMessage());
         }
 
     }
 
     /**
+     * @param BotAlgorithm $algo
      * @param string $message
      */
-    private function log(string $message)
+    private function log(BotAlgorithm $algo, string $message)
     {
         try {
             $now = new \DateTime();
             $nowString = $now->format('d-m-Y H:i:s');
-            $this->logger->info("$nowString: $message \n");
+            $this->logger->info("$nowString: (algo {$algo->getId()}) -> $message");
         } catch (\Exception $ex) {}
     }
 

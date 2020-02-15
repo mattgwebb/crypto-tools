@@ -97,7 +97,8 @@ class BotCommand extends Command
 
         /** @var BotAlgorithm $algo */
         foreach($algos as $algo) {
-            $process = new Process(["php", "bin\console", "app:run-bot", $algo->getId(), $lastPrice, "--no-debug"]);
+            //$output->writeln(["php", "bin\console", "app:run-bot", $algo->getId(), $lastPrice, "--no-debug"]);
+            $process = new Process(["php", "bin\console", "app:run-bot", $algo->getId(), $lastPrice, $lastCandle->getId(), "--no-debug"]);
             $process->start();
             $runningProcesses[] = $process;
         }
