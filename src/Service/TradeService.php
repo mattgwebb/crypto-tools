@@ -74,6 +74,7 @@ class TradeService
         $trade->setAmount(0);
         $trade->setTimeStamp(time());
         $trade->setStatus(TradeStatusTypes::FILLED);
+        $trade->setMode($algo->getMode());
 
         $this->entityManager->persist($trade);
         $this->entityManager->flush();

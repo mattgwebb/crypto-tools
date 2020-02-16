@@ -51,6 +51,11 @@ class Trade
      */
     private $status = TradeTypes::TRADE_SELL;
 
+    /**
+     * @ORM\Column(type="smallint")
+     */
+    private $mode;
+
     public function getId(): ?int
     {
         return $this->id;
@@ -166,5 +171,21 @@ class Trade
     public function setStatus(int $status): void
     {
         $this->status = $status;
+    }
+
+    /**
+     * @return mixed
+     */
+    public function getMode()
+    {
+        return $this->mode;
+    }
+
+    /**
+     * @param mixed $mode
+     */
+    public function setMode($mode): void
+    {
+        $this->mode = $mode;
     }
 }

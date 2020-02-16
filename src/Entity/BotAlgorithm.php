@@ -62,6 +62,11 @@ class BotAlgorithm implements \JsonSerializable
     private $tradeStatus = TradeTypes::TRADE_SELL;
 
     /**
+     * @ORM\Column(type="smallint")
+     */
+    private $mode = AlgoModes::NOT_ACTIVE;
+
+    /**
      * @return mixed
      */
     public function getCurrencyPair()
@@ -197,6 +202,22 @@ class BotAlgorithm implements \JsonSerializable
     public function setObservations($observations): void
     {
         $this->observations = $observations;
+    }
+
+    /**
+     * @return int
+     */
+    public function getMode(): int
+    {
+        return $this->mode;
+    }
+
+    /**
+     * @param int $mode
+     */
+    public function setMode(int $mode): void
+    {
+        $this->mode = $mode;
     }
 
     /**

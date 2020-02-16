@@ -14,6 +14,7 @@ use Symfony\Component\Console\Input\InputArgument;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
 use Symfony\Component\Debug\ErrorHandler;
+use Symfony\Component\HttpKernel\KernelInterface;
 use Symfony\Component\Process\Process;
 
 
@@ -33,14 +34,20 @@ class BotCommand extends Command
     private $dataService;
 
     /**
+     * @var string
+     */
+    private $projectDir;
+
+    /**
      * BotCommand constructor.
      * @param EntityManagerInterface $entityManager
      * @param ExternalDataService $dataService
      */
-    public function __construct(EntityManagerInterface $entityManager, ExternalDataService $dataService)
+    public function __construct(EntityManagerInterface $entityManager, ExternalDataService $dataService, KernelInterface $kernel)
     {
         $this->entityManager= $entityManager;
         $this->dataService = $dataService;
+        $this->projectDir = $kernel->getProjectDir();
 
         parent::__construct();
     }
@@ -98,7 +105,7 @@ class BotCommand extends Command
         /** @var BotAlgorithm $algo */
         foreach($algos as $algo) {
             //$output->writeln(["php", "bin\console", "app:run-bot", $algo->getId(), $lastPrice, "--no-debug"]);
-            $process = new Process(["php", "bin\console", "app:run-bot", $algo->getId(), $lastPrice, $lastCandle->getId(), "--no-debug"]);
+            $process = new Process(["php", $this->projectDir."/bin/console", "app:run-bot", $algo->getId(), $lastPrice, $lastCandle->getId(), "--no-debug"]);
             $process->start();
             $runningProcesses[] = $process;
         }
