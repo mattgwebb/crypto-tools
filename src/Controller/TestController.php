@@ -49,8 +49,10 @@ class TestController extends AbstractController
      * @param int $id
      * @return Response
      */
-    public function getChart(int $id)
+    public function getChart(Request $request, int $id)
     {
+        $timeFrame = $request->query->get('timeframe');
+        $startTime = $request->query->get('start');
         $currencyPairRepo = $this->getDoctrine()
             ->getRepository(CurrencyPair::class);
 
@@ -58,7 +60,7 @@ class TestController extends AbstractController
         $currencyPair = $currencyPairRepo
             ->find($id);
 
-        $candles = $currencyPairRepo->getCandlesByTimeFrame($currencyPair, TimeFrames::TIMEFRAME_1H);
+        $candles = $currencyPairRepo->getCandlesByTimeFrame($currencyPair, $timeFrame, $startTime);
         return new Response(json_encode($candles));
     }
 
