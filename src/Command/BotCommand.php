@@ -9,6 +9,7 @@ use App\Entity\Candle;
 use App\Entity\CurrencyPair;
 use App\Service\ExternalDataService;
 use Doctrine\ORM\EntityManagerInterface;
+use Psr\Log\LoggerInterface;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputArgument;
 use Symfony\Component\Console\Input\InputInterface;
@@ -39,15 +40,24 @@ class BotCommand extends Command
     private $projectDir;
 
     /**
+     * @var LoggerInterface
+     */
+    private $logger;
+
+    /**
      * BotCommand constructor.
      * @param EntityManagerInterface $entityManager
      * @param ExternalDataService $dataService
+     * @param KernelInterface $kernel
+     * @param LoggerInterface $botsLogger
      */
-    public function __construct(EntityManagerInterface $entityManager, ExternalDataService $dataService, KernelInterface $kernel)
+    public function __construct(EntityManagerInterface $entityManager, ExternalDataService $dataService, KernelInterface $kernel,
+                                LoggerInterface $botsLogger)
     {
         $this->entityManager= $entityManager;
         $this->dataService = $dataService;
         $this->projectDir = $kernel->getProjectDir();
+        $this->logger = $botsLogger;
 
         parent::__construct();
     }
@@ -58,7 +68,6 @@ class BotCommand extends Command
     }
 
     /**
-     * TODO log bot actions (new channel)
      * @param InputInterface $input
      * @param OutputInterface $output
      * @return int|void|null
@@ -84,19 +93,16 @@ class BotCommand extends Command
             return;
         }
 
-        $now = new \DateTime();
-        $output->writeln([$now->format('d-m-Y H:i:s').": GETTING NEW CANDLES FOR ".$pair->getSymbol()]);
+        $this->log("GETTING NEW CANDLES FOR ".$pair->getSymbol());
 
         /** @var int $newCandles */
         /** @var Candle $lastCandle */
         /** @var int $lastPrice */
         list($newCandles, $lastCandle, $lastPrice) = $this->dataService->loadPairNewCandles($pair);
 
-        $output->writeln([
-            "NEW CANDLES: $newCandles",
-            "LATEST CANDLE: ".json_encode($lastCandle),
-            "LATEST PRICE: $lastPrice"
-        ]);
+        $this->log("NEW CANDLES: $newCandles");
+        $this->log("LATEST CANDLE: ".json_encode($lastCandle));
+        $this->log("LATEST PRICE: $lastPrice");
 
         $algos = $pair->getAlgos();
 
@@ -104,7 +110,6 @@ class BotCommand extends Command
 
         /** @var BotAlgorithm $algo */
         foreach($algos as $algo) {
-            //$output->writeln(["php", "bin\console", "app:run-bot", $algo->getId(), $lastPrice, "--no-debug"]);
             $process = new Process(["php", $this->projectDir."/bin/console", "app:run-bot", $algo->getId(), $lastPrice, $lastCandle->getId(), "--no-debug"]);
             $process->start();
             $runningProcesses[] = $process;
@@ -140,5 +145,17 @@ class BotCommand extends Command
         while ($pool->collect());
 
         $pool->shutdown();*/
+    }
+
+    /**
+     * @param string $message
+     */
+    private function log(string $message)
+    {
+        try {
+            $now = new \DateTime();
+            $nowString = $now->format('d-m-Y H:i:s');
+            $this->logger->info("$nowString: $message");
+        } catch (\Exception $ex) {}
     }
 }

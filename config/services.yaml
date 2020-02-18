@@ -32,3 +32,17 @@ services:
             # you want to pass the *service* whose id is 'monolog.logger.request',
             # and not just the *string* 'monolog.logger.request'
             $algosLogger: '@monolog.logger.algos'
+
+    App\Command\AlgoBotCommand:
+        arguments:
+            # the '@' symbol is important: that's what tells the container
+            # you want to pass the *service* whose id is 'monolog.logger.request',
+            # and not just the *string* 'monolog.logger.request'
+            $botsLogger: '@monolog.logger.bots'
+
+    App\Command\BotCommand:
+        arguments:
+            # the '@' symbol is important: that's what tells the container
+            # you want to pass the *service* whose id is 'monolog.logger.request',
+            # and not just the *string* 'monolog.logger.request'
+            $botsLogger: '@monolog.logger.bots'

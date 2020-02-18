@@ -64,19 +64,19 @@ class AlgoBotCommand extends Command
      * BotCommand constructor.
      * @param EntityManagerInterface $entityManager
      * @param ExternalDataService $dataService
-     * @param LoggerInterface $logger
+     * @param LoggerInterface $botsLogger
      * @param BotAlgorithmManager $algoManager
      * @param CandleManager $candleManager
      * @param TradeService $tradeService
      * @param TelegramBot $telegramBot
      */
-    public function __construct(EntityManagerInterface $entityManager, ExternalDataService $dataService, LoggerInterface $logger,
+    public function __construct(EntityManagerInterface $entityManager, ExternalDataService $dataService, LoggerInterface $botsLogger,
                                 BotAlgorithmManager $algoManager, CandleManager $candleManager, TradeService $tradeService,
                                 TelegramBot $telegramBot)
     {
         $this->entityManager= $entityManager;
         $this->dataService = $dataService;
-        $this->logger = $logger;
+        $this->logger = $botsLogger;
         $this->algoManager = $algoManager;
         $this->candleManager = $candleManager;
         $this->tradeService = $tradeService;
