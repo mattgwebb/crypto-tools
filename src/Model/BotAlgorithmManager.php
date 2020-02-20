@@ -18,6 +18,11 @@ use Psr\Log\LoggerInterface;
 class BotAlgorithmManager
 {
     /**
+     * Number of candles passed on to the strategy calculations
+     */
+    const CANDLES_TO_LOAD = 100;
+
+    /**
      * @var BotAlgorithmRepository
      */
     private $botAlgorithmRepo;
@@ -72,21 +77,23 @@ class BotAlgorithmManager
      * @param BotAlgorithm $algo
      * @param int $from
      * @param int $to
+     * @param int $candlesToLoad
      * @return array
-     * @throws \Exception
      */
-    public function runDivergenceTest(BotAlgorithm $algo, int $from = 0, int $to = 0)
+    public function runDivergenceTest(BotAlgorithm $algo, int $from = 0, int $to = 0, int $candlesToLoad = self::CANDLES_TO_LOAD)
     {
         $this->logger->info("********************* New test  ************************");
         $this->logger->info(json_encode($algo));
 
-        $from -= 99 * ($algo->getTimeFrame() * 60);
+        $lastPositionCandles = $candlesToLoad - 1;
+
+        $from -= $lastPositionCandles * ($algo->getTimeFrame() * 60);
         $candles = $this->currencyPairRepo->getCandlesByTimeFrame($algo->getCurrencyPair(), $algo->getTimeFrame(), $from, $to);
 
         $divergences = [];
 
-        for($i=99; $i < count($candles); $i++) {
-            $auxData = array_slice($candles, $i - 99, 100);
+        for($i=$lastPositionCandles; $i < count($candles); $i++) {
+            $auxData = array_slice($candles, $i - $lastPositionCandles, $candlesToLoad);
             /** TODO delete candles from array after using them
              * TODO for some reason it doesn´t calculate indicators properly
              */
@@ -109,15 +116,18 @@ class BotAlgorithmManager
      * @param BotAlgorithm $algo
      * @param int $from
      * @param int $to
+     * @param int $candlesToLoad
      * @return array
      * @throws \Exception
      */
-    public function runTest(BotAlgorithm $algo, int $from = 0, int $to = 0)
+    public function runTest(BotAlgorithm $algo, int $from = 0, int $to = 0, int $candlesToLoad = self::CANDLES_TO_LOAD)
     {
         $this->logger->info("********************* New test  ************************");
         $this->logger->info(json_encode($algo));
 
-        $from -= 99 * ($algo->getTimeFrame() * 60);
+        $lastPositionCandles = $candlesToLoad - 1;
+
+        $from -= $lastPositionCandles * ($algo->getTimeFrame() * 60);
         $candles = $this->currencyPairRepo->getCandlesByTimeFrame($algo->getCurrencyPair(), $algo->getTimeFrame(), $from, $to);
 
         $openTradePrice = 0;
@@ -126,8 +136,8 @@ class BotAlgorithmManager
         $initialInvestment = 1000;
 
         $trades = [];
-        for($i=99; $i < count($candles); $i++) {
-            $auxData = array_slice($candles, $i - 99, 100);
+        for($i=$lastPositionCandles; $i < count($candles); $i++) {
+            $auxData = array_slice($candles, $i - $lastPositionCandles, $candlesToLoad);
             /** TODO delete candles from array after using them
              * TODO for some reason it doesn´t calculate indicators properly
              */

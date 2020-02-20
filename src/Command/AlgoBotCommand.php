@@ -22,6 +22,9 @@ use Symfony\Component\Console\Output\OutputInterface;
 
 class AlgoBotCommand extends Command
 {
+
+    const CANDLES_TO_LOAD = 50;
+
     // the name of the command (the part after "bin/console")
     protected static $defaultName = 'app:run-bot';
 
@@ -221,11 +224,12 @@ class AlgoBotCommand extends Command
     /**
      * @param int $lastClose
      * @param int $timeFrameSeconds
+     * @param int $candlesToLoad
      * @return int
      */
-    private function getTimestampToLoadFrom(int $lastClose, int $timeFrameSeconds)
+    private function getTimestampToLoadFrom(int $lastClose, int $timeFrameSeconds, int $candlesToLoad = self::CANDLES_TO_LOAD)
     {
-        $timeRange = 50 * $timeFrameSeconds;
+        $timeRange = $candlesToLoad * $timeFrameSeconds;
         return $lastClose - $timeRange;
     }
 
