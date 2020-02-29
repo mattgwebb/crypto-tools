@@ -171,6 +171,20 @@ class Indicators
     }
 
     /**
+     * @param $data
+     * @param $period
+     * @param bool $prior
+     * @return float
+     */
+    public function ma($data, $period, $prior=false)
+    {
+        $maArray = trader_ma($data, $period);
+        $ma = @array_pop($maArray) ?? 0;
+        $ma_prior = @array_pop($maArray) ?? 0;
+        return ($prior ? $ma_prior : $ma);
+    }
+
+    /**
      * TODO volume increase percentage over number of candles
      * @param $data
      * @param int $period

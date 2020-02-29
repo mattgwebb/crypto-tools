@@ -24,7 +24,8 @@ class Strategies
         "supportAndResistance",
         "rsiDivergence",
         "emaScalp",
-        "emaCrossover"
+        "emaCrossover",
+        "goldenCross"
     ];
 
     /**
@@ -159,21 +160,29 @@ class Strategies
      */
     public function emaCrossover($period1 = 10, $period2 = 20)
     {
-        $result = new StrategyResult();
-
         $period1EMA = $this->indicators->ema($this->data['close'], $period1);
         $period1PriorEMA = $this->indicators->ema($this->data['close'], $period1, 1); // prior
 
         $period2EMA = $this->indicators->ema($this->data['close'], $period2);
         $period2PriorEMA = $this->indicators->ema($this->data['close'], $period2, 1); // prior
 
-        if($period1EMA > $period2EMA && $period1PriorEMA <= $period2PriorEMA){
-            $result->setTradeResult(StrategyResult::TRADE_LONG);
-        }
-        if($period1EMA < $period2EMA && $period1PriorEMA >= $period2PriorEMA){
-            $result->setTradeResult(StrategyResult::TRADE_SHORT);
-        }
-        return $result;
+        return $this->checkCrossMovingAverages($period1EMA, $period1PriorEMA, $period2EMA, $period2PriorEMA);
+    }
+
+    /**
+     * @param int $period1
+     * @param int $period2
+     * @return StrategyResult
+     */
+    public function goldenCross($period1 = 50, $period2 = 200)
+    {
+        $period1MA = $this->indicators->ma($this->data['close'], $period1);
+        $period1PriorMA = $this->indicators->ma($this->data['close'], $period1, 1); // prior
+
+        $period2MA = $this->indicators->ma($this->data['close'], $period2);
+        $period2PriorMA = $this->indicators->ma($this->data['close'], $period2, 1); // prior
+
+        return $this->checkCrossMovingAverages($period1MA, $period1PriorMA, $period2MA, $period2PriorMA);
     }
 
     public function rsiDivergence(int $previousCandles = 10): StrategyResult
@@ -241,6 +250,26 @@ class Strategies
         }
         $result->setExtraData(['divergence_line' => $finalLine]);
 
+        return $result;
+    }
+
+    /**
+     * @param $period1
+     * @param $period1Prior
+     * @param $period2
+     * @param $period2Prior
+     * @return StrategyResult
+     */
+    private function checkCrossMovingAverages($period1, $period1Prior, $period2, $period2Prior)
+    {
+        $result = new StrategyResult();
+
+        if($period1 > $period2 && $period1Prior <= $period2Prior){
+            $result->setTradeResult(StrategyResult::TRADE_LONG);
+        }
+        if($period1 < $period2 && $period1Prior >= $period2Prior){
+            $result->setTradeResult(StrategyResult::TRADE_SHORT);
+        }
         return $result;
     }
 
