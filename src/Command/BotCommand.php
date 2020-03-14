@@ -4,6 +4,7 @@
 namespace App\Command;
 
 
+use App\Entity\AlgoModes;
 use App\Entity\BotAlgorithm;
 use App\Entity\Candle;
 use App\Entity\CurrencyPair;
@@ -110,6 +111,9 @@ class BotCommand extends Command
 
         /** @var BotAlgorithm $algo */
         foreach($algos as $algo) {
+            if($algo->getMode() == AlgoModes::NOT_ACTIVE) {
+                continue;
+            }
             $process = new Process(["php", $this->projectDir."/bin/console", "app:run-bot", $algo->getId(), $lastPrice, $lastCandle->getId(), "--no-debug"]);
             $process->start();
             $runningProcesses[] = $process;
