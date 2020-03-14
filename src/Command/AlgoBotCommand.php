@@ -141,6 +141,8 @@ class AlgoBotCommand extends Command
                     } else {
                         $this->log($algo, "NO NEW TRADE");
                     }
+                } else {
+                    $this->log($algo, "CANDLE NOT CLOSED YET");
                 }
             } else {
                 $this->log($algo, "NO NEW CANDLE");
