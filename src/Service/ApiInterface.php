@@ -8,6 +8,7 @@ use App\Entity\Candle;
 use App\Entity\CurrencyPair;
 use App\Entity\TimeFrames;
 use App\Entity\Trade;
+use App\Exceptions\API\APIException;
 use Doctrine\Common\Collections\ArrayCollection;
 
 
@@ -75,6 +76,7 @@ abstract class ApiInterface extends ThirdPartyAPI
      * @param CurrencyPair $currencyPair
      * @param int $side
      * @param float $quantity
+     * @throws APIException
      * @return Trade
      */
     public abstract function marketTrade(CurrencyPair $currencyPair, int $side, float $quantity) : Trade;

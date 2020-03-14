@@ -7,6 +7,7 @@ namespace App\Command;
 use App\Entity\BotAlgorithm;
 use App\Entity\Candle;
 use App\Entity\TradeTypes;
+use App\Exceptions\API\APIException;
 use App\Model\BotAlgorithmManager;
 use App\Model\CandleManager;
 use App\Service\ExternalDataService;
@@ -153,13 +154,14 @@ class AlgoBotCommand extends Command
     /**
      * @param BotAlgorithm $algo
      * @param string $message
+     * @param array $context
      */
-    private function log(BotAlgorithm $algo, string $message)
+    private function log(BotAlgorithm $algo, string $message, $context = [])
     {
         try {
             $now = new \DateTime();
             $nowString = $now->format('d-m-Y H:i:s');
-            $this->logger->info("$nowString: (algo {$algo->getId()}) -> $message");
+            $this->logger->info("$nowString: (algo {$algo->getId()}) -> $message", $context);
         } catch (\Exception $ex) {}
     }
 
@@ -193,17 +195,22 @@ class AlgoBotCommand extends Command
         $quantity = $this->calculateQuantity($tradeType, $currentPrice, $balance);
 
         /** TODO it´s possible that the price changes and the balance is not enough to buy the amount, the trade needs to be created again */
-        /*try {
+        try {
             $trade = $this->tradeService->newMarketTrade($algo->getCurrencyPair(), $tradeType, $quantity);
-        } catch (\Exception $exception) {
-            $this->output->writeln(["ERROR MAKING TRADE:".$exception->getMessage()]);
-        }*/
+            $trade->setAlgo($algo);
+            $trade->setMode($algo->getMode());
+            $this->tradeService->saveTrade($trade);
 
-        $trade = $this->tradeService->newTestTrade($algo, $tradeType, $currentPrice);
+            /** TODO check order has been filled before */
+            $this->telegramBot->sendNewTradeMessage($_ENV['TELEGRAM_USER_ID'], $algo, $trade);
+            $this->algoManager->saveAlgo($algo);
 
-        /** TODO check order has been filled before */
-        $this->telegramBot->sendNewTradeMessage($_ENV['TELEGRAM_USER_ID'], $algo, $trade);
-        $this->algoManager->saveAlgo($algo);
+        } catch (APIException $apiException) {
+            $this->log($algo, "ERROR MAKING TRADE: $apiException");
+            $this->telegramBot->sendNewErrorMessage($_ENV['TELEGRAM_USER_ID'], $algo, $apiException);
+        }
+
+        //$trade = $this->tradeService->newTestTrade($algo, $tradeType, $currentPrice);
     }
 
     /**
@@ -215,9 +222,10 @@ class AlgoBotCommand extends Command
     private function calculateQuantity(int $tradeType, float $price, float $balance)
     {
         if($tradeType == TradeTypes::TRADE_BUY) {
-            return round($balance/$price, 5, PHP_ROUND_HALF_DOWN);
+            return floor(($balance/$price) * 1000000) / 1000000;
+            //return round($balance/$price, 6, PHP_ROUND_HALF_DOWN);
         } else {
-            return $balance;
+            return floor($balance * 1000000) / 1000000;
         }
     }
 

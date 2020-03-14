@@ -6,6 +6,7 @@ namespace App\Service;
 use App\Entity\BotAlgorithm;
 use App\Entity\Trade;
 use App\Entity\TradeTypes;
+use App\Exceptions\API\APIException;
 use Http\Adapter\Guzzle6\Client;
 use Http\Factory\Guzzle\RequestFactory;
 use Http\Factory\Guzzle\StreamFactory;
@@ -62,6 +63,23 @@ class TelegramBot
         $message .= "Signal type: $tradeType \n";
         $message .= "Price: {$trade->getPrice()} \n";
         $message .= "Algo: {$algo->getName()} \n";
+
+        $this->send($userID, $message);
+    }
+
+    /**
+     * @param $userID
+     * @param BotAlgorithm $algo
+     * @param APIException $exception
+     */
+    public function sendNewErrorMessage($userID, BotAlgorithm $algo, APIException $exception)
+    {
+        $symbol = $algo->getCurrencyPair()->getSymbol();
+
+        $message = "TRADE ERROR \n";
+        $message .= "Symbol: $symbol \n";
+        $message .= "Algo: {$algo->getName()} \n";
+        $message .= "$exception \n";
 
         $this->send($userID, $message);
     }

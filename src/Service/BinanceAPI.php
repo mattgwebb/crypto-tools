@@ -8,8 +8,12 @@ use App\Entity\BookOrderTypes;
 use App\Entity\Candle;
 use App\Entity\CurrencyPair;
 use App\Entity\Trade;
+use App\Entity\TradeStatusTypes;
 use App\Entity\TradeTypes;
-use Symfony\Component\HttpClient\HttpClient;
+use App\Exceptions\API\APIException;
+use Symfony\Component\HttpFoundation\Response;
+use Symfony\Contracts\HttpClient\ResponseInterface;
+
 
 class BinanceAPI extends ApiInterface
 {
@@ -27,6 +31,16 @@ class BinanceAPI extends ApiInterface
     private $tradeSides = [
         TradeTypes::TRADE_BUY => 'BUY',
         TradeTypes::TRADE_SELL => 'SELL'
+    ];
+
+    private $tradeStatuses = [
+        TradeStatusTypes::NEW => "NEW",
+        TradeStatusTypes::PARTIALLY_FILLED => "PARTIALLY_FILLED",
+        TradeStatusTypes::FILLED => "FILLED",
+        TradeStatusTypes::CANCELED => "CANCELED",
+        TradeStatusTypes::PENDING_CANCEL => "PENDING_CANCEL",
+        TradeStatusTypes::REJECTED => "REJECTED",
+        TradeStatusTypes::EXPIRED => "EXPIRED"
     ];
 
     /**
@@ -144,24 +158,27 @@ class BinanceAPI extends ApiInterface
      * @throws \Symfony\Contracts\HttpClient\Exception\RedirectionExceptionInterface
      * @throws \Symfony\Contracts\HttpClient\Exception\ServerExceptionInterface
      * @throws \Symfony\Contracts\HttpClient\Exception\TransportExceptionInterface
+     * @throws APIException
      */
     public function marketTrade(CurrencyPair $currencyPair, int $side, float $quantity): Trade
     {
         $type = $this->tradeTypes[TradeTypes::MARKET];
-        $side = $this->tradeSides[$side];
-        $timestamp = time() * 1000;
+        $apiSide = $this->tradeSides[$side];
+        //$timestamp = time() * 1000;
+        $timestamp = (int)round(microtime(true) * 1000);
 
         $query = [
             'symbol' => $currencyPair->getSymbol(),
-            'side' => $side,
+            'side' => $apiSide,
             'type' => $type,
             'quantity' => $quantity,
             'timestamp' => $timestamp,
+            'recvWindow' => 10000
         ];
 
-        $result = $this->newOrder($query);
-        /** TODO read data and create new trade */
-        return new Trade();
+        $trade = $this->newOrder($query);
+        $trade->setType($side);
+        return $trade;
     }
 
 
@@ -295,7 +312,8 @@ class BinanceAPI extends ApiInterface
 
     /**
      * @param array $query
-     * @return array
+     * @return Trade
+     * @throws APIException
      * @throws \Symfony\Contracts\HttpClient\Exception\ClientExceptionInterface
      * @throws \Symfony\Contracts\HttpClient\Exception\DecodingExceptionInterface
      * @throws \Symfony\Contracts\HttpClient\Exception\RedirectionExceptionInterface
@@ -305,13 +323,32 @@ class BinanceAPI extends ApiInterface
     private function newOrder(array $query)
     {
         $query = $this->addSignature($query);
-        $response = $this->httpClient->request('POST', $this->getAPIBaseRoute()."order/test",
+        $response = $this->httpClient->request('POST', $this->getAPIBaseRoute()."order",
                 [
                     'query' => $query,
                     'headers' => $this->getKeyHeader()
                 ]);
-        $data = $response->getContent(false);
-        return $response->toArray();
+        $this->checkForError($response);
+
+        $result = $response->toArray();
+
+        $trade = new Trade();
+
+        $totalQuantity = (float)$result['executedQty'];
+        $averagePrice = 0;
+
+        foreach($result['fills'] as $fill) {
+            $fillPrice = (float)$fill['price'];
+            $fillQuantity = (float)$fill['qty'];
+
+            $averagePrice += $fillPrice * ($fillQuantity / $totalQuantity);
+        }
+        $trade->setOrderId($result['orderId']);
+        $trade->setAmount($totalQuantity);
+        $trade->setPrice($averagePrice);
+        $trade->setTimeStamp((int)($result['transactTime']/1000));
+        $trade->setStatus($this->getInternalTradeStatus($result['status']));
+        return $trade;
     }
 
     /**
@@ -320,7 +357,7 @@ class BinanceAPI extends ApiInterface
      */
     private function addSignature(array $query)
     {
-        $secret = $_ENV['BINANCE_SECRET'];
+        $secret = $_ENV['BINANCE_BOT_SECRET'];
         $totalParams = http_build_query($query);
         $query['signature'] = hash_hmac("sha256", $totalParams, $secret);
         return $query;
@@ -332,7 +369,40 @@ class BinanceAPI extends ApiInterface
     private function getKeyHeader()
     {
         return  [
-            'X-MBX-APIKEY' => $_ENV['BINANCE_KEY']
+            'X-MBX-APIKEY' => $_ENV['BINANCE_BOT_KEY']
         ];
+    }
+
+    /**
+     * @param ResponseInterface $response
+     * @throws APIException
+     * @throws \Symfony\Contracts\HttpClient\Exception\ClientExceptionInterface
+     * @throws \Symfony\Contracts\HttpClient\Exception\DecodingExceptionInterface
+     * @throws \Symfony\Contracts\HttpClient\Exception\RedirectionExceptionInterface
+     * @throws \Symfony\Contracts\HttpClient\Exception\ServerExceptionInterface
+     * @throws \Symfony\Contracts\HttpClient\Exception\TransportExceptionInterface
+     */
+    private function checkForError(ResponseInterface $response)
+    {
+        try {
+            $response->getContent();
+        } catch (\Exception $ex) {
+            $data = $response->toArray(false);
+            throw new APIException((int)$data['code'], $data['msg']);
+        }
+    }
+
+    /**
+     * @param string $status
+     * @return int
+     */
+    private function getInternalTradeStatus(string $status)
+    {
+        foreach($this->tradeStatuses as $key => $string) {
+            if($string == $status) {
+                return $key;
+            }
+        }
+        return TradeStatusTypes::UNKNOWN;
     }
 }

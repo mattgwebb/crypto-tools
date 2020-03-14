@@ -9,6 +9,8 @@ use App\Entity\CurrencyPair;
 use App\Entity\Trade;
 use App\Entity\TradeStatusTypes;
 use App\Entity\TradeTypes;
+use App\Exceptions\API\APIException;
+use App\Exceptions\API\APINotFoundException;
 use Doctrine\ORM\EntityManagerInterface;
 
 class TradeService
@@ -39,7 +41,8 @@ class TradeService
      * @param int $side
      * @param float $quantity
      * @return Trade
-     * @throws \Exception
+     * @throws APINotFoundException
+     * @throws APIException
      */
     public function newMarketTrade(CurrencyPair $currencyPair, int $side, float $quantity)
     {
@@ -48,7 +51,7 @@ class TradeService
         }
         $api = $this->getAPI($currencyPair);
         if(!$api) {
-            throw new \Exception();
+            throw new APINotFoundException();
         }
 
         return $api->marketTrade($currencyPair, $side, $quantity);
@@ -76,8 +79,7 @@ class TradeService
         $trade->setStatus(TradeStatusTypes::FILLED);
         $trade->setMode($algo->getMode());
 
-        $this->entityManager->persist($trade);
-        $this->entityManager->flush();
+        $this->saveTrade($trade);
 
         return $trade;
     }
@@ -98,6 +100,15 @@ class TradeService
         }
 
         return $api->stopLossLimitTrade($currencyPair, $quantity, $price, $stopPrice);
+    }
+
+    /**
+     * @param Trade $trade
+     */
+    public function saveTrade(Trade $trade)
+    {
+        $this->entityManager->persist($trade);
+        $this->entityManager->flush();
     }
 
     /**

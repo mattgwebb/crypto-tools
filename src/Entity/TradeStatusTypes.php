@@ -13,4 +13,5 @@ abstract class TradeStatusTypes
     const PENDING_CANCEL = 5;
     const REJECTED = 6;
     const EXPIRED = 7;
+    const UNKNOWN = 8;
 }
