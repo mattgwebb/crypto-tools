@@ -345,7 +345,7 @@ class BinanceAPI extends ApiInterface
         }
         $trade->setOrderId($result['orderId']);
         $trade->setAmount($totalQuantity);
-        $trade->setPrice($averagePrice);
+        $trade->setFillPrice($averagePrice);
         $trade->setTimeStamp((int)($result['transactTime']/1000));
         $trade->setStatus($this->getInternalTradeStatus($result['status']));
         return $trade;

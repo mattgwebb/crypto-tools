@@ -201,6 +201,7 @@ class AlgoBotCommand extends Command
             $trade = $this->tradeService->newMarketTrade($algo->getCurrencyPair(), $tradeType, $quantity);
             $trade->setAlgo($algo);
             $trade->setMode($algo->getMode());
+            $trade->setPrice($currentPrice);
             $this->tradeService->saveTrade($trade);
 
             /** TODO check order has been filled before */
@@ -224,8 +225,8 @@ class AlgoBotCommand extends Command
     private function calculateQuantity(int $tradeType, float $price, float $balance)
     {
         if($tradeType == TradeTypes::TRADE_BUY) {
-            return floor(($balance/$price) * 1000000) / 1000000;
-            //return round($balance/$price, 6, PHP_ROUND_HALF_DOWN);
+            $quantity = ($balance / $price) * 0.95;
+            return floor($quantity * 1000000) / 1000000;
         } else {
             return floor($balance * 1000000) / 1000000;
         }

@@ -37,6 +37,11 @@ class Trade
     private $price;
 
     /**
+     * @ORM\Column(type="float")
+     */
+    private $fillPrice;
+
+    /**
      * @ORM\Column(type="integer")
      */
     private $timeStamp;
@@ -187,5 +192,21 @@ class Trade
     public function setMode($mode): void
     {
         $this->mode = $mode;
+    }
+
+    /**
+     * @return mixed
+     */
+    public function getFillPrice()
+    {
+        return $this->fillPrice;
+    }
+
+    /**
+     * @param mixed $fillPrice
+     */
+    public function setFillPrice($fillPrice): void
+    {
+        $this->fillPrice = $fillPrice;
     }
 }
