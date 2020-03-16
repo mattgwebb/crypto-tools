@@ -196,6 +196,8 @@ class AlgoBotCommand extends Command
         $balance = $this->dataService->loadBalance($currencyToUse);
         $quantity = $this->calculateQuantity($tradeType, $currentPrice, $balance);
 
+        $this->log($algo, "QUANTITY: $quantity, PRICE: $currentPrice");
+
         /** TODO it´s possible that the price changes and the balance is not enough to buy the amount, the trade needs to be created again */
         try {
             $trade = $this->tradeService->newMarketTrade($algo->getCurrencyPair(), $tradeType, $quantity);
