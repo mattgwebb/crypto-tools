@@ -4,28 +4,27 @@
 namespace App\Service;
 
 
+use App\Entity\BotAlgorithm;
 use App\Entity\Candle;
 use App\Entity\DivergenceLine;
 use App\Entity\DivergenceTypes;
 use App\Entity\IndicatorPoint;
 use App\Entity\IndicatorPointList;
 use App\Entity\StrategyResult;
+use App\Entity\StrategyTypes;
 use App\Entity\TrendLine;
-use Doctrine\Common\Collections\ArrayCollection;
-use phpDocumentor\Reflection\Types\Self_;
-use Symfony\Bundle\MakerBundle\Str;
 
 class Strategies
 {
 
     const STRATEGY_LIST = [
-        "rsiAndBollinger",
-        "rsiAndMacd",
-        "supportAndResistance",
-        "rsiDivergence",
-        "emaScalp",
-        "emaCrossover",
-        "goldenCross"
+        StrategyTypes::RSI_BOLLINGER,
+        StrategyTypes::RSI_MACD,
+        StrategyTypes::SUPPORT_RESISTANCE,
+        StrategyTypes::RSI_DIVERGENCE,
+        StrategyTypes::OBI_DIVERGENCE,
+        StrategyTypes::EMA_SCALP,
+        StrategyTypes::EMA_CROSSOVER
     ];
 
     /**
@@ -124,7 +123,7 @@ class Strategies
     /**
      * @return StrategyResult
      */
-    public function emaScalp()
+    public function emaScalp() : StrategyResult
     {
         $result = new StrategyResult();
         $red = $redp = $green = $greenp = [];
@@ -158,7 +157,7 @@ class Strategies
      * @param int $period2
      * @return StrategyResult
      */
-    public function emaCrossover($period1 = 10, $period2 = 20)
+    public function emaCrossover($period1 = 10, $period2 = 20) : StrategyResult
     {
         $period1EMA = $this->indicators->ema($this->data['close'], $period1);
         $period1PriorEMA = $this->indicators->ema($this->data['close'], $period1, 1); // prior
@@ -174,7 +173,7 @@ class Strategies
      * @param int $period2
      * @return StrategyResult
      */
-    public function goldenCross($period1 = 50, $period2 = 200)
+    public function goldenCross($period1 = 50, $period2 = 200) : StrategyResult
     {
         $period1MA = $this->indicators->ma($this->data['close'], $period1);
         $period1PriorMA = $this->indicators->ma($this->data['close'], $period1, 1); // prior
@@ -260,7 +259,7 @@ class Strategies
      * @param $period2Prior
      * @return StrategyResult
      */
-    private function checkCrossMovingAverages($period1, $period1Prior, $period2, $period2Prior)
+    private function checkCrossMovingAverages($period1, $period1Prior, $period2, $period2Prior) : StrategyResult
     {
         $result = new StrategyResult();
 
@@ -479,14 +478,20 @@ class Strategies
     }
 
     /**
-     * @param $strategy
+     * @param BotAlgorithm $algo
      * @return bool|StrategyResult
      */
-    public function runStrategy($strategy)
+    public function runStrategy(BotAlgorithm $algo)
     {
-        if(!in_array($strategy, self::STRATEGY_LIST)) {
-            return false;
+        $strategy = $algo->getStrategy();
+
+        if($strategy == StrategyTypes::EMA_CROSSOVER) {
+            $config = $algo->getEmaCrossoverConfig();
+            if(!$config) {
+                return false;
+            }
+            return $this->emaCrossover($config->getSmallPeriod(), $config->getLongPeriod());
         }
-        return call_user_func(array($this,$strategy));
+        return false;
     }
 }

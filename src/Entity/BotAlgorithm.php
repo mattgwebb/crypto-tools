@@ -2,6 +2,7 @@
 
 namespace App\Entity;
 
+use App\Entity\AlgorithmConfig\EmaCrossoverConfig;
 use Doctrine\ORM\Mapping as ORM;
 
 /**
@@ -65,6 +66,12 @@ class BotAlgorithm implements \JsonSerializable
      * @ORM\Column(type="smallint")
      */
     private $mode = AlgoModes::NOT_ACTIVE;
+
+    /**
+     * @ORM\OneToOne(targetEntity="App\Entity\AlgorithmConfig\EmaCrossoverConfig", mappedBy="algo")
+     * @var EmaCrossoverConfig
+     */
+    private $emaCrossoverConfig;
 
     /**
      * @return mixed
@@ -218,6 +225,22 @@ class BotAlgorithm implements \JsonSerializable
     public function setMode(int $mode): void
     {
         $this->mode = $mode;
+    }
+
+    /**
+     * @return EmaCrossoverConfig
+     */
+    public function getEmaCrossoverConfig(): EmaCrossoverConfig
+    {
+        return $this->emaCrossoverConfig;
+    }
+
+    /**
+     * @param EmaCrossoverConfig $emaCrossoverConfig
+     */
+    public function setEmaCrossoverConfig(EmaCrossoverConfig $emaCrossoverConfig): void
+    {
+        $this->emaCrossoverConfig = $emaCrossoverConfig;
     }
 
     /**

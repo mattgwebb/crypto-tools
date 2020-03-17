@@ -102,7 +102,7 @@ class BotAlgorithmManager
             $currentCandle = $auxData[count($auxData) - 1];
 
             $this->strategies->setData($auxData);
-            $result = $this->strategies->runStrategy($algo->getStrategy());
+            $result = $this->strategies->runStrategy($algo);
 
             if(!$result->noTrade()) {
                 $divergences[] = $result->getExtraData()['divergence_line'];
@@ -146,7 +146,7 @@ class BotAlgorithmManager
             $currentCandle = $auxData[count($auxData) - 1];
 
             $this->strategies->setData($auxData);
-            $result = $this->strategies->runStrategy($algo->getStrategy());
+            $result = $this->strategies->runStrategy($algo);
 
             if($openTradePrice > 0) {
                 if($algo->getStopLoss()) {
@@ -216,7 +216,7 @@ class BotAlgorithmManager
     public function runAlgo(BotAlgorithm $algo, $candles)
     {
         $this->strategies->setData($candles);
-        return $this->strategies->runStrategy($algo->getStrategy());
+        return $this->strategies->runStrategy($algo);
     }
 
     /**
