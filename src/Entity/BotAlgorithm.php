@@ -3,6 +3,7 @@
 namespace App\Entity;
 
 use App\Entity\AlgorithmConfig\EmaCrossoverConfig;
+use App\Entity\AlgorithmConfig\RsiConfig;
 use Doctrine\ORM\Mapping as ORM;
 
 /**
@@ -72,6 +73,12 @@ class BotAlgorithm implements \JsonSerializable
      * @var EmaCrossoverConfig
      */
     private $emaCrossoverConfig;
+
+    /**
+     * @ORM\OneToOne(targetEntity="App\Entity\AlgorithmConfig\RsiConfig", mappedBy="algo")
+     * @var RsiConfig
+     */
+    private $rsiConfig;
 
     /**
      * @return mixed
@@ -241,6 +248,22 @@ class BotAlgorithm implements \JsonSerializable
     public function setEmaCrossoverConfig(EmaCrossoverConfig $emaCrossoverConfig): void
     {
         $this->emaCrossoverConfig = $emaCrossoverConfig;
+    }
+
+    /**
+     * @return RsiConfig
+     */
+    public function getRsiConfig(): RsiConfig
+    {
+        return $this->rsiConfig;
+    }
+
+    /**
+     * @param RsiConfig $rsiConfig
+     */
+    public function setRsiConfig(RsiConfig $rsiConfig): void
+    {
+        $this->rsiConfig = $rsiConfig;
     }
 
     /**

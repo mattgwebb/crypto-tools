@@ -7,6 +7,7 @@ use Doctrine\ORM\Mapping as ORM;
 
 /**
  * @ORM\Entity(repositoryClass="App\Repository\AlgorithmConfig\EmaCrossoverConfigRepository")
+ * @ORM\Table(name="algo_ema_crossover_config")
  */
 class EmaCrossoverConfig
 {

@@ -485,13 +485,24 @@ class Strategies
     {
         $strategy = $algo->getStrategy();
 
+        if(!in_array($strategy, self::STRATEGY_LIST)) {
+            return false;
+        }
+
         if($strategy == StrategyTypes::EMA_CROSSOVER) {
             $config = $algo->getEmaCrossoverConfig();
             if(!$config) {
                 return false;
             }
             return $this->emaCrossover($config->getSmallPeriod(), $config->getLongPeriod());
+        } else if($strategy == StrategyTypes::RSI_BOLLINGER || StrategyTypes::RSI_MACD) {
+            $config = $algo->getRsiConfig();
+            if(!$config) {
+                return false;
+            }
+            return call_user_func(array($this,$strategy), $config->getSellOver(), $config->getBuyUnder());
+        } else  {
+            return call_user_func(array($this,$strategy));
         }
-        return false;
     }
 }
