@@ -86,15 +86,16 @@ class BatchAlgoTestCommand extends Command
         }
 
         /** @var CurrencyPair $pair */
-        $pair = $this->entityManager
+        /*$pair = $this->entityManager
             ->getRepository(CurrencyPair::class)
             ->find(1);
 
-        $algo->setCurrencyPair($pair);
+        $algo->setCurrencyPair($pair);*/
 
         foreach(self::ALL_TIMEFRAMES as $timeFrame) {
             $algo->setTimeFrame($timeFrame);
             $this->algoManager->runTest($algo, $input->getArgument('start_time'), $input->getArgument('end_time'));
+            $this->entityManager->clear(Candle::class);
         }
 
 //        /** @var Exchange $binanceExchange */
