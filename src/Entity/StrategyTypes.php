@@ -13,4 +13,5 @@ abstract class StrategyTypes
     const OBI_DIVERGENCE = "obvDivergence";
     const EMA_SCALP = "emaScalp";
     const EMA_CROSSOVER = "emaCrossover";
+    const MA_CROSSOVER = "maCrossover";
 }

@@ -2,7 +2,7 @@
 
 namespace App\Entity;
 
-use App\Entity\AlgorithmConfig\EmaCrossoverConfig;
+use App\Entity\AlgorithmConfig\MovingAverageCrossoverConfig;
 use App\Entity\AlgorithmConfig\RsiConfig;
 use Doctrine\ORM\Mapping as ORM;
 
@@ -24,7 +24,7 @@ class BotAlgorithm implements \JsonSerializable
     }
 
     /**
-     * @ORM\ManyToOne(targetEntity="App\Entity\CurrencyPair")
+     * @ORM\ManyToOne(targetEntity="App\Entity\CurrencyPair", inversedBy="algos")
      */
     private $currencyPair;
 
@@ -69,10 +69,10 @@ class BotAlgorithm implements \JsonSerializable
     private $mode = AlgoModes::NOT_ACTIVE;
 
     /**
-     * @ORM\OneToOne(targetEntity="App\Entity\AlgorithmConfig\EmaCrossoverConfig", mappedBy="algo")
-     * @var EmaCrossoverConfig
+     * @ORM\OneToOne(targetEntity="App\Entity\AlgorithmConfig\MovingAverageCrossoverConfig", mappedBy="algo")
+     * @var MovingAverageCrossoverConfig
      */
-    private $emaCrossoverConfig;
+    private $maCrossoverConfig;
 
     /**
      * @ORM\OneToOne(targetEntity="App\Entity\AlgorithmConfig\RsiConfig", mappedBy="algo")
@@ -235,19 +235,19 @@ class BotAlgorithm implements \JsonSerializable
     }
 
     /**
-     * @return EmaCrossoverConfig
+     * @return MovingAverageCrossoverConfig
      */
-    public function getEmaCrossoverConfig(): EmaCrossoverConfig
+    public function getMaCrossoverConfig(): MovingAverageCrossoverConfig
     {
-        return $this->emaCrossoverConfig;
+        return $this->maCrossoverConfig;
     }
 
     /**
-     * @param EmaCrossoverConfig $emaCrossoverConfig
+     * @param MovingAverageCrossoverConfig $maCrossoverConfig
      */
-    public function setEmaCrossoverConfig(EmaCrossoverConfig $emaCrossoverConfig): void
+    public function setMaCrossoverConfig(MovingAverageCrossoverConfig $maCrossoverConfig): void
     {
-        $this->emaCrossoverConfig = $emaCrossoverConfig;
+        $this->maCrossoverConfig = $maCrossoverConfig;
     }
 
     /**

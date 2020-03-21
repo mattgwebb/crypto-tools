@@ -24,7 +24,8 @@ class Strategies
         StrategyTypes::RSI_DIVERGENCE,
         StrategyTypes::OBI_DIVERGENCE,
         StrategyTypes::EMA_SCALP,
-        StrategyTypes::EMA_CROSSOVER
+        StrategyTypes::EMA_CROSSOVER,
+        StrategyTypes::MA_CROSSOVER
     ];
 
     /**
@@ -173,7 +174,7 @@ class Strategies
      * @param int $period2
      * @return StrategyResult
      */
-    public function goldenCross($period1 = 50, $period2 = 200) : StrategyResult
+    public function maCrossover($period1 = 10, $period2 = 50) : StrategyResult
     {
         $period1MA = $this->indicators->ma($this->data['close'], $period1);
         $period1PriorMA = $this->indicators->ma($this->data['close'], $period1, 1); // prior
@@ -489,12 +490,12 @@ class Strategies
             return false;
         }
 
-        if($strategy == StrategyTypes::EMA_CROSSOVER) {
-            $config = $algo->getEmaCrossoverConfig();
+        if($strategy == StrategyTypes::EMA_CROSSOVER || $strategy == StrategyTypes::MA_CROSSOVER) {
+            $config = $algo->getMaCrossoverConfig();
             if(!$config) {
                 return false;
             }
-            return $this->emaCrossover($config->getSmallPeriod(), $config->getLongPeriod());
+            return call_user_func(array($this,$strategy), $config->getSmallPeriod(), $config->getLongPeriod());
         } else if($strategy == StrategyTypes::RSI_BOLLINGER || StrategyTypes::RSI_MACD) {
             $config = $algo->getRsiConfig();
             if(!$config) {

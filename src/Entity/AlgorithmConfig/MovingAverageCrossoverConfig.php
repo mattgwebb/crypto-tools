@@ -7,14 +7,14 @@ use Doctrine\ORM\Mapping as ORM;
 
 /**
  * @ORM\Entity(repositoryClass="App\Repository\AlgorithmConfig\EmaCrossoverConfigRepository")
- * @ORM\Table(name="algo_ema_crossover_config")
+ * @ORM\Table(name="algo_ma_crossover_config")
  */
-class EmaCrossoverConfig
+class MovingAverageCrossoverConfig
 {
 
     /**
      * @ORM\Id()
-     * @ORM\OneToOne(targetEntity="App\Entity\BotAlgorithm", inversedBy="emaCrossoverConfig")
+     * @ORM\OneToOne(targetEntity="App\Entity\BotAlgorithm", inversedBy="maCrossoverConfig")
      * @var BotAlgorithm
      */
     private $algo;
