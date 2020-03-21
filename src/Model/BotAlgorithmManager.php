@@ -117,10 +117,12 @@ class BotAlgorithmManager
      * @param int $from
      * @param int $to
      * @param int $candlesToLoad
+     * @param bool $logAllTrades
      * @return array
      * @throws \Exception
      */
-    public function runTest(BotAlgorithm $algo, int $from = 0, int $to = 0, int $candlesToLoad = self::CANDLES_TO_LOAD)
+    public function runTest(BotAlgorithm $algo, int $from = 0, int $to = 0,
+                            int $candlesToLoad = self::CANDLES_TO_LOAD, bool $logAllTrades= true)
     {
         $this->logger->info("********************* New test  ************************");
         $this->logger->info(json_encode($algo));
@@ -176,8 +178,9 @@ class BotAlgorithmManager
                     "price" => $openTradePrice];
                 $trades[] = $trade;
 
-                $this->logger->info(json_encode($trade));
-
+                if($logAllTrades) {
+                    $this->logger->info(json_encode($trade));
+                }
             }
             if(($result->isShort() || $short) && $openTradePrice > 0) {
                 $percentage = ($currentCandle->getClosePrice()/$openTradePrice) - 1;
@@ -193,7 +196,9 @@ class BotAlgorithmManager
                     "stopLoss_takeProfit" => $short];
                 $trades[] = $trade;
 
-                $this->logger->info(json_encode($trade));
+                if($logAllTrades) {
+                    $this->logger->info(json_encode($trade));
+                }
                 $openTradePrice = 0;
             }
 
