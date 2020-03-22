@@ -4,6 +4,7 @@
 namespace App\Model;
 
 
+use App\Entity\AlgoTestResult;
 use App\Entity\BotAlgorithm;
 use App\Entity\Candle;
 use App\Entity\StrategyResult;
@@ -127,6 +128,8 @@ class BotAlgorithmManager
         $this->logger->info("********************* New test  ************************");
         $this->logger->info(json_encode($algo));
 
+        $initialFrom = $from;
+
         $lastPositionCandles = $candlesToLoad - 1;
 
         $from -= $lastPositionCandles * ($algo->getTimeFrame() * 60);
@@ -136,6 +139,8 @@ class BotAlgorithmManager
         $totalPercentage = 0;
 
         $initialInvestment = 1000;
+
+        $testResult = new AlgoTestResult();
 
         $trades = [];
         for($i=$lastPositionCandles; $i < count($candles); $i++) {
@@ -206,6 +211,20 @@ class BotAlgorithmManager
         }
 
         $percentage = (($initialInvestment / 1000) - 1) * 100;
+
+        if(isset($currentCandle)) {
+            $testResult->setAlgo($algo);
+            $testResult->setPercentage($percentage);
+            $testResult->setTimestamp(time());
+            $testResult->setTrades(count($trades));
+            $testResult->setStartTime($initialFrom);
+            $testResult->setEndTime($currentCandle->getCloseTime());
+            $testResult->setTimeFrame($algo->getTimeFrame());
+
+            $this->entityManager->persist($testResult);
+            $this->entityManager->flush();
+        }
+
         $trade = "percentage $percentage";
         //$trades[] = $trade;
         $this->logger->info($trade);

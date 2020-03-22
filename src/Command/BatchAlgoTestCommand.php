@@ -5,7 +5,6 @@ namespace App\Command;
 
 
 use App\Entity\BotAlgorithm;
-use App\Entity\Candle;
 use App\Entity\CurrencyPair;
 use App\Entity\TimeFrames;
 use App\Model\BotAlgorithmManager;
@@ -96,7 +95,6 @@ class BatchAlgoTestCommand extends Command
         foreach(self::ALL_TIMEFRAMES as $timeFrame) {
             $algo->setTimeFrame($timeFrame);
             $this->algoManager->runTest($algo, $input->getArgument('start_time'), $input->getArgument('end_time'));
-            $this->entityManager->clear(Candle::class);
         }
 
 //        /** @var Exchange $binanceExchange */

@@ -48,7 +48,7 @@ class CurrencyPairRepository extends ServiceEntityRepository
         /** @var Candle $candle */
         foreach($allCandles as $candle) {
             if($i == 1) {
-                $aux = $candle;
+                $aux = $this->copyCandleData($candle);
             } else {
                 if($candle->getHighPrice() > $aux->getHighPrice()) {
                     $aux->setHighPrice($candle->getHighPrice());
@@ -70,5 +70,27 @@ class CurrencyPairRepository extends ServiceEntityRepository
             $i++;
         }
         return $candles;
+    }
+
+    /**
+     * @param Candle $candle
+     * @return Candle
+     */
+    private function copyCandleData(Candle $candle)
+    {
+        $newCandle = new Candle();
+        $newCandle->setClosePrice($candle->getClosePrice());
+        $newCandle->setCloseTime($candle->getCloseTime());
+        $newCandle->setOpenPrice($candle->getOpenPrice());
+        $newCandle->setOpenTime($candle->getOpenTime());
+
+        $newCandle->setHighPrice($candle->getHighPrice());
+        $newCandle->setLowPrice($candle->getLowPrice());
+
+        $newCandle->setVolume($candle->getVolume());
+
+        $newCandle->setCurrencyPair($candle->getCurrencyPair());
+
+        return $newCandle;
     }
 }
