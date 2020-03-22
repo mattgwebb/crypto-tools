@@ -5,6 +5,7 @@ namespace App\Command;
 
 
 use App\Entity\BotAlgorithm;
+use App\Entity\Candle;
 use App\Entity\CurrencyPair;
 use App\Entity\TimeFrames;
 use App\Model\BotAlgorithmManager;
