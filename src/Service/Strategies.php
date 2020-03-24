@@ -496,7 +496,7 @@ class Strategies
                 return false;
             }
             return call_user_func(array($this,$strategy), $config->getSmallPeriod(), $config->getLongPeriod());
-        } else if($strategy == StrategyTypes::RSI_BOLLINGER || StrategyTypes::RSI_MACD) {
+        } else if($strategy == StrategyTypes::RSI_BOLLINGER || $strategy == StrategyTypes::RSI_MACD) {
             $config = $algo->getRsiConfig();
             if(!$config) {
                 return false;
