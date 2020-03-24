@@ -23,6 +23,7 @@ class Strategies
         StrategyTypes::MACD,
         StrategyTypes::RSI_BOLLINGER,
         StrategyTypes::RSI_MACD,
+        StrategyTypes::MACD_BOLLINGER,
         StrategyTypes::SUPPORT_RESISTANCE,
         StrategyTypes::RSI_DIVERGENCE,
         StrategyTypes::OBI_DIVERGENCE,
@@ -165,6 +166,24 @@ class Strategies
             $result->setTradeResult(StrategyResult::TRADE_SHORT);
         }
 
+        return $result;
+    }
+
+    /**
+     * @return StrategyResult
+     */
+    public function macdAndBollinger() : StrategyResult
+    {
+        $result = new StrategyResult();
+
+        $bollingerResult = $this->bollingerBands();
+        $macdResult = $this->macd();
+
+        if($macdResult->isLong() && $bollingerResult->isLong()) {
+            $result->setTradeResult(StrategyResult::TRADE_LONG);
+        } else if($macdResult->isShort() && $bollingerResult->isShort()) {
+            $result->setTradeResult(StrategyResult::TRADE_SHORT);
+        }
         return $result;
     }
 

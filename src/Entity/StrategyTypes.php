@@ -11,6 +11,7 @@ abstract class StrategyTypes
     const MACD = "macd";
     const RSI_BOLLINGER = "rsiAndBollinger";
     const RSI_MACD = "rsiAndMacd";
+    const MACD_BOLLINGER = "macdAndBollinger";
     const SUPPORT_RESISTANCE = "supportAndResistance";
     const RSI_DIVERGENCE = "rsiDivergence";
     const OBI_DIVERGENCE = "obvDivergence";
