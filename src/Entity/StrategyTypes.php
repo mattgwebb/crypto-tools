@@ -6,6 +6,9 @@ namespace App\Entity;
 
 abstract class StrategyTypes
 {
+    const RSI = "rsi";
+    const BOLLINGER_BANDS = "bollingerBands";
+    const MACD = "macd";
     const RSI_BOLLINGER = "rsiAndBollinger";
     const RSI_MACD = "rsiAndMacd";
     const SUPPORT_RESISTANCE = "supportAndResistance";

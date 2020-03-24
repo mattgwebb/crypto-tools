@@ -18,6 +18,9 @@ class Strategies
 {
 
     const STRATEGY_LIST = [
+        StrategyTypes::RSI,
+        StrategyTypes::BOLLINGER_BANDS,
+        StrategyTypes::MACD,
         StrategyTypes::RSI_BOLLINGER,
         StrategyTypes::RSI_MACD,
         StrategyTypes::SUPPORT_RESISTANCE,
@@ -70,51 +73,95 @@ class Strategies
         $this->currentPrice = $currentPrice;
     }
 
-
-
-    public function rsiAndBollinger(float $rsiSell = 70.00, float $rsiBuy = 30.00) : StrategyResult
+    /**
+     * @param float $rsiSell
+     * @param float $rsiBuy
+     * @return StrategyResult
+     */
+    public function rsi(float $rsiSell = 70.00, float $rsiBuy = 30.00) : StrategyResult
     {
-        list($highBand, $lowBand) = $this->indicators->bollingerBands($this->data);
-
-        if($this->currentPrice < $lowBand) {
-            $bollingerResult = StrategyResult::TRADE_LONG;
-        } else if($this->currentPrice > $highBand) {
-            $bollingerResult = StrategyResult::TRADE_SHORT;
-        } else {
-            $bollingerResult = StrategyResult::NO_TRADE;
-        }
-
+        $result = new StrategyResult();
         $rsi = $this->indicators->rsi($this->data);
 
         if($rsi < $rsiBuy) {
-            $rsiResult = StrategyResult::TRADE_LONG;
-        } else if($rsi > $rsiSell) {
-            $rsiResult = StrategyResult::TRADE_SHORT;
-        } else {
-            $rsiResult = StrategyResult::NO_TRADE;
-        }
-
-        $result = new StrategyResult();
-
-        if($rsiResult == StrategyResult::TRADE_LONG && $bollingerResult == StrategyResult::TRADE_LONG) {
             $result->setTradeResult(StrategyResult::TRADE_LONG);
-        } else if($rsiResult == StrategyResult::TRADE_SHORT && $bollingerResult == StrategyResult::TRADE_SHORT) {
+        } else if($rsi > $rsiSell) {
             $result->setTradeResult(StrategyResult::TRADE_SHORT);
+        } else {
+            $result->setTradeResult(StrategyResult::NO_TRADE);
         }
-
         return $result;
     }
 
-    public function rsiAndMacd(float $rsiSell = 70.00, float $rsiBuy = 30.00) : StrategyResult
+    /**
+     * @return StrategyResult
+     */
+    public function bollingerBands() : StrategyResult
     {
-        $macd = $this->indicators->macd($this->data);
-        $rsi = $this->indicators->rsi($this->data);
+        $result = new StrategyResult();
+        list($highBand, $lowBand) = $this->indicators->bollingerBands($this->data);
 
+        if($this->currentPrice < $lowBand) {
+            $result->setTradeResult(StrategyResult::TRADE_LONG);
+        } else if($this->currentPrice > $highBand) {
+            $result->setTradeResult(StrategyResult::TRADE_SHORT);
+        } else {
+            $result->setTradeResult(StrategyResult::NO_TRADE);
+        }
+        return $result;
+    }
+
+    /**
+     * @return StrategyResult
+     */
+    public function macd()
+    {
+        $result = new StrategyResult();
+        $macd = $this->indicators->macd($this->data);
+
+        if($macd > 0) {
+            $result->setTradeResult(StrategyResult::TRADE_LONG);
+        } else {
+            $result->setTradeResult(StrategyResult::TRADE_SHORT);
+        }
+        return $result;
+    }
+
+    /**
+     * @param float $rsiSell
+     * @param float $rsiBuy
+     * @return StrategyResult
+     */
+    public function rsiAndBollinger(float $rsiSell = 70.00, float $rsiBuy = 30.00) : StrategyResult
+    {
         $result = new StrategyResult();
 
-        if($rsi < $rsiBuy && $macd > 0) {
+        $bollingerResult = $this->bollingerBands();
+        $rsiResult = $this->rsi($rsiSell, $rsiBuy);
+
+        if($rsiResult->isLong() && $bollingerResult->isLong()) {
             $result->setTradeResult(StrategyResult::TRADE_LONG);
-        } else if($rsi > $rsiSell && $macd < 0) {
+        } else if($rsiResult->isShort() && $bollingerResult->isShort()) {
+            $result->setTradeResult(StrategyResult::TRADE_SHORT);
+        }
+        return $result;
+    }
+
+    /**
+     * @param float $rsiSell
+     * @param float $rsiBuy
+     * @return StrategyResult
+     */
+    public function rsiAndMacd(float $rsiSell = 70.00, float $rsiBuy = 30.00) : StrategyResult
+    {
+        $result = new StrategyResult();
+
+        $macdResult = $this->macd();
+        $rsiResult = $this->rsi($rsiSell, $rsiBuy);
+
+        if($macdResult->isLong() && $rsiResult->isLong()) {
+            $result->setTradeResult(StrategyResult::TRADE_LONG);
+        } else if($macdResult->isShort() && $rsiResult->isShort()) {
             $result->setTradeResult(StrategyResult::TRADE_SHORT);
         }
 
