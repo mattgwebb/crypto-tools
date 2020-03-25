@@ -32,6 +32,12 @@ class RsiConfig
     private $sellOver;
 
     /**
+     * @ORM\Column(type="integer")
+     * @var int
+     */
+    private $calculationPeriod;
+
+    /**
      * @return BotAlgorithm
      */
     public function getAlgo(): BotAlgorithm
@@ -77,5 +83,21 @@ class RsiConfig
     public function setSellOver(float $sellOver): void
     {
         $this->sellOver = $sellOver;
+    }
+
+    /**
+     * @return int
+     */
+    public function getPeriod(): int
+    {
+        return $this->calculationPeriod;
+    }
+
+    /**
+     * @param int $period
+     */
+    public function setPeriod(int $period): void
+    {
+        $this->calculationPeriod = $period;
     }
 }

@@ -77,12 +77,13 @@ class Strategies
     /**
      * @param float $rsiSell
      * @param float $rsiBuy
+     * @param int $period
      * @return StrategyResult
      */
-    public function rsi(float $rsiSell = 70.00, float $rsiBuy = 30.00) : StrategyResult
+    public function rsi(float $rsiSell = 70.00, float $rsiBuy = 30.00, int $period = 14) : StrategyResult
     {
         $result = new StrategyResult();
-        $rsi = $this->indicators->rsi($this->data);
+        $rsi = $this->indicators->rsi($this->data, $period);
 
         if($rsi < $rsiBuy) {
             $result->setTradeResult(StrategyResult::TRADE_LONG);
@@ -131,14 +132,15 @@ class Strategies
     /**
      * @param float $rsiSell
      * @param float $rsiBuy
+     * @param int $period
      * @return StrategyResult
      */
-    public function rsiAndBollinger(float $rsiSell = 70.00, float $rsiBuy = 30.00) : StrategyResult
+    public function rsiAndBollinger(float $rsiSell = 70.00, float $rsiBuy = 30.00, int $period = 14) : StrategyResult
     {
         $result = new StrategyResult();
 
         $bollingerResult = $this->bollingerBands();
-        $rsiResult = $this->rsi($rsiSell, $rsiBuy);
+        $rsiResult = $this->rsi($rsiSell, $rsiBuy, $period);
 
         if($rsiResult->isLong() && $bollingerResult->isLong()) {
             $result->setTradeResult(StrategyResult::TRADE_LONG);
@@ -151,14 +153,15 @@ class Strategies
     /**
      * @param float $rsiSell
      * @param float $rsiBuy
+     * @param int $period
      * @return StrategyResult
      */
-    public function rsiAndMacd(float $rsiSell = 70.00, float $rsiBuy = 30.00) : StrategyResult
+    public function rsiAndMacd(float $rsiSell = 70.00, float $rsiBuy = 30.00, int $period = 14) : StrategyResult
     {
         $result = new StrategyResult();
 
         $macdResult = $this->macd();
-        $rsiResult = $this->rsi($rsiSell, $rsiBuy);
+        $rsiResult = $this->rsi($rsiSell, $rsiBuy, $period);
 
         if($macdResult->isLong() && $rsiResult->isLong()) {
             $result->setTradeResult(StrategyResult::TRADE_LONG);
@@ -567,7 +570,7 @@ class Strategies
             if(!$config) {
                 return false;
             }
-            return call_user_func(array($this,$strategy), $config->getSellOver(), $config->getBuyUnder());
+            return call_user_func(array($this,$strategy), $config->getSellOver(), $config->getBuyUnder(), $config->getPeriod());
         } else  {
             return call_user_func(array($this,$strategy));
         }
