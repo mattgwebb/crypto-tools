@@ -4,7 +4,8 @@
 namespace App\Model;
 
 
-use App\Entity\BotAlgorithm;
+use App\Entity\Algorithm\BotAlgorithm;
+use App\Entity\Data\Candle;
 use App\Repository\CandleRepository;
 use App\Repository\CurrencyPairRepository;
 
@@ -37,7 +38,7 @@ class CandleManager
      * @param BotAlgorithm $algo
      * @param int $loadFrom
      * @param int $lastOpen
-     * @return \App\Entity\Candle[]
+     * @return Candle[]
      */
     public function getCandlesByTimeFrame(BotAlgorithm $algo, int $loadFrom, int $lastOpen)
     {
@@ -47,7 +48,7 @@ class CandleManager
 
     /**
      * @param int $id
-     * @return \App\Entity\Candle|null
+     * @return Candle|null
      */
     public function getCandle(int $id)
     {

@@ -4,15 +4,15 @@
 namespace App\Command;
 
 
-use App\Entity\BotAlgorithm;
-use App\Entity\Candle;
-use App\Entity\TradeTypes;
+use App\Entity\Algorithm\BotAlgorithm;
+use App\Entity\Data\Candle;
+use App\Entity\Trade\TradeTypes;
 use App\Exceptions\API\APIException;
 use App\Model\BotAlgorithmManager;
 use App\Model\CandleManager;
-use App\Service\ExternalDataService;
-use App\Service\TelegramBot;
-use App\Service\TradeService;
+use App\Service\Data\ExternalDataService;
+use App\Service\ThirdPartyAPIs\TelegramBot;
+use App\Service\Trade\TradeService;
 use Doctrine\ORM\EntityManagerInterface;
 use Psr\Log\LoggerInterface;
 use Symfony\Component\Console\Command\Command;

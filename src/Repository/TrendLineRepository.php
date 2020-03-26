@@ -2,7 +2,7 @@
 
 namespace App\Repository;
 
-use App\Entity\TrendLine;
+use App\Entity\TechnicalAnalysis\TrendLine;
 use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
 use Doctrine\Common\Persistence\ManagerRegistry;
 

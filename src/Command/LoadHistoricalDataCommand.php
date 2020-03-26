@@ -3,12 +3,12 @@
 
 namespace App\Command;
 
-use App\Entity\Candle;
-use App\Entity\CurrencyPair;
-use App\Entity\Exchange;
-use App\Entity\TimeFrames;
-use App\Service\ApiFactory;
-use App\Service\ApiInterface;
+use App\Entity\Data\Candle;
+use App\Entity\Data\CurrencyPair;
+use App\Entity\Data\Exchange;
+use App\Entity\Data\TimeFrames;
+use App\Service\Exchanges\ApiFactory;
+use App\Service\Exchanges\ApiInterface;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputArgument;

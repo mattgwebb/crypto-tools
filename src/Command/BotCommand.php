@@ -4,11 +4,11 @@
 namespace App\Command;
 
 
-use App\Entity\AlgoModes;
-use App\Entity\BotAlgorithm;
-use App\Entity\Candle;
-use App\Entity\CurrencyPair;
-use App\Service\ExternalDataService;
+use App\Entity\Algorithm\AlgoModes;
+use App\Entity\Algorithm\BotAlgorithm;
+use App\Entity\Data\Candle;
+use App\Entity\Data\CurrencyPair;
+use App\Service\Data\ExternalDataService;
 use Doctrine\ORM\EntityManagerInterface;
 use Psr\Log\LoggerInterface;
 use Symfony\Component\Console\Command\Command;

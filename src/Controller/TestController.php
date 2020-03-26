@@ -2,11 +2,11 @@
 
 namespace App\Controller;
 
-use App\Entity\BotAlgorithm;
-use App\Entity\CurrencyPair;
-use App\Entity\TimeFrames;
+use App\Entity\Algorithm\BotAlgorithm;
+use App\Entity\Data\CurrencyPair;
+use App\Entity\Data\TimeFrames;
 use App\Model\BotAlgorithmManager;
-use App\Service\Strategies;
+use App\Service\TechnicalAnalysis\Strategies;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;

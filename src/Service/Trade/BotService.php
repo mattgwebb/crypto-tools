@@ -1,7 +1,7 @@
 <?php
 
 
-namespace App\Command;
+namespace App\Service\Trade;
 
 
 use App\Entity\Algorithm\BotAlgorithm;
@@ -10,64 +10,20 @@ use App\Entity\Trade\TradeTypes;
 use App\Kernel;
 use App\Model\BotAlgorithmManager;
 use App\Model\CandleManager;
-use App\Service\Data\ExternalDataService;
-use App\Service\ThirdPartyAPIs\TelegramBot;
-use App\Service\Trade\TradeService;
 use Symfony\Component\DependencyInjection\ContainerInterface;
 
-class BotProcess extends \Thread
+class BotService
 {
-
-    /**
-     * @var int
-     */
-    private $algoId;
-
-    /**
-     * @var float
-     */
-    private $lastPrice;
-
-    /**
-     * @var int
-     */
-    private $lastCandleId;
-
-    /**
-     * @var string
-     */
-    private $environment;
-
-    /**
-     * @var bool
-     */
-    private $debug;
-
-    /**
-     * BotProcess constructor.
-     * @param int $algoId
-     * @param float $lastPrice
-     * @param int $lastCandleId
-     * @param string $environment
-     * @param bool $debug
-     */
-    public function __construct(int $algoId, float $lastPrice, int $lastCandleId, string $environment, bool $debug)
+    public function runBot(int $algoId, float $lastPrice, int $lastCandleId)
     {
-        $this->algoId = $algoId;
-        $this->lastPrice = $lastPrice;
-        $this->lastCandleId = $lastCandleId;
-        $this->environment = $environment;
-        $this->debug = $debug;
-    }
+        $kernelEnv = $GLOBALS['kernel']->getEnvironment();
+        $kernelDebug = $GLOBALS['kernel']->isDebug();
+
+        require_once __DIR__ . '/../../vendor/autoload.php';
+        require_once __DIR__ . '/../Kernel.php';
 
 
-    public function run()
-    {
-        require_once __DIR__.'/../../vendor/autoload.php';
-        require_once __DIR__.'/../Kernel.php';
-
-
-        $kernelInThread = new Kernel($this->environment, $this->debug);
+        $kernelInThread = new Kernel($kernelEnv, $kernelDebug);
         $kernelInThread->boot();
 
         $container = $kernelInThread->getContainer();
@@ -77,11 +33,14 @@ class BotProcess extends \Thread
         /** @var CandleManager $candleManager */
         $candleManager = $container->get('App\Model\CandleManager');
 
+        /** @var Candle $lastCandle */
+        $lastCandle = $candleManager->getCandle($lastCandleId);
         /** @var BotAlgorithm $algo */
-        $algo = $algoManager->getAlgo($this->algoId);
+        $algo = $algoManager->getAlgo($algoId);
 
         try {
             $this->log("RUNNING BOT USING ALGO ".$algo->getId()." ".$algo->getName());
+            sleep(5);
 
             /*if($algoManager->checkStopLossAndTakeProfit($algo, $lastPrice)->isShort()) {
                 $this->output->writeln(["NEW SHORT TRADE (STOP LOSS/TAKE PROFIT)"]);
@@ -89,11 +48,8 @@ class BotProcess extends \Thread
                 return;
             }*/
 
-            if($this->lastCandleId != 0) {
-                /** @var Candle $lastCandle */
-                $lastCandle = $candleManager->getCandle($this->lastCandleId);
+            if($lastCandle) {
                 $timeFrameSeconds = $algo->getTimeFrame() * 60;
-
                 if($this->checkTimeFrameClose($lastCandle->getCloseTime(), $timeFrameSeconds)) {
                     $this->log("CHECKING FOR NEW TRADE");
 
@@ -105,10 +61,10 @@ class BotProcess extends \Thread
 
                     if($algo->isLong() && $result->isShort()) {
                         $this->log("NEW SHORT TRADE");
-                        $this->newOrder($algo, TradeTypes::TRADE_SELL, $this->lastPrice, $container);
+                        $this->newOrder($algo, TradeTypes::TRADE_SELL, $lastPrice, $container);
                     } else if($algo->isShort() && $result->isLong()) {
                         $this->log("NEW LONG TRADE");
-                        $this->newOrder($algo, TradeTypes::TRADE_BUY, $this->lastPrice, $container);
+                        $this->newOrder($algo, TradeTypes::TRADE_BUY, $lastPrice, $container);
                     } else {
                         $this->log("NO NEW TRADE");
                     }
@@ -219,4 +175,5 @@ class BotProcess extends \Thread
         $now = time();
         return (int)(floor($now / $timeFrameSeconds) * $timeFrameSeconds);
     }
+
 }

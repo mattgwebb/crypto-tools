@@ -4,14 +4,14 @@
 namespace App\Model;
 
 
-use App\Entity\AlgoTestResult;
-use App\Entity\BotAlgorithm;
-use App\Entity\Candle;
-use App\Entity\StrategyResult;
+use App\Entity\Algorithm\AlgoTestResult;
+use App\Entity\Algorithm\BotAlgorithm;
+use App\Entity\Data\Candle;
+use App\Entity\Algorithm\StrategyResult;
 use App\Repository\BotAlgorithmRepository;
 use App\Repository\CurrencyPairRepository;
 use App\Repository\TradeRepository;
-use App\Service\Strategies;
+use App\Service\TechnicalAnalysis\Strategies;
 use Doctrine\ORM\EntityManagerInterface;
 use Doctrine\ORM\NonUniqueResultException;
 use Psr\Log\LoggerInterface;

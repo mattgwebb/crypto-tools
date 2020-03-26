@@ -2,9 +2,9 @@
 
 namespace App\Repository;
 
-use App\Entity\Candle;
-use App\Entity\Currency;
-use App\Entity\TimeFrames;
+use App\Entity\Data\Candle;
+use App\Entity\Data\Currency;
+use App\Entity\Data\TimeFrames;
 use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Persistence\ManagerRegistry;

@@ -4,9 +4,9 @@
 namespace App\Command;
 
 
-use App\Entity\BotAlgorithm;
-use App\Entity\CurrencyPair;
-use App\Entity\TimeFrames;
+use App\Entity\Algorithm\BotAlgorithm;
+use App\Entity\Data\CurrencyPair;
+use App\Entity\Data\TimeFrames;
 use App\Model\BotAlgorithmManager;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Component\Console\Command\Command;

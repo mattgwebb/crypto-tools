@@ -2,9 +2,9 @@
 
 namespace App\Repository;
 
-use App\Entity\BotAlgorithm;
-use App\Entity\Trade;
-use App\Entity\TradeTypes;
+use App\Entity\Algorithm\BotAlgorithm;
+use App\Entity\Trade\Trade;
+use App\Entity\Trade\TradeTypes;
 use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
 use Doctrine\Common\Persistence\ManagerRegistry;
 

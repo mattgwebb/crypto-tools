@@ -2,9 +2,9 @@
 
 namespace App\Repository;
 
-use App\Entity\Candle;
-use App\Entity\Currency;
-use App\Entity\CurrencyPair;
+use App\Entity\Data\Candle;
+use App\Entity\Data\Currency;
+use App\Entity\Data\CurrencyPair;
 use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
 use Doctrine\Common\Persistence\ManagerRegistry;
 

@@ -2,7 +2,7 @@
 
 namespace App\Repository;
 
-use App\Entity\BotAlgorithm;
+use App\Entity\Algorithm\BotAlgorithm;
 use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
 use Doctrine\Common\Persistence\ManagerRegistry;
 

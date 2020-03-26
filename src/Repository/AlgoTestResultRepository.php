@@ -2,7 +2,7 @@
 
 namespace App\Repository;
 
-use App\Entity\AlgoTestResult;
+use App\Entity\Algorithm\AlgoTestResult;
 use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
 use Doctrine\Common\Persistence\ManagerRegistry;
 

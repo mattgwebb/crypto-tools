@@ -2,7 +2,7 @@
 
 namespace App\Entity\AlgorithmConfig;
 
-use App\Entity\BotAlgorithm;
+use App\Entity\Algorithm\BotAlgorithm;
 use Doctrine\ORM\Mapping as ORM;
 
 /**
@@ -14,7 +14,7 @@ class MovingAverageCrossoverConfig
 
     /**
      * @ORM\Id()
-     * @ORM\OneToOne(targetEntity="App\Entity\BotAlgorithm", inversedBy="maCrossoverConfig")
+     * @ORM\OneToOne(targetEntity="App\Entity\Algorithm\BotAlgorithm", inversedBy="maCrossoverConfig")
      * @var BotAlgorithm
      */
     private $algo;

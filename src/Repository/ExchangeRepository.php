@@ -2,7 +2,7 @@
 
 namespace App\Repository;
 
-use App\Entity\Exchange;
+use App\Entity\Data\Exchange;
 use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
 use Doctrine\Common\Persistence\ManagerRegistry;
 
