@@ -24,7 +24,7 @@ class CurrencyPair
     private $symbol;
 
     /**
-     * @ORM\OneToMany(targetEntity="App\Entity\Data\BotAlgorithm", mappedBy="currencyPair")
+     * @ORM\OneToMany(targetEntity="App\Entity\Data\Candle", mappedBy="currencyPair")
      */
     private $candles;
 
