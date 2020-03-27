@@ -336,16 +336,19 @@ class BinanceAPI extends ApiInterface
 
         $totalQuantity = (float)$result['executedQty'];
         $averagePrice = 0;
+        $fees = 0;
 
         foreach($result['fills'] as $fill) {
             $fillPrice = (float)$fill['price'];
             $fillQuantity = (float)$fill['qty'];
+            $fees += (float)$fill['commission'];
 
             $averagePrice += $fillPrice * ($fillQuantity / $totalQuantity);
         }
         $trade->setOrderId($result['orderId']);
         $trade->setAmount($totalQuantity);
         $trade->setFillPrice($averagePrice);
+        $trade->setFees($fees);
         $trade->setTimeStamp((int)($result['transactTime']/1000));
         $trade->setStatus($this->getInternalTradeStatus($result['status']));
         return $trade;

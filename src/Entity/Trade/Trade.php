@@ -61,6 +61,11 @@ class Trade
      */
     private $mode;
 
+    /**
+     * @ORM\Column(type="float")
+     */
+    private $fees = 0;
+
     public function getId(): ?int
     {
         return $this->id;
@@ -208,5 +213,21 @@ class Trade
     public function setFillPrice($fillPrice): void
     {
         $this->fillPrice = $fillPrice;
+    }
+
+    /**
+     * @return mixed
+     */
+    public function getFees()
+    {
+        return $this->fees;
+    }
+
+    /**
+     * @param mixed $fees
+     */
+    public function setFees($fees): void
+    {
+        $this->fees = $fees;
     }
 }
