@@ -4,6 +4,7 @@
 namespace App\Command;
 
 
+use App\Entity\Algorithm\AlgoModes;
 use App\Entity\Algorithm\BotAlgorithm;
 use App\Entity\Data\Candle;
 use App\Entity\Trade\TradeTypes;
@@ -198,24 +199,27 @@ class AlgoBotCommand extends Command
 
         $this->log($algo, "QUANTITY: $quantity, PRICE: $currentPrice");
 
-        /** TODO it´s possible that the price changes and the balance is not enough to buy the amount, the trade needs to be created again */
-        try {
-            $trade = $this->tradeService->newMarketTrade($algo->getCurrencyPair(), $tradeType, $quantity);
-            $trade->setAlgo($algo);
-            $trade->setMode($algo->getMode());
-            $trade->setPrice($currentPrice);
-            $this->tradeService->saveTrade($trade);
-
-            /** TODO check order has been filled before */
-            $this->telegramBot->sendNewTradeMessage($_ENV['TELEGRAM_USER_ID'], $algo, $trade);
+        if($algo->getMode() == AlgoModes::TESTING) {
+            $this->tradeService->newTestTrade($algo, $tradeType, $currentPrice, $quantity);
             $this->algoManager->saveAlgo($algo);
+        } else if($algo->getMode() == AlgoModes::LIVE) {
+            /** TODO it´s possible that the price changes and the balance is not enough to buy the amount, the trade needs to be created again */
+            try {
+                $trade = $this->tradeService->newMarketTrade($algo->getCurrencyPair(), $tradeType, $quantity);
+                $trade->setAlgo($algo);
+                $trade->setMode($algo->getMode());
+                $trade->setPrice($currentPrice);
+                $this->tradeService->saveTrade($trade);
 
-        } catch (APIException $apiException) {
-            $this->log($algo, "ERROR MAKING TRADE: $apiException");
-            $this->telegramBot->sendNewErrorMessage($_ENV['TELEGRAM_USER_ID'], $algo, $apiException);
+                /** TODO check order has been filled before */
+                $this->telegramBot->sendNewTradeMessage($_ENV['TELEGRAM_USER_ID'], $algo, $trade);
+                $this->algoManager->saveAlgo($algo);
+
+            } catch (APIException $apiException) {
+                $this->log($algo, "ERROR MAKING TRADE: $apiException");
+                $this->telegramBot->sendNewErrorMessage($_ENV['TELEGRAM_USER_ID'], $algo, $apiException);
+            }
         }
-
-        //$trade = $this->tradeService->newTestTrade($algo, $tradeType, $currentPrice);
     }
 
     /**

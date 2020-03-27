@@ -63,20 +63,22 @@ class TradeService
      * @param BotAlgorithm $algo
      * @param int $side
      * @param float $currentPrice
+     * @param float $amount
      * @return Trade
      * @throws \Exception
      */
-    public function newTestTrade(BotAlgorithm $algo, int $side, float $currentPrice)
+    public function newTestTrade(BotAlgorithm $algo, int $side, float $currentPrice, float $amount)
     {
         if(!$this->checkSide($side)) {
             throw new \Exception();
         }
         $trade = new Trade();
         $trade->setPrice($currentPrice);
+        $trade->setFillPrice($currentPrice);
         $trade->setType($side);
         $trade->setAlgo($algo);
         $trade->setOrderId(999);
-        $trade->setAmount(0);
+        $trade->setAmount($amount);
         $trade->setTimeStamp(time());
         $trade->setStatus(TradeStatusTypes::FILLED);
         $trade->setMode($algo->getMode());
