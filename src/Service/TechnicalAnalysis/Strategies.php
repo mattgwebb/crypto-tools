@@ -27,16 +27,11 @@ class Strategies
         StrategyTypes::MACD_BOLLINGER,
         StrategyTypes::SUPPORT_RESISTANCE,
         StrategyTypes::RSI_DIVERGENCE,
-        StrategyTypes::OBI_DIVERGENCE,
+        StrategyTypes::OBV_DIVERGENCE,
         StrategyTypes::EMA_SCALP,
         StrategyTypes::EMA_CROSSOVER,
         StrategyTypes::MA_CROSSOVER
     ];
-
-    /**
-     * Minumum candle difference for line divergences (so we don´t draw lines between two adjacent points)
-     */
-    const MIN_CANDLE_DIFFERENCE_DIVERGENCE = 2;
 
     /**
      * @var Indicators
@@ -259,28 +254,34 @@ class Strategies
 
     /**
      * @param int $previousCandles
+     * @param int $minCandleDifference
+     * @param int $minDivergencePercentage
      * @return StrategyResult
      */
-    public function rsiDivergence(int $previousCandles = 10): StrategyResult
+    public function rsiDivergence(int $previousCandles = 10, int $minCandleDifference = 2, int $minDivergencePercentage = 20): StrategyResult
     {
-        return $this->indicatorDivergence(DivergenceIndicators::RSI, $previousCandles);
+        return $this->indicatorDivergence(DivergenceIndicators::RSI, $previousCandles, $minCandleDifference, $minDivergencePercentage);
     }
 
     /**
      * @param int $previousCandles
+     * @param int $minCandleDifference
+     * @param int $minDivergencePercentage
      * @return StrategyResult
      */
-    public function obvDivergence(int $previousCandles = 10): StrategyResult
+    public function obvDivergence(int $previousCandles = 10, int $minCandleDifference = 2, int $minDivergencePercentage = 20): StrategyResult
     {
-        return $this->indicatorDivergence(DivergenceIndicators::OBV, $previousCandles);
+        return $this->indicatorDivergence(DivergenceIndicators::OBV, $previousCandles, $minCandleDifference, $minDivergencePercentage);
     }
 
     /**
      * @param int $type
      * @param int $previousCandles
+     * @param int $minCandleDifference
+     * @param int $minDivergencePercentage
      * @return StrategyResult
      */
-    private function indicatorDivergence(int $type, int $previousCandles): StrategyResult
+    private function indicatorDivergence(int $type, int $previousCandles, int $minCandleDifference, int $minDivergencePercentage): StrategyResult
     {
         $result = new StrategyResult();
 
@@ -307,10 +308,10 @@ class Strategies
         $divergenceLines = [];
 
         foreach($orderedIndicatorPointsAsc as $lowPoint) {
-            if($lowPoint->getPeriod() >= self::MIN_CANDLE_DIFFERENCE_DIVERGENCE) {
+            if($lowPoint->getPeriod() >= $minCandleDifference) {
                 $line = $indicatorPoints->getValidLine($lowPoint->getPeriod(), true);
                 if($line) {
-                    $this->checkDivergence($line, $lastCloses, true);
+                    $this->checkDivergence($line, $lastCloses, $minDivergencePercentage, true);
                     if($line->getType() != DivergenceTypes::NO_DIVERGENCE) {
                         $divergenceLines[] = $line;
                     }
@@ -321,10 +322,10 @@ class Strategies
         $orderedIndicatorPointsDesc = $indicatorPoints->getOrderedList(true);
 
         foreach($orderedIndicatorPointsDesc as $highPoint) {
-            if($highPoint->getPeriod() >= self::MIN_CANDLE_DIFFERENCE_DIVERGENCE) {
+            if($highPoint->getPeriod() >= $minCandleDifference) {
                 $line = $indicatorPoints->getValidLine($highPoint->getPeriod(), false);
                 if($line) {
-                    $this->checkDivergence($line, $lastCloses, false);
+                    $this->checkDivergence($line, $lastCloses, $minDivergencePercentage,false);
                     if($line->getType() != DivergenceTypes::NO_DIVERGENCE) {
                         $divergenceLines[] = $line;
                     }
@@ -375,9 +376,10 @@ class Strategies
     /**
      * @param DivergenceLine $line
      * @param array $lastCloses
-     * @param $lower
+     * @param int $minDivergencePercentage
+     * @param bool $lower
      */
-    private function checkDivergence(DivergenceLine $line, array $lastCloses, $lower)
+    private function checkDivergence(DivergenceLine $line, array $lastCloses, int $minDivergencePercentage, bool $lower)
     {
         $firstPeriod = $line->getFirstPoint()->getPeriod();
         $secondPeriod = $line->getSecondPoint()->getPeriod();
@@ -392,7 +394,7 @@ class Strategies
         $indicatorDownPriceUp = $indicatorPercentageChange > 100 && $priceClosePercentageChange < 100;
 
         $line->setPercentageDivergenceWithPrice(abs($priceClosePercentageChange - $indicatorPercentageChange));
-        if($line->getPercentageDivergenceWithPrice() > 20) {
+        if($line->getPercentageDivergenceWithPrice() >= $minDivergencePercentage) {
             if($lower) {
                 if($indicatorDownPriceUp) {
                     $line->setType(DivergenceTypes::BULLISH_HIDDEN_DIVERGENCE);
@@ -601,6 +603,13 @@ class Strategies
                 return false;
             }
             return call_user_func(array($this,$strategy), $config->getSellOver(), $config->getBuyUnder(), $config->getPeriod());
+        } else if($strategy == StrategyTypes::RSI_DIVERGENCE || $strategy == StrategyTypes::OBV_DIVERGENCE) {
+            $config = $algo->getDivergenceConfig();
+            if(!$config) {
+                return false;
+            }
+            return call_user_func(array($this,$strategy), $config->getLastCandles(), $config->getMinCandleDifference(),
+                $config->getMinDivergencePercentage());
         } else  {
             return call_user_func(array($this,$strategy));
         }

@@ -2,6 +2,7 @@
 
 namespace App\Entity\Algorithm;
 
+use App\Entity\AlgorithmConfig\DivergenceConfig;
 use App\Entity\AlgorithmConfig\MovingAverageCrossoverConfig;
 use App\Entity\AlgorithmConfig\RsiConfig;
 use App\Entity\Trade\TradeTypes;
@@ -80,6 +81,12 @@ class BotAlgorithm implements \JsonSerializable
      * @var RsiConfig
      */
     private $rsiConfig;
+
+    /**
+     * @ORM\OneToOne(targetEntity="App\Entity\AlgorithmConfig\DivergenceConfig", mappedBy="algo")
+     * @var DivergenceConfig
+     */
+    private $divergenceConfig;
 
     /**
      * @return mixed
@@ -265,6 +272,22 @@ class BotAlgorithm implements \JsonSerializable
     public function setRsiConfig(RsiConfig $rsiConfig): void
     {
         $this->rsiConfig = $rsiConfig;
+    }
+
+    /**
+     * @return DivergenceConfig
+     */
+    public function getDivergenceConfig(): DivergenceConfig
+    {
+        return $this->divergenceConfig;
+    }
+
+    /**
+     * @param DivergenceConfig $divergenceConfig
+     */
+    public function setDivergenceConfig(DivergenceConfig $divergenceConfig): void
+    {
+        $this->divergenceConfig = $divergenceConfig;
     }
 
     /**
