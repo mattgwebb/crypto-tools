@@ -8,6 +8,8 @@ use App\Entity\Algorithm\AlgoTestResult;
 use App\Entity\Algorithm\BotAlgorithm;
 use App\Entity\Data\Candle;
 use App\Entity\Algorithm\StrategyResult;
+use App\Entity\Trade\Trade;
+use App\Entity\Trade\TradeTypes;
 use App\Repository\BotAlgorithmRepository;
 use App\Repository\CurrencyPairRepository;
 use App\Repository\TradeRepository;
@@ -86,12 +88,19 @@ class BotAlgorithmManager
         $this->logger->info("********************* New test  ************************");
         $this->logger->info(json_encode($algo));
 
+        $initialFrom = $from;
+
         $lastPositionCandles = $candlesToLoad - 1;
 
         $from -= $lastPositionCandles * ($algo->getTimeFrame() * 60);
         $candles = $this->currencyPairRepo->getCandlesByTimeFrame($algo->getCurrencyPair(), $algo->getTimeFrame(), $from, $to);
 
-        $divergences = [];
+        $openTradePrice = 0;
+        $totalPercentage = 0;
+
+        $initialInvestment = 1000;
+
+        $trades = $divergences = [];
 
         for($i=$lastPositionCandles; $i < count($candles); $i++) {
             $auxData = array_slice($candles, $i - $lastPositionCandles, $candlesToLoad);
@@ -105,10 +114,44 @@ class BotAlgorithmManager
             $this->strategies->setData($auxData);
             $result = $this->strategies->runStrategy($algo);
 
-            if(!$result->noTrade()) {
+            /*if(!$result->noTrade()) {
+                $divergences[] = $result->getExtraData()['divergence_line'];
+            }*/
+
+            if(($result->isLong()) && $openTradePrice == 0) {
+                $openTradePrice = $currentCandle->getClosePrice();
+
+                $trade = $this->newTestTrade($currentCandle, TradeTypes::TRADE_BUY);
+                $trades[] = $trade;
+
+                $this->logger->info(json_encode($trade));
+                $divergences[] = $result->getExtraData()['divergence_line'];
+            }
+            if($result->isShort()  && $openTradePrice > 0) {
+                $percentage = ($currentCandle->getClosePrice()/$openTradePrice) - 1;
+                $totalPercentage += $percentage;
+                $initialInvestment *= ($percentage + 1);
+
+                $trade = $this->newTestTrade($currentCandle, TradeTypes::TRADE_SELL);
+                $trade["percentage"] = round($percentage * 100, 2);
+                $trades[] = $trade;
+
+                $this->logger->info(json_encode($trade));
+
+                $openTradePrice = 0;
                 $divergences[] = $result->getExtraData()['divergence_line'];
             }
         }
+
+        $percentage = (($initialInvestment / 1000) - 1) * 100;
+
+        if(isset($currentCandle)) {
+            $this->saveAlgoTestResult($algo, $percentage, count($trades), $initialFrom, $currentCandle->getCloseTime());
+        }
+
+        $trade = "percentage $percentage";
+        //$trades[] = $trade;
+        $this->logger->info($trade);
 
         return $divergences;
     }
@@ -123,7 +166,7 @@ class BotAlgorithmManager
      * @throws \Exception
      */
     public function runTest(BotAlgorithm $algo, int $from = 0, int $to = 0,
-                            int $candlesToLoad = self::CANDLES_TO_LOAD, bool $logAllTrades= true)
+                            int $candlesToLoad = self::CANDLES_TO_LOAD)
     {
         $this->logger->info("********************* New test  ************************");
         $this->logger->info(json_encode($algo));
@@ -139,8 +182,6 @@ class BotAlgorithmManager
         $totalPercentage = 0;
 
         $initialInvestment = 1000;
-
-        $testResult = new AlgoTestResult();
 
         $trades = [];
         for($i=$lastPositionCandles; $i < count($candles); $i++) {
@@ -172,57 +213,34 @@ class BotAlgorithmManager
                 $short = false;
             }
 
-            if(($result->isLong())
-                && $openTradePrice == 0) {
+            if(($result->isLong()) && $openTradePrice == 0) {
                 $openTradePrice = $currentCandle->getClosePrice();
-                $date = new \DateTime('@' .$currentCandle->getCloseTime());
-                $date->setTimezone(new \DateTimeZone("Europe/Madrid"));
-                $trade = ["trade" => "long",
-                    "time" => date_format($date, 'D M j G:i:s'),
-                    "timestamp"=> $currentCandle->getCloseTime() * 1000,
-                    "price" => $openTradePrice];
+
+                $trade = $this->newTestTrade($currentCandle, TradeTypes::TRADE_BUY);
                 $trades[] = $trade;
 
-                if($logAllTrades) {
-                    $this->logger->info(json_encode($trade));
-                }
+                $this->logger->info(json_encode($trade));
             }
             if(($result->isShort() || $short) && $openTradePrice > 0) {
                 $percentage = ($currentCandle->getClosePrice()/$openTradePrice) - 1;
                 $totalPercentage += $percentage;
                 $initialInvestment *= ($percentage + 1);
-                $date = new \DateTime('@' .$currentCandle->getCloseTime());
-                $date->setTimezone(new \DateTimeZone("Europe/Madrid"));
-                $trade = ["trade" => "short",
-                    "time" => date_format($date, 'D M j G:i:s'),
-                    "timestamp"=> $currentCandle->getCloseTime() * 1000,
-                    "price" => $currentCandle->getClosePrice(),
-                    "percentage" => round($percentage * 100, 2),
-                    "stopLoss_takeProfit" => $short];
+
+                $trade = $this->newTestTrade($currentCandle, TradeTypes::TRADE_SELL);
+                $trade["percentage"] = round($percentage * 100, 2);
+                $trade["stopLoss_takeProfit"] = $short;
                 $trades[] = $trade;
 
-                if($logAllTrades) {
-                    $this->logger->info(json_encode($trade));
-                }
+                $this->logger->info(json_encode($trade));
+
                 $openTradePrice = 0;
             }
-
-
         }
 
         $percentage = (($initialInvestment / 1000) - 1) * 100;
 
         if(isset($currentCandle)) {
-            $testResult->setAlgo($algo);
-            $testResult->setPercentage($percentage);
-            $testResult->setTimestamp(time());
-            $testResult->setTrades(count($trades));
-            $testResult->setStartTime($initialFrom);
-            $testResult->setEndTime($currentCandle->getCloseTime());
-            $testResult->setTimeFrame($algo->getTimeFrame());
-
-            $this->entityManager->persist($testResult);
-            $this->entityManager->flush();
+            $this->saveAlgoTestResult($algo, $percentage, count($trades), $initialFrom, $currentCandle->getCloseTime());
         }
 
         $trade = "percentage $percentage";
@@ -290,5 +308,52 @@ class BotAlgorithmManager
     public function saveAlgo(BotAlgorithm $algo)
     {
         $this->entityManager->persist($algo);
+    }
+
+    /**
+     * @param Candle $currentCandle
+     * @param int $tradeSide
+     * @return array
+     * @throws \Exception
+     */
+    private function newTestTrade(Candle $currentCandle, int $tradeSide)
+    {
+        $date = new \DateTime('@' .$currentCandle->getCloseTime());
+        $date->setTimezone(new \DateTimeZone("Europe/Madrid"));
+
+        $trade = [
+            "time" => date_format($date, 'D M j G:i:s'),
+            "timestamp"=> $currentCandle->getCloseTime() * 1000,
+            "price" => $currentCandle->getClosePrice()
+        ];
+
+        if($tradeSide == TradeTypes::TRADE_BUY) {
+            $trade["trade"] = "long";
+        } else if($tradeSide == TradeTypes::TRADE_SELL) {
+            $trade["trade"] = "short";
+        }
+        return $trade;
+    }
+
+    /**
+     * @param BotAlgorithm $algo
+     * @param float $percentage
+     * @param int $numTrades
+     * @param int $startTime
+     * @param int $finishTime
+     */
+    private function saveAlgoTestResult(BotAlgorithm $algo, float $percentage, int $numTrades, int $startTime, int $finishTime)
+    {
+        $testResult = new AlgoTestResult();
+        $testResult->setAlgo($algo);
+        $testResult->setPercentage($percentage);
+        $testResult->setTimestamp(time());
+        $testResult->setTrades($numTrades);
+        $testResult->setStartTime($startTime);
+        $testResult->setEndTime($finishTime);
+        $testResult->setTimeFrame($algo->getTimeFrame());
+
+        $this->entityManager->persist($testResult);
+        $this->entityManager->flush();
     }
 }
