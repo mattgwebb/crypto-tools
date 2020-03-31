@@ -132,7 +132,7 @@ class BotAlgorithmManager
                 $compoundedProfit *= $profit;
 
                 $trade = $this->newTestTrade($currentCandle, TradeTypes::TRADE_SELL);
-                $trade["percentage"] = round($percentage * 100, 2);
+                $trade["percentage"] = round($percentage, 2);
                 $trades[] = $trade;
 
                 $this->logger->info(json_encode($trade));
@@ -160,7 +160,6 @@ class BotAlgorithmManager
      * @param int $from
      * @param int $to
      * @param int $candlesToLoad
-     * @param bool $logAllTrades
      * @return array
      * @throws \Exception
      */
