@@ -96,9 +96,8 @@ class BotAlgorithmManager
         $candles = $this->currencyPairRepo->getCandlesByTimeFrame($algo->getCurrencyPair(), $algo->getTimeFrame(), $from, $to);
 
         $openTradePrice = 0;
-        $totalPercentage = 0;
 
-        $initialInvestment = 1000;
+        $compoundedProfit = 1;
 
         $trades = $divergences = [];
 
@@ -128,9 +127,9 @@ class BotAlgorithmManager
                 $divergences[] = $result->getExtraData()['divergence_line'];
             }
             if($result->isShort()  && $openTradePrice > 0) {
-                $percentage = ($currentCandle->getClosePrice()/$openTradePrice) - 1;
-                $totalPercentage += $percentage;
-                $initialInvestment *= ($percentage + 1);
+                $profit = ($currentCandle->getClosePrice()/$openTradePrice);
+                $percentage = ($profit - 1) * 100;
+                $compoundedProfit *= $profit;
 
                 $trade = $this->newTestTrade($currentCandle, TradeTypes::TRADE_SELL);
                 $trade["percentage"] = round($percentage * 100, 2);
@@ -143,13 +142,13 @@ class BotAlgorithmManager
             }
         }
 
-        $percentage = (($initialInvestment / 1000) - 1) * 100;
+        $compoundedPercentage = ($compoundedProfit - 1) * 100;
 
         if(isset($currentCandle)) {
-            $this->saveAlgoTestResult($algo, $percentage, count($trades), $initialFrom, $currentCandle->getCloseTime());
+            $this->saveAlgoTestResult($algo, $compoundedPercentage, count($trades), $initialFrom, $currentCandle->getCloseTime());
         }
 
-        $trade = "percentage $percentage";
+        $trade = "percentage $compoundedPercentage";
         //$trades[] = $trade;
         $this->logger->info($trade);
 
@@ -179,10 +178,8 @@ class BotAlgorithmManager
         $candles = $this->currencyPairRepo->getCandlesByTimeFrame($algo->getCurrencyPair(), $algo->getTimeFrame(), $from, $to);
 
         $openTradePrice = 0;
-        $totalPercentage = 0;
 
-        $initialInvestment = 1000;
-
+        $compoundedProfit = 1;
         $trades = [];
         for($i=$lastPositionCandles; $i < count($candles); $i++) {
             $auxData = array_slice($candles, $i - $lastPositionCandles, $candlesToLoad);
@@ -222,12 +219,12 @@ class BotAlgorithmManager
                 $this->logger->info(json_encode($trade));
             }
             if(($result->isShort() || $short) && $openTradePrice > 0) {
-                $percentage = ($currentCandle->getClosePrice()/$openTradePrice) - 1;
-                $totalPercentage += $percentage;
-                $initialInvestment *= ($percentage + 1);
+                $profit = ($currentCandle->getClosePrice()/$openTradePrice);
+                $percentage = ($profit - 1) * 100;
+                $compoundedProfit *= $profit;
 
                 $trade = $this->newTestTrade($currentCandle, TradeTypes::TRADE_SELL);
-                $trade["percentage"] = round($percentage * 100, 2);
+                $trade["percentage"] = round($percentage, 2);
                 $trade["stopLoss_takeProfit"] = $short;
                 $trades[] = $trade;
 
@@ -237,13 +234,13 @@ class BotAlgorithmManager
             }
         }
 
-        $percentage = (($initialInvestment / 1000) - 1) * 100;
+        $compoundedPercentage = ($compoundedProfit  - 1) * 100;
 
         if(isset($currentCandle)) {
-            $this->saveAlgoTestResult($algo, $percentage, count($trades), $initialFrom, $currentCandle->getCloseTime());
+            $this->saveAlgoTestResult($algo, $compoundedPercentage, count($trades), $initialFrom, $currentCandle->getCloseTime());
         }
 
-        $trade = "percentage $percentage";
+        $trade = "percentage $compoundedPercentage";
         //$trades[] = $trade;
         $this->logger->info($trade);
 
