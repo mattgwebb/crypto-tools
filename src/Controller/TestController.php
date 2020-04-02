@@ -172,55 +172,7 @@ class TestController extends AbstractController
 
         return $this->render('algo_test_result.html.twig', [
             "pair" => $algo->getCurrencyPair(),
-            "trades" => $trades,
-            "divergences" => []
-        ]);
-    }
-
-    /**
-     * @Route("/algos/divergence/result", name="run_algo_divergence_test", methods={"POST"})
-     * @return Response
-     * @throws \Exception
-     */
-    public function runAlgoDivergenceTest(Request $request)
-    {
-        $id = $request->request->get('algo-id');
-        $startTime = $request->request->get('start-time');
-        $endTime = $request->request->get('end-time');
-
-        /** @var BotAlgorithm $algo */
-        $algo = $this->getDoctrine()
-            ->getRepository(BotAlgorithm::class)
-            ->find($id);
-
-        if(!$algo) {
-            return $this->render('error.html.twig', [
-                "error" => "Algo not found.",
-            ]);
-        }
-
-        //$trades = $this->manager->runTest($algo, $startTime, $endTime);
-        $trades = [];
-        $divergences = $this->manager->runDivergenceTest($algo, $startTime, $endTime);
-
-        /*$mockTrades = [["trade"=>"long","time"=>"Thu Sep 6 13=>59=>59","timestamp"=>1536235199000,"price"=>6408.65],
-            ["trade"=>"short","time"=>"Sat Sep 22 2=>59=>59","timestamp"=>1537577999000,"price"=>6802.95,"percentage"=>6.15,"stopLoss_takeProfit"=>false],
-            ["trade"=>"long","time"=>"Tue Sep 25 20=>59=>59","timestamp"=>1537901999000,"price"=>6347.58],
-            ["trade"=>"short","time"=>"Tue Dec 18 5=>59=>59","timestamp"=>1545109199000,"price"=>3530.34,"percentage"=>-44.38,"stopLoss_takeProfit"=>false],
-            ["trade"=>"long","time"=>"Fri Jan 11 2=>59=>59","timestamp"=>1547171999000,"price"=>3592.95],
-            ["trade"=>"short","time"=>"Sat Feb 9 5=>59=>59","timestamp"=>1549688399000,"price"=>3652.72,"percentage"=>1.66,"stopLoss_takeProfit"=>false],
-            ["trade"=>"long","time"=>"Wed Jul 17 13=>59=>59","timestamp"=>1563364799000,"price"=>9157.02],
-            ["trade"=>"short","time"=>"Fri Aug 2 14=>59=>59","timestamp"=>1564750799000,"price"=>10554.78,"percentage"=>15.26,"stopLoss_takeProfit"=>false],
-            ["trade"=>"long","time"=>"Wed Aug 14 18=>59=>59","timestamp"=>1565801999000,"price"=>10347.13],
-            ["trade"=>"short","time"=>"Tue Sep 3 9=>59=>59","timestamp"=>1567497599000,"price"=>10368.72,"percentage"=>0.21,"stopLoss_takeProfit"=>false],
-            ["trade"=>"long","time"=>"Wed Sep 25 13=>59=>59","timestamp"=>1569412799000,"price"=>8326.64],
-            ["trade"=>"short","time"=>"Thu Oct 10 6=>59=>59","timestamp"=>1570683599000,"price"=>8574.98,"percentage"=>2.98,"stopLoss_takeProfit"=>false],
-            ["trade"=>"long","time"=>"Thu Oct 24 3=>59=>59","timestamp"=>1571882399000,"price"=>7440.25]];*/
-
-        return $this->render('algo_test_result.html.twig', [
-            "pair" => $algo->getCurrencyPair(),
-            "trades" => $trades,
-            "divergences" => $divergences
+            "trades" => $trades
         ]);
     }
 

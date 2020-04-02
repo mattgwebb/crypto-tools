@@ -82,85 +82,6 @@ class BotAlgorithmManager
      * @param int $to
      * @param int $candlesToLoad
      * @return array
-     */
-    public function runDivergenceTest(BotAlgorithm $algo, int $from = 0, int $to = 0, int $candlesToLoad = self::CANDLES_TO_LOAD)
-    {
-        $this->logger->info("********************* New test  ************************");
-        $this->logger->info(json_encode($algo));
-
-        $initialFrom = $from;
-
-        $lastPositionCandles = $candlesToLoad - 1;
-
-        $from -= $lastPositionCandles * ($algo->getTimeFrame() * 60);
-        $candles = $this->currencyPairRepo->getCandlesByTimeFrame($algo->getCurrencyPair(), $algo->getTimeFrame(), $from, $to);
-
-        $openTradePrice = 0;
-
-        $compoundedProfit = 1;
-
-        $trades = $divergences = [];
-
-        for($i=$lastPositionCandles; $i < count($candles); $i++) {
-            $auxData = array_slice($candles, $i - $lastPositionCandles, $candlesToLoad);
-            /** TODO delete candles from array after using them
-             * TODO for some reason it doesn´t calculate indicators properly
-             */
-            //array_shift($candles);
-
-            $currentCandle = $auxData[count($auxData) - 1];
-
-            $this->strategies->setData($auxData);
-            $result = $this->strategies->runStrategy($algo);
-
-            /*if(!$result->noTrade()) {
-                $divergences[] = $result->getExtraData()['divergence_line'];
-            }*/
-
-            if(($result->isLong()) && $openTradePrice == 0) {
-                $openTradePrice = $currentCandle->getClosePrice();
-
-                $trade = $this->newTestTrade($currentCandle, TradeTypes::TRADE_BUY);
-                $trades[] = $trade;
-
-                $this->logger->info(json_encode($trade));
-                $divergences[] = $result->getExtraData()['divergence_line'];
-            }
-            if($result->isShort()  && $openTradePrice > 0) {
-                $profit = ($currentCandle->getClosePrice()/$openTradePrice);
-                $percentage = ($profit - 1) * 100;
-                $compoundedProfit *= $profit;
-
-                $trade = $this->newTestTrade($currentCandle, TradeTypes::TRADE_SELL);
-                $trade["percentage"] = round($percentage, 2);
-                $trades[] = $trade;
-
-                $this->logger->info(json_encode($trade));
-
-                $openTradePrice = 0;
-                $divergences[] = $result->getExtraData()['divergence_line'];
-            }
-        }
-
-        $compoundedPercentage = ($compoundedProfit - 1) * 100;
-
-        if(isset($currentCandle)) {
-            $this->saveAlgoTestResult($algo, $compoundedPercentage, count($trades), $initialFrom, $currentCandle->getCloseTime());
-        }
-
-        $trade = "percentage $compoundedPercentage";
-        //$trades[] = $trade;
-        $this->logger->info($trade);
-
-        return $divergences;
-    }
-
-    /**
-     * @param BotAlgorithm $algo
-     * @param int $from
-     * @param int $to
-     * @param int $candlesToLoad
-     * @return array
      * @throws \Exception
      */
     public function runTest(BotAlgorithm $algo, int $from = 0, int $to = 0,
@@ -177,9 +98,10 @@ class BotAlgorithmManager
         $candles = $this->currencyPairRepo->getCandlesByTimeFrame($algo->getCurrencyPair(), $algo->getTimeFrame(), $from, $to);
 
         $openTradePrice = 0;
-
         $compoundedProfit = 1;
+
         $trades = [];
+
         for($i=$lastPositionCandles; $i < count($candles); $i++) {
             $auxData = array_slice($candles, $i - $lastPositionCandles, $candlesToLoad);
             /** TODO delete candles from array after using them
@@ -213,6 +135,8 @@ class BotAlgorithmManager
                 $openTradePrice = $currentCandle->getClosePrice();
 
                 $trade = $this->newTestTrade($currentCandle, TradeTypes::TRADE_BUY);
+                $trade['extra_data'] = $result->getExtraData();
+
                 $trades[] = $trade;
 
                 $this->logger->info(json_encode($trade));
@@ -223,6 +147,7 @@ class BotAlgorithmManager
                 $compoundedProfit *= $profit;
 
                 $trade = $this->newTestTrade($currentCandle, TradeTypes::TRADE_SELL);
+                $trade['extra_data'] = $result->getExtraData();
                 $trade["percentage"] = round($percentage, 2);
                 $trade["stopLoss_takeProfit"] = $short;
                 $trades[] = $trade;

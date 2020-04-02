@@ -69,19 +69,21 @@
                             oversold: 30
                         }
                     },
-                        {% for divergence in divergences  %}
+                        {% for trade in trades  %}
+                        {% if trade.extra_data.divergence_line is defined %}
                         {
                             type: 'line',
-                            data:  [[{{ divergence.secondPoint.timestamp * 1000 }}, {{ divergence.secondPoint.price }}],[{{ divergence.firstPoint.timestamp * 1000 }}, {{ divergence.firstPoint.price }}]],
+                            data:  [[{{ trade.extra_data.divergence_line.secondPoint.timestamp * 1000 }}, {{ trade.extra_data.divergence_line.secondPoint.price }}],[{{ trade.extra_data.divergence_line.firstPoint.timestamp * 1000 }}, {{ trade.extra_data.divergence_line.firstPoint.price }}]],
                             color: 'green',
                             yAxis: 0,
                         },
                         {
                             type: 'line',
-                            data:  [[{{ divergence.secondPoint.timestamp * 1000 }}, {{ divergence.secondPoint.value }}],[{{ divergence.firstPoint.timestamp * 1000 }}, {{ divergence.firstPoint.value }}]],
+                            data:  [[{{ trade.extra_data.divergence_line.secondPoint.timestamp * 1000 }}, {{ trade.extra_data.divergence_line.secondPoint.value }}],[{{ trade.extra_data.divergence_line.firstPoint.timestamp * 1000 }}, {{ trade.extra_data.divergence_line.firstPoint.value }}]],
                             color: 'green',
                             yAxis: 1,
                         },
+                        {% endif %}
                         {% endfor %}
                     ]
                 }, function(chart){
