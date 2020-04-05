@@ -18,4 +18,5 @@ abstract class StrategyTypes
     const EMA_SCALP = "emaScalp";
     const EMA_CROSSOVER = "emaCrossover";
     const MA_CROSSOVER = "maCrossover";
+    const ADAPTIVE_PQ = "adaptivePQ";
 }

@@ -30,7 +30,8 @@ class Strategies
         StrategyTypes::OBV_DIVERGENCE,
         StrategyTypes::EMA_SCALP,
         StrategyTypes::EMA_CROSSOVER,
-        StrategyTypes::MA_CROSSOVER
+        StrategyTypes::MA_CROSSOVER,
+        StrategyTypes::ADAPTIVE_PQ
     ];
 
     /**
@@ -272,6 +273,32 @@ class Strategies
     public function obvDivergence(int $previousCandles = 10, int $minCandleDifference = 2, int $minDivergencePercentage = 20): StrategyResult
     {
         return $this->indicatorDivergence(DivergenceIndicators::OBV, $previousCandles, $minCandleDifference, $minDivergencePercentage);
+    }
+
+    /**
+     * @param float $rsiMaHigh
+     * @param float $rsiMaLow
+     * @param int $maPeriod
+     * @return StrategyResult
+     */
+    public function adaptivePQ(float $rsiMaHigh = 60.00, float $rsiMaLow = 40.00, int $maPeriod = 20) : StrategyResult
+    {
+        $result = new StrategyResult();
+
+        $rsiPeriod = $this->indicators->rsiPeriod($this->data);
+        $rsiData = array_values($rsiPeriod);
+
+        $rsiMa = $this->indicators->ema($rsiData, $maPeriod);
+        $rsi = array_pop($rsiPeriod);
+
+        if($rsiMa > $rsiMaLow && $rsiMa < $rsiMaHigh) {
+            if($rsi >= $rsiMa) {
+                $result->setTradeResult(StrategyResult::TRADE_LONG);
+            } else  {
+                $result->setTradeResult(StrategyResult::TRADE_SHORT);
+            }
+        }
+        return $result;
     }
 
     /**
