@@ -6,7 +6,7 @@ use App\Entity\Algorithm\BotAlgorithm;
 use Doctrine\ORM\Mapping as ORM;
 
 /**
- * @ORM\Entity(repositoryClass="App\Repository\AlgorithmConfig\DivergenceRepository")
+ * @ORM\Entity(repositoryClass="App\Repository\AlgorithmConfig\DivergenceConfigRepository")
  * @ORM\Table(name="algo_divergence_config")
  */
 class DivergenceConfig
