@@ -13,7 +13,9 @@ use App\Entity\TechnicalAnalysis\IndicatorPoint;
 use App\Entity\TechnicalAnalysis\IndicatorPointList;
 use App\Entity\Algorithm\StrategyResult;
 use App\Entity\Algorithm\StrategyTypes;
+use App\Entity\TechnicalAnalysis\IndicatorTypes;
 use App\Entity\TechnicalAnalysis\TrendLine;
+use App\Exceptions\TechnicalAnalysis\IndicatorNotSupported;
 
 class Strategies
 {
@@ -276,23 +278,35 @@ class Strategies
     }
 
     /**
-     * @param float $rsiMaHigh
-     * @param float $rsiMaLow
+     * @param float $p
+     * @param float $q
+     * @param string $oscillator
+     * @param string $ma
      * @param int $maPeriod
      * @return StrategyResult
+     * @throws IndicatorNotSupported
      */
-    public function adaptivePQ(float $rsiMaHigh = 60.00, float $rsiMaLow = 40.00, int $maPeriod = 20) : StrategyResult
+    public function adaptivePQ(float $p = 40.00, float $q = 60.00, string $oscillator = IndicatorTypes::RSI,
+                               string $ma = IndicatorTypes::EMA, int $maPeriod = 20) : StrategyResult
     {
         $result = new StrategyResult();
 
-        $rsiPeriod = $this->indicators->rsiPeriod($this->data);
-        $rsiData = array_values($rsiPeriod);
+        if($oscillator == IndicatorTypes::RSI) {
+            $oscillatorPeriodData = $this->indicators->rsiPeriod($this->data);
+            $oscillatorPeriodData = array_values($oscillatorPeriodData);
+        } else {
+            throw new IndicatorNotSupported();
+        }
 
-        $rsiMa = $this->indicators->ema($rsiData, $maPeriod);
-        $rsi = array_pop($rsiPeriod);
+        if($ma == IndicatorTypes::EMA) {
+            $oscillatorMa = $this->indicators->ema($oscillatorPeriodData, $maPeriod);
+            $oscillatorLastValue = array_pop($oscillatorPeriodData);
+        } else {
+            throw new IndicatorNotSupported();
+        }
 
-        if($rsiMa > $rsiMaLow && $rsiMa < $rsiMaHigh) {
-            if($rsi >= $rsiMa) {
+        if($oscillatorMa > $p && $oscillatorMa < $q) {
+            if($oscillatorLastValue >= $oscillatorMa) {
                 $result->setTradeResult(StrategyResult::TRADE_LONG);
             } else  {
                 $result->setTradeResult(StrategyResult::TRADE_SHORT);
@@ -637,7 +651,14 @@ class Strategies
             }
             return call_user_func(array($this,$strategy), $config->getLastCandles(), $config->getMinCandleDifference(),
                 $config->getMinDivergencePercentage());
-        } else  {
+        } else if($strategy == StrategyTypes::ADAPTIVE_PQ) {
+            $config = $algo->getAdaptivePQConfig();
+            if(!$config) {
+                return false;
+            }
+            return call_user_func(array($this,$strategy), $config->getPValue(), $config->getQValue(),
+                $config->getOscillatorIndicator(), $config->getMaIndicator(), $config->getMaPeriod());
+        } else {
             return call_user_func(array($this,$strategy));
         }
     }

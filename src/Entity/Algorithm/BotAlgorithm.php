@@ -2,6 +2,7 @@
 
 namespace App\Entity\Algorithm;
 
+use App\Entity\AlgorithmConfig\AdaptivePQConfig;
 use App\Entity\AlgorithmConfig\DivergenceConfig;
 use App\Entity\AlgorithmConfig\MovingAverageCrossoverConfig;
 use App\Entity\AlgorithmConfig\RsiConfig;
@@ -87,6 +88,12 @@ class BotAlgorithm implements \JsonSerializable
      * @var DivergenceConfig
      */
     private $divergenceConfig;
+
+    /**
+     * @ORM\OneToOne(targetEntity="App\Entity\AlgorithmConfig\AdaptivePQConfig", mappedBy="algo")
+     * @var AdaptivePQConfig
+     */
+    private $adaptivePQConfig;
 
     /**
      * @return mixed
@@ -288,6 +295,22 @@ class BotAlgorithm implements \JsonSerializable
     public function setDivergenceConfig(DivergenceConfig $divergenceConfig): void
     {
         $this->divergenceConfig = $divergenceConfig;
+    }
+
+    /**
+     * @return AdaptivePQConfig
+     */
+    public function getAdaptivePQConfig(): AdaptivePQConfig
+    {
+        return $this->adaptivePQConfig;
+    }
+
+    /**
+     * @param AdaptivePQConfig $adaptivePQConfig
+     */
+    public function setAdaptivePQConfig(AdaptivePQConfig $adaptivePQConfig): void
+    {
+        $this->adaptivePQConfig = $adaptivePQConfig;
     }
 
     /**
