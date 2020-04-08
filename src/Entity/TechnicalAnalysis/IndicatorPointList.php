@@ -44,7 +44,7 @@ class IndicatorPointList extends ArrayCollection
 
         $line = new DivergenceLine($currentPoint, $secondPoint);
 
-        $RSIDifferenceByPeriod = $line->getDifferencePerPeriod();
+        $indicatorDifferenceByPeriod = $line->getDifferencePerPeriod();
 
         /** @var IndicatorPoint $point */
         foreach($this as $point) {
@@ -55,13 +55,13 @@ class IndicatorPointList extends ArrayCollection
                 return $line;
             }
 
-            $allowedRSI = $currentPoint->getValue() - ($point->getPeriod() * $RSIDifferenceByPeriod);
+            $allowedIndicatorValue = $currentPoint->getValue() - ($point->getPeriod() * $indicatorDifferenceByPeriod);
 
-            if($lower && $allowedRSI > $point->getValue()) {
+            if($lower && $allowedIndicatorValue > $point->getValue()) {
                 return false;
             }
 
-            if(!$lower && $allowedRSI < $point->getValue()) {
+            if(!$lower && $allowedIndicatorValue < $point->getValue()) {
                 return false;
             }
         }
