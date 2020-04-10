@@ -65,17 +65,6 @@ class DivergenceLine
     }
 
     /**
-     * @return float
-     */
-    public function getPercentageChange() : float
-    {
-        if(is_null($this->percentageChange)) {
-            $this->percentageChange = ($this->secondPoint->getValue() / $this->firstPoint->getValue()) * 100;
-        }
-        return $this->percentageChange;
-    }
-
-    /**
      * @return int
      */
     public function getLength(): int

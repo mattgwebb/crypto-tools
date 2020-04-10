@@ -342,6 +342,9 @@ class Strategies
         $lastCloses = array_slice($this->data['close'], $previousCandles * (-1));
         $lastCloses = array_reverse($lastCloses);
 
+        $priceRange = $this->getRange($lastCloses);
+        $indicatorRange = $this->getRange($indicatorPeriod);
+
         $indicatorPoints = new IndicatorPointList($indicatorPeriod, $lastOpenTimes, $lastCloses);
 
         $orderedIndicatorPointsAsc = $indicatorPoints->getOrderedList();
@@ -352,7 +355,7 @@ class Strategies
             if($lowPoint->getPeriod() >= $minCandleDifference) {
                 $line = $indicatorPoints->getValidLine($lowPoint->getPeriod(), true);
                 if($line) {
-                    $this->checkDivergence($line, $lastCloses, $minDivergencePercentage, true);
+                    $this->checkDivergence($line, $lastCloses, $minDivergencePercentage, $priceRange, $indicatorRange, true);
                     if($line->getType() != DivergenceTypes::NO_DIVERGENCE) {
                         $divergenceLines[] = $line;
                     }
@@ -366,7 +369,7 @@ class Strategies
             if($highPoint->getPeriod() >= $minCandleDifference) {
                 $line = $indicatorPoints->getValidLine($highPoint->getPeriod(), false);
                 if($line) {
-                    $this->checkDivergence($line, $lastCloses, $minDivergencePercentage,false);
+                    $this->checkDivergence($line, $lastCloses, $minDivergencePercentage, $priceRange, $indicatorRange,false);
                     if($line->getType() != DivergenceTypes::NO_DIVERGENCE) {
                         $divergenceLines[] = $line;
                     }
@@ -395,6 +398,18 @@ class Strategies
     }
 
     /**
+     * @param array $values
+     * @return float
+     */
+    private function getRange(array $values)
+    {
+        $smallest = min($values);
+        $biggest = max($values);
+
+        return $biggest - $smallest;
+    }
+
+    /**
      * @param $period1
      * @param $period1Prior
      * @param $period2
@@ -418,9 +433,12 @@ class Strategies
      * @param DivergenceLine $line
      * @param array $lastCloses
      * @param int $minDivergencePercentage
+     * @param float $priceRange
+     * @param float $indicatorRange
      * @param bool $lower
      */
-    private function checkDivergence(DivergenceLine $line, array $lastCloses, int $minDivergencePercentage, bool $lower)
+    private function checkDivergence(DivergenceLine $line, array $lastCloses, int $minDivergencePercentage,
+                                     float $priceRange, float $indicatorRange, bool $lower)
     {
         $firstPeriod = $line->getFirstPoint()->getPeriod();
         $secondPeriod = $line->getSecondPoint()->getPeriod();
@@ -428,11 +446,11 @@ class Strategies
         $firstPeriodClose = $lastCloses[$firstPeriod];
         $secondPeriodClose = $lastCloses[$secondPeriod];
 
-        $priceClosePercentageChange = ($secondPeriodClose / $firstPeriodClose) * 100;
-        $indicatorPercentageChange = $line->getPercentageChange();
+        $priceClosePercentageChange = (($secondPeriodClose - $firstPeriodClose) / $priceRange) * 100;
+        $indicatorPercentageChange = (($line->getSecondPoint()->getValue() - $line->getFirstPoint()->getValue()) / $indicatorRange) * 100;
 
-        $indicatorUpPriceDown = $indicatorPercentageChange < 100 && $priceClosePercentageChange > 100;
-        $indicatorDownPriceUp = $indicatorPercentageChange > 100 && $priceClosePercentageChange < 100;
+        $indicatorUpPriceDown = $indicatorPercentageChange < 0 && $priceClosePercentageChange > 0;
+        $indicatorDownPriceUp = $indicatorPercentageChange > 0 && $priceClosePercentageChange < 0;
 
         $line->setPercentageDivergenceWithPrice(abs($priceClosePercentageChange - $indicatorPercentageChange));
         if($line->getPercentageDivergenceWithPrice() >= $minDivergencePercentage) {
