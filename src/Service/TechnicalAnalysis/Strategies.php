@@ -260,22 +260,30 @@ class Strategies
      * @param int $previousCandles
      * @param int $minCandleDifference
      * @param int $minDivergencePercentage
+     * @param bool $regularDivergence
+     * @param bool $hiddenDivergence
      * @return StrategyResult
      */
-    public function rsiDivergence(int $previousCandles = 10, int $minCandleDifference = 2, int $minDivergencePercentage = 20): StrategyResult
+    public function rsiDivergence(int $previousCandles = 10, int $minCandleDifference = 2, int $minDivergencePercentage = 20,
+                                  bool $regularDivergence = true, bool $hiddenDivergence = true): StrategyResult
     {
-        return $this->indicatorDivergence(DivergenceIndicators::RSI, $previousCandles, $minCandleDifference, $minDivergencePercentage);
+        return $this->indicatorDivergence(DivergenceIndicators::RSI, $previousCandles, $minCandleDifference, $minDivergencePercentage,
+            $regularDivergence, $hiddenDivergence);
     }
 
     /**
      * @param int $previousCandles
      * @param int $minCandleDifference
      * @param int $minDivergencePercentage
+     * @param bool $regularDivergence
+     * @param bool $hiddenDivergence
      * @return StrategyResult
      */
-    public function obvDivergence(int $previousCandles = 10, int $minCandleDifference = 2, int $minDivergencePercentage = 20): StrategyResult
+    public function obvDivergence(int $previousCandles = 10, int $minCandleDifference = 2, int $minDivergencePercentage = 20,
+                                  bool $regularDivergence = true, bool $hiddenDivergence = true): StrategyResult
     {
-        return $this->indicatorDivergence(DivergenceIndicators::OBV, $previousCandles, $minCandleDifference, $minDivergencePercentage);
+        return $this->indicatorDivergence(DivergenceIndicators::OBV, $previousCandles, $minCandleDifference, $minDivergencePercentage,
+            $regularDivergence, $hiddenDivergence);
     }
 
     /**
@@ -340,10 +348,25 @@ class Strategies
      * @param int $previousCandles
      * @param int $minCandleDifference
      * @param int $minDivergencePercentage
+     * @param bool $regularDivergence
+     * @param bool $hiddenDivergence
      * @return StrategyResult
      */
-    private function indicatorDivergence(int $type, int $previousCandles, int $minCandleDifference, int $minDivergencePercentage): StrategyResult
+    private function indicatorDivergence(int $type, int $previousCandles, int $minCandleDifference, int $minDivergencePercentage,
+                                         bool $regularDivergence, bool $hiddenDivergence): StrategyResult
     {
+        $divergenceTypes = [];
+
+        if($regularDivergence) {
+            $divergenceTypes[] = DivergenceTypes::BULLISH_REGULAR_DIVERGENCE;
+            $divergenceTypes[] = DivergenceTypes::BEARISH_REGULAR_DIVERGENCE;
+        }
+
+        if($hiddenDivergence) {
+            $divergenceTypes[] = DivergenceTypes::BULLISH_HIDDEN_DIVERGENCE;
+            $divergenceTypes[] = DivergenceTypes::BEARISH_HIDDEN_DIVERGENCE;
+        }
+
         $result = new StrategyResult();
 
         if($type == DivergenceIndicators::RSI) {
@@ -376,7 +399,7 @@ class Strategies
                 $line = $indicatorPoints->getValidLine($lowPoint->getPeriod(), true);
                 if($line) {
                     $this->checkDivergence($line, $lastCloses, $minDivergencePercentage, $priceRange, $indicatorRange, true);
-                    if($line->getType() != DivergenceTypes::NO_DIVERGENCE) {
+                    if(in_array($line->getType(), $divergenceTypes)) {
                         $divergenceLines[] = $line;
                     }
                 }
@@ -390,7 +413,7 @@ class Strategies
                 $line = $indicatorPoints->getValidLine($highPoint->getPeriod(), false);
                 if($line) {
                     $this->checkDivergence($line, $lastCloses, $minDivergencePercentage, $priceRange, $indicatorRange,false);
-                    if($line->getType() != DivergenceTypes::NO_DIVERGENCE) {
+                    if(in_array($line->getType(), $divergenceTypes)) {
                         $divergenceLines[] = $line;
                     }
                 }
@@ -690,7 +713,7 @@ class Strategies
                 return false;
             }
             return call_user_func(array($this,$strategy), $config->getLastCandles(), $config->getMinCandleDifference(),
-                $config->getMinDivergencePercentage());
+                $config->getMinDivergencePercentage(), $config->isRegularDivergences(), $config->isHiddenDivergences());
         } else if($strategy == StrategyTypes::ADAPTIVE_PQ) {
             $config = $algo->getAdaptivePQConfig();
             if(!$config) {

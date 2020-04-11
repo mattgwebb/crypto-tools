@@ -39,6 +39,18 @@ class DivergenceConfig
     private $minDivergencePercentage;
 
     /**
+     * @ORM\Column(type="boolean")
+     * @var bool
+     */
+    private $regularDivergences;
+
+    /**
+     * @ORM\Column(type="boolean")
+     * @var bool
+     */
+    private $hiddenDivergences;
+
+    /**
      * @return BotAlgorithm
      */
     public function getAlgo(): BotAlgorithm
@@ -100,5 +112,37 @@ class DivergenceConfig
     public function setMinDivergencePercentage(int $minDivergencePercentage): void
     {
         $this->minDivergencePercentage = $minDivergencePercentage;
+    }
+
+    /**
+     * @return bool
+     */
+    public function isRegularDivergences(): bool
+    {
+        return $this->regularDivergences;
+    }
+
+    /**
+     * @param bool $regularDivergences
+     */
+    public function setRegularDivergences(bool $regularDivergences): void
+    {
+        $this->regularDivergences = $regularDivergences;
+    }
+
+    /**
+     * @return bool
+     */
+    public function isHiddenDivergences(): bool
+    {
+        return $this->hiddenDivergences;
+    }
+
+    /**
+     * @param bool $hiddenDivergences
+     */
+    public function setHiddenDivergences(bool $hiddenDivergences): void
+    {
+        $this->hiddenDivergences = $hiddenDivergences;
     }
 }
