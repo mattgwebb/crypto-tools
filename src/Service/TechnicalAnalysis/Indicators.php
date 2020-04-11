@@ -169,6 +169,18 @@ class Indicators
     }
 
     /**
+     * @param $data
+     * @param int $fastKPeriod
+     * @param int $slowKPeriod
+     * @return float
+     */
+    public function stoch($data, int $fastKPeriod = 14, int $slowKPeriod = 3)
+    {
+        $stoch = trader_stoch($data['high'], $data['low'], $data['close'], $fastKPeriod, $slowKPeriod);
+        $stoch = array_pop($stoch[0]);
+        return $stoch;
+    }
+    /**
      * TODO volume increase percentage over number of candles
      * @param $data
      * @param int $period

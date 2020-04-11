@@ -33,7 +33,8 @@ class Strategies
         StrategyTypes::EMA_SCALP,
         StrategyTypes::EMA_CROSSOVER,
         StrategyTypes::MA_CROSSOVER,
-        StrategyTypes::ADAPTIVE_PQ
+        StrategyTypes::ADAPTIVE_PQ,
+        StrategyTypes::STOCH
     ];
 
     /**
@@ -311,6 +312,25 @@ class Strategies
             } else  {
                 $result->setTradeResult(StrategyResult::TRADE_SHORT);
             }
+        }
+        return $result;
+    }
+
+
+    /**
+     * @param int $stochBuy
+     * @param int $stochSell
+     * @return StrategyResult
+     */
+    public function stoch(int $stochBuy = 20, int $stochSell = 80) : StrategyResult
+    {
+        $result = new StrategyResult();
+        $stoch = $this->indicators->stoch($this->data);
+
+        if($stoch < $stochBuy) {
+            $result->setTradeResult(StrategyResult::TRADE_LONG);
+        } else if($stoch > $stochSell) {
+            $result->setTradeResult(StrategyResult::TRADE_SHORT);
         }
         return $result;
     }
@@ -624,6 +644,8 @@ class Strategies
             $data['open_time'][] = $candle->getOpenTime();
             $data['close_time'][] = $candle->getCloseTime();
             $data['volume'][] = $candle->getVolume();
+            $data['high'][] = $candle->getHighPrice();
+            $data['low'][] = $candle->getLowPrice();
         }
         $this->data = $data;
         $this->currentPrice = $candle->getClosePrice();
