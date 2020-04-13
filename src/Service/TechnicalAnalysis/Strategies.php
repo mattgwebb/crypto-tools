@@ -58,6 +58,11 @@ class Strategies
     private $currentClose;
 
     /**
+     * @var array
+     */
+    private $candles;
+
+    /**
      * Strategies constructor.
      * @param Indicators $indicators
      */
@@ -564,41 +569,148 @@ class Strategies
     }
 
     /**
-     * @param TrendLine[] $trendLines
      * @return StrategyResult
      */
-    public function supportAndResistance($trendLines)
+    public function supportAndResistance()
     {
+        $trendLines = $this->detectTrendLines();
         $linesMetResult = $this->supportAndResistanceLinesMet($trendLines);
-        $breakoutsResult = $this->supportAndResistanceLinesBreakouts($trendLines);
-
-        if(!$breakoutsResult->noTrade()) {
-            return $breakoutsResult;
-        } else {
-            return $linesMetResult;
-        }
-
+        //$breakoutsResult = $this->supportAndResistanceLinesBreakouts($trendLines);
+        return $linesMetResult;
     }
 
     /**
- * @param $trendLines
- * @return StrategyResult
- */
+     * @return array
+     */
+    public function detectTrendLines()
+    {
+        $trendLines = [];
+        $pivotPoints = $this->getPivotPoints();
+        $lines = $this->getLinePoints($pivotPoints);
+
+        foreach($lines as $pivotTouches) {
+            if(count($pivotTouches) < 2) {
+                continue;
+            }
+            $lineTouches = array_values($pivotTouches);
+
+            $trendLines[] = $this->newTrendLine($lineTouches);
+        }
+        return $trendLines;
+    }
+
+    /**
+     * @param array $lineTouches
+     * @return TrendLine
+     */
+    private function newTrendLine(array $lineTouches)
+    {
+        $price = $lineTouches[0]->getClosePrice();
+
+        usort($lineTouches, function(Candle $a, Candle $b)
+        { return $a->getCloseTime() > $b->getCloseTime(); });
+
+        $firstTouch = $lineTouches[0];
+        $lastTouch = $lineTouches[count($lineTouches) - 1];
+
+        $trendLine = new TrendLine();
+        $trendLine->setStartPrice($price);
+        $trendLine->setEndPrice($price);
+        $trendLine->setStartTime($firstTouch->getCloseTime());
+        $trendLine->setEndTime($lastTouch->getCloseTime());
+
+        return $trendLine;
+    }
+
+    /**
+     * @return array
+     */
+    private function getPivotPoints()
+    {
+        $pivotPoints = [];
+
+        foreach($this->candles as $key => $candle) {
+            if(isset($this->candles[$key - 2]) && isset($this->candles[$key + 2])) {
+
+                $previousClose = $this->candles[$key - 1]->getClosePrice();
+                $nextClose = $this->candles[$key + 1]->getClosePrice();
+                $previousPreviousClose = $this->candles[$key - 2]->getClosePrice();
+                $nextNextClose = $this->candles[$key + 2]->getClosePrice();
+
+                if($candle->getClosePrice() < $previousClose && $candle->getClosePrice() < $nextClose &&
+                    $candle->getClosePrice() < $previousPreviousClose && $candle->getClosePrice() < $nextNextClose) {
+                    $pivotPoints[] = $candle;
+                }
+
+                if($candle->getClosePrice() > $previousClose && $candle->getClosePrice() > $nextClose &&
+                    $candle->getClosePrice() > $previousPreviousClose && $candle->getClosePrice() > $nextNextClose) {
+                    $pivotPoints[] = $candle;
+                }
+            }
+        }
+        return $pivotPoints;
+    }
+
+    /**
+     * @param array $pivotPoints
+     * @return array
+     */
+    private function getLinePoints(array $pivotPoints)
+    {
+        $pivotTouches = [];
+        foreach($pivotPoints as $candle) {
+            foreach($pivotPoints as $key => $potentialTouchCandle) {
+                if($candle->getOpenTime() == $potentialTouchCandle->getOpenTime()) {
+                    continue;
+                }
+                if($candle->isTouchingCandle($potentialTouchCandle)) {
+                    if(!isset($pivotTouches[$candle->getOpenTime()])) {
+                        $pivotTouches[$candle->getOpenTime()][] = $candle;
+                    }
+                    $pivotTouches[$candle->getOpenTime()][] = $potentialTouchCandle;
+                }
+            }
+        }
+
+        usort($pivotTouches, function($a, $b)
+        { return(count($a) < count($b)); });
+
+        $usedCandles = [];
+        foreach($pivotTouches as $key => $pivotTouch) {
+            foreach($pivotTouch as $touchKey => $candle) {
+                if(!in_array($candle->getOpenTime(), $usedCandles)) {
+                    $usedCandles[] = $candle->getOpenTime();
+                } else {
+                    unset($pivotTouches[$key][$touchKey]);
+                }
+            }
+        }
+        return $pivotTouches;
+    }
+
+    /**
+     * @param $trendLines
+     * @return StrategyResult
+     */
     private function supportAndResistanceLinesMet($trendLines)
     {
+        $candles = count($this->data['close']);
+        $previousPrice = $this->data['close'][$candles - 2];
+        $currentPrice = $this->currentPrice;
+
         $result = new StrategyResult();
         foreach($trendLines as $trendLine) {
             if(!$this->checkTrendLineTime($trendLine)) {
                 continue;
             }
-            $price = $this->getTrendLinePrice($trendLine);
+            $linePrice = $this->getTrendLinePrice($trendLine);
 
             if($trendLine->getType() == TrendLine::TYPE_SUPPORT) {
-                if($this->currentPrice <= $price) {
+                if($currentPrice <= $linePrice && $previousPrice > $linePrice) {
                     $result->setTradeResult(StrategyResult::TRADE_LONG);
                 }
             } else if($trendLine->getType() == TrendLine::TYPE_RESISTANCE) {
-                if($this->currentPrice >= $price) {
+                if($currentPrice >= $linePrice && $previousPrice < $linePrice) {
                     $result->setTradeResult(StrategyResult::TRADE_SHORT);
                 }
             }
@@ -673,6 +785,7 @@ class Strategies
         $this->data = $data;
         $this->currentPrice = $candle->getClosePrice();
         $this->currentClose = $candle->getCloseTime();
+        $this->candles = $candles;
     }
 
     /**

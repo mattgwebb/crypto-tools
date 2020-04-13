@@ -173,6 +173,26 @@ class BotAlgorithmManager
 
     /**
      * @param BotAlgorithm $algo
+     * @param int $from
+     * @param int $to
+     * @param int $candlesToLoad
+     * @return array
+     * @throws \Exception
+     */
+    public function runTrendLinesTest(BotAlgorithm $algo, int $from = 0, int $to = 0,
+                            int $candlesToLoad = self::CANDLES_TO_LOAD)
+    {
+        $lastPositionCandles = $candlesToLoad - 1;
+
+        $from -= $lastPositionCandles * ($algo->getTimeFrame() * 60);
+        $candles = $this->currencyPairRepo->getCandlesByTimeFrame($algo->getCurrencyPair(), $algo->getTimeFrame(), $from, $to);
+
+        $this->strategies->setData($candles);
+        return $this->strategies->detectTrendLines();
+    }
+
+    /**
+     * @param BotAlgorithm $algo
      * @param Candle[] $candles
      * @return StrategyResult|bool
      */

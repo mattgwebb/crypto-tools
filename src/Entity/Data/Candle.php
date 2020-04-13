@@ -205,6 +205,11 @@ class Candle implements \JsonSerializable
         return is_null($this->getId());
     }
 
+    public function isTouchingCandle(Candle $candle)
+    {
+        return $this->getClosePrice() >= $candle->getLowPrice() && $this->getClosePrice() <= $candle->getHighPrice();
+    }
+    
     /**
      * Specify data which should be serialized to JSON
      * @link https://php.net/manual/en/jsonserializable.jsonserialize.php

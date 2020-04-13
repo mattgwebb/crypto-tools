@@ -177,6 +177,37 @@ class TestController extends AbstractController
     }
 
     /**
+     * @Route("/algos/trendlines/result", name="run_trend_line_test", methods={"GET"})
+     * @return Response
+     * @throws \Exception
+     */
+    public function runTrendLinesTest(Request $request)
+    {
+        $id = $request->query->get('algo-id');
+        $startTime = $request->query->get('start-time');
+        $endTime = $request->query->get('end-time');
+
+        /** @var BotAlgorithm $algo */
+        $algo = $this->getDoctrine()
+            ->getRepository(BotAlgorithm::class)
+            ->find($id);
+
+        if(!$algo) {
+            return $this->render('error.html.twig', [
+                "error" => "Algo not found.",
+            ]);
+        }
+
+        $trendLines = $this->manager->runTrendLinesTest($algo, $startTime, $endTime);
+
+        return $this->render('algo_test_result.html.twig', [
+            "pair" => $algo->getCurrencyPair(),
+            "trades" => [],
+            "trend_lines" => $trendLines
+        ]);
+    }
+
+    /**
      * @Route("/algos", name="new_algo", methods={"POST"})
      * @param Request $request
      * @return \Symfony\Component\HttpFoundation\RedirectResponse

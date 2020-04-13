@@ -85,6 +85,14 @@
                         },
                         {% endif %}
                         {% endfor %}
+                        {% for trend_line in trend_lines  %}
+                        {
+                            type: 'line',
+                            data:  [[{{ trend_line.startTime * 1000 }}, {{ trend_line.startPrice }}],[{{ trend_line.endTime * 1000 }}, {{ trend_line.endPrice }}]],
+                            color: 'green',
+                            yAxis: 0,
+                        },
+                        {% endfor %}
                     ]
                 }, function(chart){
 
