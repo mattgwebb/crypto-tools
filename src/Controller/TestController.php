@@ -183,25 +183,27 @@ class TestController extends AbstractController
      */
     public function runTrendLinesTest(Request $request)
     {
-        $id = $request->query->get('algo-id');
-        $startTime = $request->query->get('start-time');
-        $endTime = $request->query->get('end-time');
+        $id = $request->query->get('pair_id');
+        $startTime = $request->query->get('start_time');
+        $endTime = $request->query->get('end_time');
+        $timeFrame = $request->query->get('timeframe');
 
-        /** @var BotAlgorithm $algo */
-        $algo = $this->getDoctrine()
-            ->getRepository(BotAlgorithm::class)
+
+        /** @var CurrencyPair $pair */
+        $pair = $this->getDoctrine()
+            ->getRepository(CurrencyPair::class)
             ->find($id);
 
-        if(!$algo) {
+        if(!$pair) {
             return $this->render('error.html.twig', [
-                "error" => "Algo not found.",
+                "error" => "Pair not found.",
             ]);
         }
 
-        $trendLines = $this->manager->runTrendLinesTest($algo, $startTime, $endTime);
+        $trendLines = $this->manager->runTrendLinesTest($pair, $timeFrame, $startTime, $endTime);
 
         return $this->render('algo_test_result.html.twig', [
-            "pair" => $algo->getCurrencyPair(),
+            "pair" => $pair,
             "trades" => [],
             "trend_lines" => $trendLines
         ]);

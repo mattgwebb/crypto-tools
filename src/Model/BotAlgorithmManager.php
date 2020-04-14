@@ -8,6 +8,7 @@ use App\Entity\Algorithm\AlgoTestResult;
 use App\Entity\Algorithm\BotAlgorithm;
 use App\Entity\Data\Candle;
 use App\Entity\Algorithm\StrategyResult;
+use App\Entity\Data\CurrencyPair;
 use App\Entity\Trade\Trade;
 use App\Entity\Trade\TradeTypes;
 use App\Repository\BotAlgorithmRepository;
@@ -172,20 +173,20 @@ class BotAlgorithmManager
     }
 
     /**
-     * @param BotAlgorithm $algo
+     * @param CurrencyPair $pair
+     * @param int $timeFrame
      * @param int $from
      * @param int $to
      * @param int $candlesToLoad
      * @return array
-     * @throws \Exception
      */
-    public function runTrendLinesTest(BotAlgorithm $algo, int $from = 0, int $to = 0,
+    public function runTrendLinesTest(CurrencyPair $pair, int $timeFrame = 60, int $from = 0, int $to = 0,
                             int $candlesToLoad = self::CANDLES_TO_LOAD)
     {
         $lastPositionCandles = $candlesToLoad - 1;
 
-        $from -= $lastPositionCandles * ($algo->getTimeFrame() * 60);
-        $candles = $this->currencyPairRepo->getCandlesByTimeFrame($algo->getCurrencyPair(), $algo->getTimeFrame(), $from, $to);
+        $from -= $lastPositionCandles * ($timeFrame * 60);
+        $candles = $this->currencyPairRepo->getCandlesByTimeFrame($pair, $timeFrame, $from, $to);
 
         $this->strategies->setData($candles);
         return $this->strategies->detectTrendLines();
