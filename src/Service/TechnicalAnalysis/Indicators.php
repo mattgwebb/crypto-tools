@@ -181,6 +181,35 @@ class Indicators
         return $stoch;
     }
     /**
+     * @param $data
+     * @param $period
+     * @param bool $prior
+     * @return array
+     */
+    public function adxPeriod($data, $period, $prior = false)
+    {
+        $adxArray = trader_adx($data['high'], $data['low'], $data['close'], $period);
+        $adx = @array_pop($adxArray) ?? 0;
+        $adx_prior = @array_pop($adxArray) ?? 0;
+        return ($prior ? $adx : $adx_prior);
+    }
+
+    /**
+     * TODO implement (doesn´t calculate D+ D- lines, needed for crossover)
+     * @param $data
+     * @param $period
+     * @param bool $prior
+     * @return array
+     */
+    public function dmiPeriod($data, $period, $prior = false)
+    {
+        $dmiArray = trader_dx($data['high'], $data['low'], $data['close'], $period);
+        $dmi = @array_pop($dmiArray) ?? 0;
+        $dmi_prior = @array_pop($dmiArray) ?? 0;
+        return ($prior ? $dmi : $dmi_prior);
+    }
+
+    /**
      * TODO volume increase percentage over number of candles
      * @param $data
      * @param int $period

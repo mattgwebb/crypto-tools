@@ -36,6 +36,7 @@ class Strategies
         StrategyTypes::EMA_CROSSOVER,
         StrategyTypes::MA_CROSSOVER,
         StrategyTypes::ADAPTIVE_PQ,
+        StrategyTypes::ADX_DMI,
         StrategyTypes::STOCH
     ];
 
@@ -331,6 +332,21 @@ class Strategies
         return $result;
     }
 
+    /**
+     * TODO implement strategy
+     * @param int $period
+     * @return StrategyResult
+     */
+    public function adxDmi(int $period = 14) : StrategyResult
+    {
+        $result = new StrategyResult();
+
+        $dmi = $this->indicators->dmiPeriod($this->data, $period);
+        $adx = $this->indicators->adxPeriod($this->data, $period);
+
+        return $result;
+
+    }
 
     /**
      * @param int $stochBuy
