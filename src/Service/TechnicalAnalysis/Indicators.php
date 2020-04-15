@@ -180,6 +180,19 @@ class Indicators
         $stoch = array_pop($stoch[0]);
         return $stoch;
     }
+
+    /**
+     * @param $data
+     * @param int $fastPeriod
+     * @param int $slowPeriod
+     * @return float
+     */
+    public function chaikinOscillatorPeriod($data, int $fastPeriod = 3, int $slowPeriod = 10)
+    {
+        $chaikin = trader_adosc($data['high'], $data['low'], $data['close'], $data['volume'], $fastPeriod, $slowPeriod);
+        return $chaikin;
+    }
+
     /**
      * @param $data
      * @param $period

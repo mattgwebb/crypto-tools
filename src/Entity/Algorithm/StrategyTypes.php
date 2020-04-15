@@ -15,6 +15,7 @@ abstract class StrategyTypes
     const SUPPORT_RESISTANCE = "supportAndResistance";
     const RSI_DIVERGENCE = "rsiDivergence";
     const OBV_DIVERGENCE = "obvDivergence";
+    const CHAIKIN_DIVERGENCE = "chaikinDivergence";
     const EMA_SCALP = "emaScalp";
     const EMA_CROSSOVER = "emaCrossover";
     const MA_CROSSOVER = "maCrossover";

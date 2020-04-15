@@ -32,6 +32,7 @@ class Strategies
         StrategyTypes::SUPPORT_RESISTANCE,
         StrategyTypes::RSI_DIVERGENCE,
         StrategyTypes::OBV_DIVERGENCE,
+        StrategyTypes::CHAIKIN_DIVERGENCE,
         StrategyTypes::EMA_SCALP,
         StrategyTypes::EMA_CROSSOVER,
         StrategyTypes::MA_CROSSOVER,
@@ -287,6 +288,21 @@ class Strategies
      * @param bool $hiddenDivergence
      * @return StrategyResult
      */
+    public function chaikinDivergence(int $previousCandles = 10, int $minCandleDifference = 2, int $minDivergencePercentage = 20,
+                                  bool $regularDivergence = true, bool $hiddenDivergence = true): StrategyResult
+    {
+        return $this->indicatorDivergence(DivergenceIndicators::CHAIKIN, $previousCandles, $minCandleDifference, $minDivergencePercentage,
+            $regularDivergence, $hiddenDivergence);
+    }
+
+    /**
+     * @param int $previousCandles
+     * @param int $minCandleDifference
+     * @param int $minDivergencePercentage
+     * @param bool $regularDivergence
+     * @param bool $hiddenDivergence
+     * @return StrategyResult
+     */
     public function obvDivergence(int $previousCandles = 10, int $minCandleDifference = 2, int $minDivergencePercentage = 20,
                                   bool $regularDivergence = true, bool $hiddenDivergence = true): StrategyResult
     {
@@ -396,7 +412,11 @@ class Strategies
             $indicatorPeriod = $this->indicators->rsiPeriod($this->data);
         } else if($type == DivergenceIndicators::OBV) {
             $indicatorPeriod = $this->indicators->obvPeriod($this->data);
-        } else return $result;
+        } else if($type == DivergenceIndicators::CHAIKIN) {
+            $indicatorPeriod = $this->indicators->chaikinOscillatorPeriod($this->data);
+        } else {
+            return $result;
+        }
 
         $indicatorPeriod = array_values($indicatorPeriod);
         $indicatorPeriod = array_slice($indicatorPeriod, $previousCandles * (-1));
@@ -871,7 +891,7 @@ class Strategies
                 return false;
             }
             return call_user_func(array($this,$strategy), $config->getSellOver(), $config->getBuyUnder(), $config->getPeriod());
-        } else if($strategy == StrategyTypes::RSI_DIVERGENCE || $strategy == StrategyTypes::OBV_DIVERGENCE) {
+        } else if(in_array($strategy,[StrategyTypes::RSI_DIVERGENCE, StrategyTypes::OBV_DIVERGENCE, StrategyTypes::CHAIKIN_DIVERGENCE])) {
             $config = $algo->getDivergenceConfig();
             if(!$config) {
                 return false;
