@@ -84,15 +84,25 @@
                             yAxis: 1,
                         },
                         {% endif %}
+                        {% if trade.extra_data.trend_line is defined %}
+                        {
+                            type: 'line',
+                            data:  [[{{ trade.extra_data.trend_line.startTime * 1000 }}, {{ trade.extra_data.trend_line.startPrice }}],[{{ trade.extra_data.trend_line.endTime * 1000 }}, {{ trade.extra_data.trend_line.endPrice }}]],
+                            color: {% if trade.extra_data.trend_line.type == 1 %}'green'{% else %}'red'{% endif %},
+                            yAxis: 0,
+                        },
+                        {% endif %}
                         {% endfor %}
+                        {% if trend_lines is defined %}
                         {% for trend_line in trend_lines  %}
                         {
                             type: 'line',
                             data:  [[{{ trend_line.startTime * 1000 }}, {{ trend_line.startPrice }}],[{{ trend_line.endTime * 1000 }}, {{ trend_line.endPrice }}]],
-                            color: 'green',
+                            color: {% if trend_line.type == 1 %}'green'{% else %}'red'{% endif %},
                             yAxis: 0,
                         },
                         {% endfor %}
+                        {% endif %}
                     ]
                 }, function(chart){
 

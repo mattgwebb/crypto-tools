@@ -14,6 +14,8 @@ use App\Entity\TechnicalAnalysis\IndicatorPointList;
 use App\Entity\Algorithm\StrategyResult;
 use App\Entity\Algorithm\StrategyTypes;
 use App\Entity\TechnicalAnalysis\IndicatorTypes;
+use App\Entity\TechnicalAnalysis\PivotPoint;
+use App\Entity\TechnicalAnalysis\PivotTypes;
 use App\Entity\TechnicalAnalysis\TrendLine;
 use App\Exceptions\TechnicalAnalysis\IndicatorNotSupported;
 
@@ -605,10 +607,20 @@ class Strategies
      */
     private function newTrendLine(array $lineTouches)
     {
-        $price = $lineTouches[0]->getClosePrice();
+        $price = $lineTouches[0]->getCandle()->getClosePrice();
 
-        usort($lineTouches, function(Candle $a, Candle $b)
-        { return $a->getCloseTime() > $b->getCloseTime(); });
+        usort($lineTouches, function(PivotPoint $a, PivotPoint $b)
+        { return $a->getCandle()->getCloseTime() > $b->getCandle()->getCloseTime(); });
+
+        $tops = $bottoms = 0;
+        /** @var PivotPoint $pivotPoint */
+        foreach($lineTouches as $pivotPoint) {
+            if($pivotPoint->getType() == PivotTypes::TOP) {
+                $tops ++;
+            } else if($pivotPoint->getType() == PivotTypes::BOTTOM) {
+                $bottoms ++;
+            }
+        }
 
         $firstTouch = $lineTouches[0];
         $lastTouch = $lineTouches[count($lineTouches) - 1];
@@ -616,8 +628,14 @@ class Strategies
         $trendLine = new TrendLine();
         $trendLine->setStartPrice($price);
         $trendLine->setEndPrice($price);
-        $trendLine->setStartTime($firstTouch->getCloseTime());
-        $trendLine->setEndTime($lastTouch->getCloseTime());
+        $trendLine->setStartTime($firstTouch->getCandle()->getCloseTime());
+        $trendLine->setEndTime($lastTouch->getCandle()->getCloseTime());
+
+        if($tops > $bottoms) {
+            $trendLine->setType(TrendLine::TYPE_RESISTANCE);
+        } else {
+            $trendLine->setType(TrendLine::TYPE_SUPPORT);
+        }
 
         return $trendLine;
     }
@@ -639,12 +657,12 @@ class Strategies
 
                 if($candle->getClosePrice() < $previousClose && $candle->getClosePrice() < $nextClose &&
                     $candle->getClosePrice() < $previousPreviousClose && $candle->getClosePrice() < $nextNextClose) {
-                    $pivotPoints[] = $candle;
+                    $pivotPoints[] = new PivotPoint($candle, PivotTypes::BOTTOM);
                 }
 
                 if($candle->getClosePrice() > $previousClose && $candle->getClosePrice() > $nextClose &&
                     $candle->getClosePrice() > $previousPreviousClose && $candle->getClosePrice() > $nextNextClose) {
-                    $pivotPoints[] = $candle;
+                    $pivotPoints[] = new PivotPoint($candle, PivotTypes::TOP);
                 }
             }
         }
@@ -658,16 +676,23 @@ class Strategies
     private function getLinePoints(array $pivotPoints)
     {
         $pivotTouches = [];
-        foreach($pivotPoints as $candle) {
-            foreach($pivotPoints as $key => $potentialTouchCandle) {
-                if($candle->getOpenTime() == $potentialTouchCandle->getOpenTime()) {
+        /** @var PivotPoint $pivotPoint */
+        foreach($pivotPoints as $pivotPoint) {
+            $pivotPointCandle = $pivotPoint->getCandle();
+            /**
+             * @var int $key
+             * @var  PivotPoint $potentialTouchPoint
+             */
+            foreach($pivotPoints as $key => $potentialTouchPoint) {
+                $potentialTouchCandle = $potentialTouchPoint->getCandle();
+                if($pivotPointCandle->getOpenTime() == $potentialTouchCandle->getOpenTime()) {
                     continue;
                 }
-                if($candle->isTouchingCandle($potentialTouchCandle)) {
-                    if(!isset($pivotTouches[$candle->getOpenTime()])) {
-                        $pivotTouches[$candle->getOpenTime()][] = $candle;
+                if($pivotPointCandle->isTouchingCandle($potentialTouchCandle)) {
+                    if(!isset($pivotTouches[$pivotPointCandle->getOpenTime()])) {
+                        $pivotTouches[$pivotPointCandle->getOpenTime()][] = $pivotPoint;
                     }
-                    $pivotTouches[$candle->getOpenTime()][] = $potentialTouchCandle;
+                    $pivotTouches[$pivotPointCandle->getOpenTime()][] = $potentialTouchPoint;
                 }
             }
         }
@@ -677,7 +702,8 @@ class Strategies
 
         $usedCandles = [];
         foreach($pivotTouches as $key => $pivotTouch) {
-            foreach($pivotTouch as $touchKey => $candle) {
+            foreach($pivotTouch as $touchKey => $pivotPoint) {
+                $candle = $pivotPoint->getCandle();
                 if(!in_array($candle->getOpenTime(), $usedCandles)) {
                     $usedCandles[] = $candle->getOpenTime();
                 } else {
@@ -699,19 +725,25 @@ class Strategies
         $currentPrice = $this->currentPrice;
 
         $result = new StrategyResult();
+
+        /** @var TrendLine $trendLine */
         foreach($trendLines as $trendLine) {
             if(!$this->checkTrendLineTime($trendLine)) {
-                continue;
+                //continue;
             }
             $linePrice = $this->getTrendLinePrice($trendLine);
+
+            $result->setExtraData(['trend_line' => $trendLine]);
 
             if($trendLine->getType() == TrendLine::TYPE_SUPPORT) {
                 if($currentPrice <= $linePrice && $previousPrice > $linePrice) {
                     $result->setTradeResult(StrategyResult::TRADE_LONG);
+                    return $result;
                 }
             } else if($trendLine->getType() == TrendLine::TYPE_RESISTANCE) {
                 if($currentPrice >= $linePrice && $previousPrice < $linePrice) {
                     $result->setTradeResult(StrategyResult::TRADE_SHORT);
+                    return $result;
                 }
             }
         }
@@ -750,6 +782,9 @@ class Strategies
      */
     private function getTrendLinePrice(TrendLine $trendLine)
     {
+        if($trendLine->getStartPrice() == $trendLine->getEndPrice()) {
+            return $trendLine->getStartPrice();
+        }
         $timeRange = $trendLine->getEndTime() - $trendLine->getStartTime();
         $priceRange = $trendLine->getEndPrice() - $trendLine->getStartPrice();
         $timeDifference = $this->currentClose - $trendLine->getStartTime();
