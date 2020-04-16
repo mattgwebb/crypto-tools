@@ -38,6 +38,7 @@ class Strategies
         StrategyTypes::MA_CROSSOVER,
         StrategyTypes::ADAPTIVE_PQ,
         StrategyTypes::ADX_DMI,
+        StrategyTypes::ADX_MOM,
         StrategyTypes::STOCH
     ];
 
@@ -361,7 +362,28 @@ class Strategies
         $adx = $this->indicators->adxPeriod($this->data, $period);
 
         return $result;
+    }
 
+    /**
+     * @param int $adxPeriod
+     * @param int $momPeriod
+     * @return StrategyResult
+     */
+    public function adxMom(int $adxPeriod = 25, int $momPeriod = 14) : StrategyResult
+    {
+        $result = new StrategyResult();
+
+        $adx = $this->indicators->adx($this->data, $adxPeriod);
+        $mom = $this->indicators->mom($this->data, $momPeriod);
+        $fsar = $this->indicators->fsar($this->data);
+
+        if ($adx > 25 && $mom > 100 && $fsar > 0) {
+            $result->setTradeResult(StrategyResult::TRADE_LONG);
+        }
+        if ($adx > 25 && $mom < 100 && $fsar < 0) {
+            $result->setTradeResult(StrategyResult::TRADE_SHORT);
+        }
+        return $result;
     }
 
     /**

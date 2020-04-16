@@ -195,11 +195,94 @@ class Indicators
 
     /**
      * @param $data
+     * @param int $period
+     * @return float
+     */
+    public function adx($data, int $period = 14)
+    {
+        $adx = trader_adx($data['high'], $data['low'], $data['close'], $period);
+        $adx = @array_pop($adx) ?? 0;
+        return $adx;
+    }
+
+    /**
+     * @param $data
+     * @param int $period
+     * @return float
+     */
+    public function mom($data, int $period = 14)
+    {
+        $mom  = trader_mom($data['close'], $period);
+        $mom  = @array_pop($mom) ?? 0;
+        return $mom;
+    }
+
+    /**
+     * @param $data
+     * @param float $acceleration
+     * @param float $maximum
+     *
+     * @return int
+     *
+     *  This is a forex version of SAR which is used with Stoch.
+     *  The idea is the positioning of the sar is above 'certain' kinds of candles
+     */
+    public function fsar($data, $acceleration=0.02, $maximum=0.02)
+    {
+        # array $high , array $low [, float $acceleration [, float $maximum ]]
+        $_sar = trader_sar($data['high'], $data['low'], $acceleration, $maximum);
+        $current_sar = (float) array_pop($_sar);
+        $prior_sar   = (float) array_pop($_sar);
+
+        $last_high  = (float) array_pop($data['high']);
+        $last_low   = (float) array_pop($data['low']);
+        $last_open  = (float) array_pop($data['open']);
+        $last_close = (float) array_pop($data['close']);
+
+        $prior_high  = (float) array_pop($data['high']);
+        $prior_low   = (float) array_pop($data['low']);
+        $prior_open  = (float) array_pop($data['open']);
+        $prior_close = (float) array_pop($data['close']);
+
+        $prev_open  = (float) array_pop($data['open']);
+        $prev_close = (float) array_pop($data['close']);
+
+        $below        = $current_sar < $last_low;
+        $above        = $current_sar > $last_high;
+        $red_candle   = $last_open < $last_close;
+        $green_candle = $last_open > $last_close;
+
+        $prior_below        = $prior_sar < $prior_low;
+        $prior_above        = $prior_sar > $prior_high;
+        $prior_red_candle   = $prior_open < $prior_close;
+        $prior_green_candle = $prior_open > $prior_close;
+
+        $prev_red_candle   = $prev_open < $prev_close;
+        $prev_green_candle = $prev_open > $prev_close;
+
+        $prior_red_candle   = ($prev_red_candle || $prior_red_candle ? true : false);
+        $prior_green_candle = ($prev_green_candle || $prior_green_candle ? true : false);
+
+
+        if (($prior_above && $prior_red_candle) && ($below && $green_candle)) {
+            /** SAR is below a NEW green candle. */
+            return 1; // buy signal
+        } elseif (($prior_below && $prior_green_candle) && ($above && $red_candle)) {
+            /** SAR is above a NEW red candle */
+            return -1; // sell signal
+        } else {
+            /** do nothing  */
+            return 0; // twiddle thumbs
+        }
+    }
+
+    /**
+     * @param $data
      * @param $period
      * @param bool $prior
      * @return array
      */
-    public function adxPeriod($data, $period, $prior = false)
+    public function adxPeriod($data, int $period = 14, $prior = false)
     {
         $adxArray = trader_adx($data['high'], $data['low'], $data['close'], $period);
         $adx = @array_pop($adxArray) ?? 0;

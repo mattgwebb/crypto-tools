@@ -21,5 +21,6 @@ abstract class StrategyTypes
     const MA_CROSSOVER = "maCrossover";
     const ADAPTIVE_PQ = "adaptivePQ";
     const ADX_DMI = "adxDmi";
+    const ADX_MOM = "adxMom";
     const STOCH = "stoch";
 }
