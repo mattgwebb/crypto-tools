@@ -23,4 +23,5 @@ abstract class StrategyTypes
     const ADX_DMI = "adxDmi";
     const ADX_MOM = "adxMom";
     const STOCH = "stoch";
+    const GUPPY_CROSSOVER = "guppyCrossover";
 }

@@ -39,7 +39,8 @@ class Strategies
         StrategyTypes::ADAPTIVE_PQ,
         StrategyTypes::ADX_DMI,
         StrategyTypes::ADX_MOM,
-        StrategyTypes::STOCH
+        StrategyTypes::STOCH,
+        StrategyTypes::GUPPY_CROSSOVER
     ];
 
     /**
@@ -264,6 +265,52 @@ class Strategies
         $period2PriorMA = $this->indicators->ma($this->data['close'], $period2, 1); // prior
 
         return $this->checkCrossMovingAverages($period1MA, $period1PriorMA, $period2MA, $period2PriorMA);
+    }
+
+    /**
+     * @return StrategyResult
+     */
+    public function guppyCrossover() : StrategyResult
+    {
+        $result = new StrategyResult();
+
+        $shortPeriods = [3,5,8,10,12,15];
+        $longPeriods = [30,35,40,45,50,60];
+
+        $currentShortEMAs = $priorShortEMAs = $currentLongEMAs = $priorLongEMAs = [];
+
+        foreach ($shortPeriods as $shortPeriod) {
+            $currentShortEMAs[] = $this->indicators->ema($this->data['close'], $shortPeriod);
+            $priorShortEMAs[] = $this->indicators->ema($this->data['close'], $shortPeriod, 1);
+        }
+
+        foreach ($longPeriods as $longPeriod) {
+            $currentLongEMAs[] = $this->indicators->ema($this->data['close'], $longPeriod);
+            $priorLongEMAs[] = $this->indicators->ema($this->data['close'], $longPeriod, 1);
+        }
+
+        $minShortEMA = min($currentShortEMAs);
+        $maxShortEMA = max($currentShortEMAs);
+
+        $minPriorShortEMA = min($priorShortEMAs);
+        $maxPriorShortEMA = max($priorShortEMAs);
+
+        $minLongEMA = min($currentLongEMAs);
+        $maxLongEMA = max($currentLongEMAs);
+
+        $minPriorLongEMA = min($priorLongEMAs);
+        $maxPriorLongEMA = max($priorLongEMAs);
+
+        if($minShortEMA >= $maxLongEMA) {
+            if($minPriorShortEMA < $maxPriorLongEMA) {
+                $result->setTradeResult(StrategyResult::TRADE_LONG);
+            }
+        } else if($minLongEMA >= $maxShortEMA) {
+            if($minPriorLongEMA < $maxPriorShortEMA) {
+                $result->setTradeResult(StrategyResult::TRADE_SHORT);
+            }
+        }
+        return $result;
     }
 
     /**
