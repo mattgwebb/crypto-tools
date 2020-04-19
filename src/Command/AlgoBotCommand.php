@@ -28,7 +28,7 @@ class AlgoBotCommand extends Command
     const CANDLES_TO_LOAD = 50;
 
     // the name of the command (the part after "bin/console")
-    protected static $defaultName = 'app:run-bot';
+    protected static $defaultName = 'app:bot:run';
 
     /**
      * @var EntityManagerInterface

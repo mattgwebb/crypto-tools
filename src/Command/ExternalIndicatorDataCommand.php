@@ -13,7 +13,7 @@ use Symfony\Component\Console\Output\OutputInterface;
 class ExternalIndicatorDataCommand extends Command
 {
     // the name of the command (the part after "bin/console")
-    protected static $defaultName = 'app:get-external-indicator-data';
+    protected static $defaultName = 'app:external:latest';
 
     /**
      * @var ExternalDataService

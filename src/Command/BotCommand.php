@@ -23,7 +23,7 @@ use Symfony\Component\Process\Process;
 class BotCommand extends Command
 {
     // the name of the command (the part after "bin/console")
-    protected static $defaultName = 'app:run-bots-pair';
+    protected static $defaultName = 'app:bot:pair';
 
     /**
      * @var EntityManagerInterface
@@ -114,7 +114,7 @@ class BotCommand extends Command
             if($algo->getMode() == AlgoModes::NOT_ACTIVE) {
                 continue;
             }
-            $process = new Process(["php", $this->projectDir."/bin/console", "app:run-bot", $algo->getId(), $lastPrice, $lastCandle->getId(), "--no-debug"]);
+            $process = new Process(["php", $this->projectDir."/bin/console", "app:bot:run", $algo->getId(), $lastPrice, $lastCandle->getId(), "--no-debug"]);
             $process->start();
             $runningProcesses[] = $process;
         }

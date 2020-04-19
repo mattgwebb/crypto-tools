@@ -13,7 +13,7 @@ use Symfony\Component\Console\Output\OutputInterface;
 class ExternalDataCommand extends Command
 {
     // the name of the command (the part after "bin/console")
-    protected static $defaultName = 'app:get-latest-data';
+    protected static $defaultName = 'app:data:latest';
 
     /**
      * @var ExternalDataService

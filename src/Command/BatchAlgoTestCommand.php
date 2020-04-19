@@ -31,7 +31,7 @@ class BatchAlgoTestCommand extends Command
     ];
 
     // the name of the command (the part after "bin/console")
-    protected static $defaultName = 'app:batch-algo-test';
+    protected static $defaultName = 'app:test:batch';
 
     /**
      * @var EntityManagerInterface
