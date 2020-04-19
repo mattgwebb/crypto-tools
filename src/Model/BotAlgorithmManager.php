@@ -8,11 +8,17 @@ use App\Entity\Algorithm\AlgoTestResult;
 use App\Entity\Algorithm\BotAlgorithm;
 use App\Entity\Data\Candle;
 use App\Entity\Algorithm\StrategyResult;
+use App\Entity\Data\Currency;
 use App\Entity\Data\CurrencyPair;
+use App\Entity\Data\ExternalIndicatorData;
+use App\Entity\Data\ExternalIndicatorDataType;
+use App\Entity\Data\TimeFrames;
 use App\Entity\Trade\Trade;
 use App\Entity\Trade\TradeTypes;
 use App\Repository\BotAlgorithmRepository;
+use App\Repository\CandleRepository;
 use App\Repository\CurrencyPairRepository;
+use App\Repository\ExternalIndicatorDataRepository;
 use App\Repository\TradeRepository;
 use App\Service\TechnicalAnalysis\Strategies;
 use Doctrine\ORM\EntityManagerInterface;
@@ -37,6 +43,11 @@ class BotAlgorithmManager
     private $currencyPairRepo;
 
     /**
+     * @var CandleRepository
+     */
+    private $candleRepository;
+
+    /**
      * @var Strategies
      */
     private $strategies;
@@ -52,6 +63,11 @@ class BotAlgorithmManager
     private $tradeRepository;
 
     /**
+     * @var ExternalIndicatorDataRepository
+     */
+    private $externalIndicatorRepository;
+
+    /**
      * @var EntityManagerInterface
      */
     private $entityManager;
@@ -60,21 +76,26 @@ class BotAlgorithmManager
      * BotAlgorithmManager constructor.
      * @param BotAlgorithmRepository $botAlgorithmRepo
      * @param CurrencyPairRepository $currencyRepo
+     * @param CandleRepository $candleRepository
      * @param Strategies $strategies
      * @param LoggerInterface $algosLogger
      * @param TradeRepository $tradeRepository
+     * @param ExternalIndicatorDataRepository $externalIndicatorRepository
      * @param EntityManagerInterface $entityManager
      */
     public function __construct(BotAlgorithmRepository $botAlgorithmRepo, CurrencyPairRepository $currencyRepo,
-                                Strategies $strategies, LoggerInterface $algosLogger, TradeRepository $tradeRepository,
+                                CandleRepository $candleRepository, Strategies $strategies, LoggerInterface $algosLogger,
+                                TradeRepository $tradeRepository, ExternalIndicatorDataRepository $externalIndicatorRepository,
                                 EntityManagerInterface $entityManager)
     {
         $this->botAlgorithmRepo = $botAlgorithmRepo;
         $this->currencyPairRepo = $currencyRepo;
+        $this->candleRepository = $candleRepository;
         $this->strategies = $strategies;
         $this->logger = $algosLogger;
         $this->tradeRepository = $tradeRepository;
         $this->entityManager = $entityManager;
+        $this->externalIndicatorRepository = $externalIndicatorRepository;
     }
 
     /**
@@ -172,6 +193,59 @@ class BotAlgorithmManager
         return $trades;
     }
 
+
+    /**
+     * @param ExternalIndicatorDataType $type
+     * @param CurrencyPair $pair
+     * @param int $from
+     * @param int $to
+     * @return array
+     */
+    public function runExternalIndicatorTest(ExternalIndicatorDataType $type, CurrencyPair $pair, int $from, int $to)
+    {
+        $openTradePrice = 0;
+        $compoundedProfit = 1;
+        $trades = [];
+
+        $this->logger->info("********************* New test  ************************");
+        $this->logger->info($type->getName()." ".$pair->getSymbol(). "from $from to $to");
+
+        $data = $this->externalIndicatorRepository->getData($type, $from, $to);
+
+        /** @var ExternalIndicatorData $indicatorData */
+        foreach($data as $indicatorData) {
+            if($openTradePrice == 0 && $indicatorData->getIndicatorValue() <= 20) {
+                $trade = $this->newExternalIndicatorTrade($pair, $indicatorData, TradeTypes::TRADE_BUY);
+                $trades[] = $trade;
+
+                $openTradePrice = $trade['price'];
+
+                $this->logger->info(json_encode($trade));
+            } else if($openTradePrice > 0 && $indicatorData->getIndicatorValue() >= 60) {
+
+                $trade = $this->newExternalIndicatorTrade($pair, $indicatorData, TradeTypes::TRADE_SELL);
+
+                $profit = ($trade['price']/$openTradePrice);
+                $percentage = ($profit - 1) * 100;
+                $compoundedProfit *= $profit;
+
+                $trade["percentage"] = round($percentage, 2);
+                $trade["stopLoss_takeProfit"] = false;
+                $trades[] = $trade;
+
+                $openTradePrice = 0;
+
+                $this->logger->info(json_encode($trade));
+            }
+        }
+        $compoundedPercentage = ($compoundedProfit  - 1) * 100;
+
+        $trade = "percentage $compoundedPercentage";
+        $this->logger->info($trade);
+
+        return $trades;
+    }
+
     /**
      * @param CurrencyPair $pair
      * @param int $timeFrame
@@ -250,6 +324,19 @@ class BotAlgorithmManager
     public function saveAlgo(BotAlgorithm $algo)
     {
         $this->entityManager->persist($algo);
+    }
+
+    /**
+     * @param CurrencyPair $pair
+     * @param ExternalIndicatorData $indicatorData
+     * @param int $tradeSide
+     * @return array
+     */
+    private function newExternalIndicatorTrade(CurrencyPair $pair, ExternalIndicatorData $indicatorData, int $tradeSide)
+    {
+        $candle = $this->candleRepository->getCandleByTime($pair, $indicatorData->getCloseTime());
+
+        return $this->newTestTrade($candle, $tradeSide);
     }
 
     /**

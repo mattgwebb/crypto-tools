@@ -29,4 +29,29 @@ class ExternalIndicatorDataRepository extends ServiceEntityRepository
         return $this->findOneBy(["indicatorType" => $indicatorDataType], ["closeTime" => "desc"]);
     }
 
+    /**
+     * @param ExternalIndicatorDataType $indicatorDataType
+     * @param int $to
+     * @param int $from
+     * @return ExternalIndicatorData[]
+     */
+    public function getData(ExternalIndicatorDataType $indicatorDataType, int $to, int $from)
+    {
+        $queryBuilder = $this->createQueryBuilder('c')
+            ->andWhere('c.indicatorType = :type')
+            ->andWhere('c.closeTime >= :from')
+            ->setParameter('type', $indicatorDataType)
+            ->setParameter('from', $from)
+            ->orderBy('c.closeTime', 'ASC');
+
+        if($to > 0) {
+            $queryBuilder
+                ->andWhere('c.closeTime <= :to')
+                ->setParameter('to', $to);
+        }
+
+        return $queryBuilder
+            ->getQuery()
+            ->getResult();
+    }
 }

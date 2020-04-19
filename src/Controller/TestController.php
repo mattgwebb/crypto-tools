@@ -4,6 +4,7 @@ namespace App\Controller;
 
 use App\Entity\Algorithm\BotAlgorithm;
 use App\Entity\Data\CurrencyPair;
+use App\Entity\Data\ExternalIndicatorDataType;
 use App\Entity\Data\TimeFrames;
 use App\Model\BotAlgorithmManager;
 use App\Service\TechnicalAnalysis\Strategies;
@@ -172,6 +173,48 @@ class TestController extends AbstractController
 
         return $this->render('algo_test_result.html.twig', [
             "pair" => $algo->getCurrencyPair(),
+            "trades" => $trades
+        ]);
+    }
+
+    /**
+     * @Route("/algos/external_indicator/result", name="run_external_indicator_test", methods={"GET"})
+     * @return Response
+     * @throws \Exception
+     */
+    public function runExternalIndicatorTest(Request $request)
+    {
+        $id = $request->query->get('pair_id');
+        $indicatorType = $request->query->get('indicator_type');
+        $startTime = $request->query->get('start_time');
+        $endTime = $request->query->get('end_time');
+
+        /** @var ExternalIndicatorDataType $type */
+        $type = $this->getDoctrine()
+            ->getRepository(ExternalIndicatorDataType::class)
+            ->findOneBy(['name' => $indicatorType]);
+
+        if(!$type) {
+            return $this->render('error.html.twig', [
+                "error" => "External indicator not found.",
+            ]);
+        }
+
+        /** @var CurrencyPair $pair */
+        $pair = $this->getDoctrine()
+            ->getRepository(CurrencyPair::class)
+            ->find($id);
+
+        if(!$pair) {
+            return $this->render('error.html.twig', [
+                "error" => "Pair not found.",
+            ]);
+        }
+
+        $trades = $this->manager->runExternalIndicatorTest($type, $pair, $startTime, $endTime);
+
+        return $this->render('algo_test_result.html.twig', [
+            "pair" => $pair,
             "trades" => $trades
         ]);
     }

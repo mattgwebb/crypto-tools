@@ -51,6 +51,24 @@ class CandleRepository extends ServiceEntityRepository
 
     /**
      * @param CurrencyPair $currencyPair
+     * @param int $timestamp
+     * @return Candle|null
+     */
+    public function getCandleByTime(CurrencyPair $currencyPair, int $timestamp)
+    {
+        return $this->createQueryBuilder('c')
+            ->andWhere('c.currencyPair = :currencyPair')
+            ->andWhere('c.closeTime <= :timestamp')
+            ->setParameter('currencyPair', $currencyPair)
+            ->setParameter('timestamp', $timestamp)
+            ->orderBy('c.closeTime', 'DESC')
+            ->setMaxResults(1)
+            ->getQuery()
+            ->getOneOrNullResult();
+    }
+
+    /**
+     * @param CurrencyPair $currencyPair
      * @param int $limit
      * @return Candle[] Returns an array of Candle objects
      */
