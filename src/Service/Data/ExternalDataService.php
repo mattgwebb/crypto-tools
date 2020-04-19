@@ -8,9 +8,12 @@ use App\Entity\Data\Candle;
 use App\Entity\Data\Currency;
 use App\Entity\Data\CurrencyPair;
 use App\Entity\Data\Exchange;
+use App\Entity\Data\ExternalIndicatorData;
+use App\Entity\Data\ExternalIndicatorDataType;
 use App\Entity\Data\TimeFrames;
 use App\Service\Exchanges\ApiFactory;
 use App\Service\Exchanges\ApiInterface;
+use App\Service\ThirdPartyAPIs\GreedAndFearIndexAPI;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Component\DependencyInjection\ParameterBag\ParameterBagInterface;
 
@@ -113,6 +116,56 @@ class ExternalDataService
         $exchange = $pair->getFirstCurrency()->getExchange();
         $api = ApiFactory::getApi($exchange);
         return $this->loadNewCandles($api, $pair);
+    }
+
+    /**
+     * @return array
+     */
+    public function loadAllExternalIndicatorData()
+    {
+        $newData = [];
+
+        $indicatorTypes = $this->entityManager
+            ->getRepository(ExternalIndicatorDataType::class)
+            ->findAll();
+
+        /** @var ExternalIndicatorDataType $indicatorDataType */
+        foreach($indicatorTypes as $indicatorDataType) {
+            $newData[$indicatorDataType->getName()] = $this->loadExternalIndicatorData($indicatorDataType);
+        }
+        return $newData;
+    }
+
+    /**
+     * @param ExternalIndicatorDataType $indicatorDataType
+     * @return int
+     */
+    private function loadExternalIndicatorData(ExternalIndicatorDataType $indicatorDataType)
+    {
+        $newDataLoaded = 0;
+
+        if($indicatorDataType->getName() == 'fear_greed_index') {
+            $api = new GreedAndFearIndexAPI();
+            $data = $api->getData();
+
+            /** @var ExternalIndicatorData $latestData */
+            $latestData =  $this->entityManager
+                ->getRepository(ExternalIndicatorData::class)
+                ->getLatestData($indicatorDataType);
+
+            foreach($data as $dailyValue) {
+                if(!$latestData || $dailyValue['timestamp'] > $latestData->getCloseTime()) {
+                    $close = (int)$dailyValue['timestamp'];
+                    $value = (float)$dailyValue['value'];
+
+                    $newData = new ExternalIndicatorData($close, $value, $indicatorDataType);
+                    $this->entityManager->persist($newData);
+                    $newDataLoaded ++;
+                }
+            }
+            $this->entityManager->flush();
+        }
+        return $newDataLoaded;
     }
 
     /**
