@@ -10,7 +10,7 @@ use App\Entity\Trade\TradeTypes;
 use Doctrine\ORM\Mapping as ORM;
 
 /**
- * @ORM\Entity(repositoryClass="App\Repository\BotAlgorithmRepository")
+ * @ORM\Entity(repositoryClass="App\Repository\Algorithm\BotAlgorithmRepository")
  */
 class BotAlgorithm implements \JsonSerializable
 {

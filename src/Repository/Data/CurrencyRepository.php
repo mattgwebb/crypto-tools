@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Repository;
+namespace App\Repository\Data;
 
 use App\Entity\Data\Candle;
 use App\Entity\Data\Currency;

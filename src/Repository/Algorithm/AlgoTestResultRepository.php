@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Repository;
+namespace App\Repository\Algorithm;
 
 use App\Entity\Algorithm\AlgoTestResult;
 use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;

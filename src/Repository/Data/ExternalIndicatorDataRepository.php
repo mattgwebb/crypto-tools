@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Repository;
+namespace App\Repository\Data;
 
 use App\Entity\Data\ExternalIndicatorData;
 use App\Entity\Data\ExternalIndicatorDataType;

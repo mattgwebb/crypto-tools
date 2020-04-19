@@ -5,7 +5,7 @@ namespace App\Entity\Algorithm;
 use Doctrine\ORM\Mapping as ORM;
 
 /**
- * @ORM\Entity(repositoryClass="App\Repository\AlgoTestResultRepository")
+ * @ORM\Entity(repositoryClass="App\Repository\Algorithm\AlgoTestResultRepository")
  */
 class AlgoTestResult
 {

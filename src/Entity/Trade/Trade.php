@@ -5,7 +5,7 @@ namespace App\Entity\Trade;
 use Doctrine\ORM\Mapping as ORM;
 
 /**
- * @ORM\Entity(repositoryClass="App\Repository\TradeRepository")
+ * @ORM\Entity(repositoryClass="App\Repository\Trade\TradeRepository")
  */
 class Trade
 {

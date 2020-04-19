@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Repository;
+namespace App\Repository\TechnicalAnalysis;
 
 use App\Entity\TechnicalAnalysis\TrendLine;
 use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;

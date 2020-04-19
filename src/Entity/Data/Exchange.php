@@ -5,7 +5,7 @@ namespace App\Entity\Data;
 use Doctrine\ORM\Mapping as ORM;
 
 /**
- * @ORM\Entity(repositoryClass="App\Repository\ExchangeRepository")
+ * @ORM\Entity(repositoryClass="App\Repository\Data\ExchangeRepository")
  */
 class Exchange
 {

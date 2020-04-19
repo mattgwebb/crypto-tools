@@ -5,7 +5,7 @@ namespace App\Entity\Data;
 use Doctrine\ORM\Mapping as ORM;
 
 /**
- * @ORM\Entity(repositoryClass="App\Repository\ExternalIndicatorDataTypeRepository")
+ * @ORM\Entity(repositoryClass="App\Repository\Data\ExternalIndicatorDataTypeRepository")
  */
 class ExternalIndicatorDataType
 {

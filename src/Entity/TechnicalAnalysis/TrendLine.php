@@ -5,7 +5,7 @@ namespace App\Entity\TechnicalAnalysis;
 use Doctrine\ORM\Mapping as ORM;
 
 /**
- * @ORM\Entity(repositoryClass="App\Repository\TrendLineRepository")
+ * @ORM\Entity(repositoryClass="App\Repository\TechnicalAnalysis\TrendLineRepository")
  */
 class TrendLine
 {

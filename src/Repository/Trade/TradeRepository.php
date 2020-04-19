@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Repository;
+namespace App\Repository\Trade;
 
 use App\Entity\Algorithm\BotAlgorithm;
 use App\Entity\Trade\Trade;

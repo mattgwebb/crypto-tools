@@ -6,8 +6,8 @@ namespace App\Model;
 
 use App\Entity\Algorithm\BotAlgorithm;
 use App\Entity\Data\Candle;
-use App\Repository\CandleRepository;
-use App\Repository\CurrencyPairRepository;
+use App\Repository\Data\CandleRepository;
+use App\Repository\Data\CurrencyPairRepository;
 
 class CandleManager
 {

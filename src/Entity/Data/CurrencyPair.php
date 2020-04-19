@@ -7,7 +7,7 @@ use Doctrine\Common\Collections\Collection;
 use Doctrine\ORM\Mapping as ORM;
 
 /**
- * @ORM\Entity(repositoryClass="App\Repository\CurrencyPairRepository")
+ * @ORM\Entity(repositoryClass="App\Repository\Data\CurrencyPairRepository")
  */
 class CurrencyPair
 {
