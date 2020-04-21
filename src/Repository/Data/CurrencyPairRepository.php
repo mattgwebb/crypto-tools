@@ -4,7 +4,6 @@ namespace App\Repository\Data;
 
 use App\Entity\Data\Candle;
 use App\Entity\Data\CurrencyPair;
-use App\Entity\Data\TimeFrames;
 use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
 use Doctrine\Common\Persistence\ManagerRegistry;
 
@@ -27,70 +26,13 @@ class CurrencyPairRepository extends ServiceEntityRepository
      * @param int $fromTime
      * @param int $toTime
      * @return Candle[]
-     * TODO change to query to not have to load all candles
      */
     public function getCandlesByTimeFrame(CurrencyPair $currencyPair, $timeFrame, $fromTime = 0, $toTime = 0)
     {
-        //$groupAmount = $timeFrame / TimeFrames::TIMEFRAME_5M;
         $timeFrameSeconds = $timeFrame * 60;
-        $candles = [];
-        $i = 1;
-        $aux = new Candle();
 
         /** @var CandleRepository $candleRepo */
         $candleRepo = $this->getEntityManager()->getRepository(Candle::class);
-        $allCandles = $candleRepo->getByCurrencyFromTime($currencyPair, $fromTime, $toTime);
-
-        if($timeFrame == TimeFrames::TIMEFRAME_5M) {
-            return $allCandles;
-        }
-
-        /** @var Candle $candle */
-        foreach($allCandles as $candle) {
-            if($i == 1) {
-                $aux = $this->copyCandleData($candle);
-            } else {
-                if($candle->getHighPrice() > $aux->getHighPrice()) {
-                    $aux->setHighPrice($candle->getHighPrice());
-                }
-
-                if($candle->getLowPrice() < $aux->getLowPrice()) {
-                    $aux->setLowPrice($candle->getLowPrice());
-                }
-
-                $aux->addToVolume($candle->getVolume());
-
-                if($candle->getCloseTime() % $timeFrameSeconds == ($timeFrameSeconds-1)) {
-                    $aux->setCloseTime($candle->getCloseTime());
-                    $aux->setClosePrice($candle->getClosePrice());
-                    $candles[] = $aux;
-                    $i = 0;
-                }
-            }
-            $i++;
-        }
-        return $candles;
-    }
-
-    /**
-     * @param Candle $candle
-     * @return Candle
-     */
-    private function copyCandleData(Candle $candle)
-    {
-        $newCandle = new Candle();
-        $newCandle->setClosePrice($candle->getClosePrice());
-        $newCandle->setCloseTime($candle->getCloseTime());
-        $newCandle->setOpenPrice($candle->getOpenPrice());
-        $newCandle->setOpenTime($candle->getOpenTime());
-
-        $newCandle->setHighPrice($candle->getHighPrice());
-        $newCandle->setLowPrice($candle->getLowPrice());
-
-        $newCandle->setVolume($candle->getVolume());
-
-        $newCandle->setCurrencyPair($candle->getCurrencyPair());
-
-        return $newCandle;
+        return $candleRepo->getByCurrencyFromTimeFrame($currencyPair, $timeFrameSeconds, $fromTime, $toTime);
     }
 }
