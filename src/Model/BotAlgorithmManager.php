@@ -133,10 +133,12 @@ class BotAlgorithmManager
 
             $currentCandle = $auxData[count($auxData) - 1];
 
-            $this->strategies->setData($auxData);
-            $result = $this->strategies->runStrategy($algo);
+            $currentTradeStatus = $openTradePrice > 0 ? TradeTypes::TRADE_BUY : TradeTypes::TRADE_SELL;
 
-            if($openTradePrice > 0) {
+            $this->strategies->setData($auxData);
+            $result = $this->strategies->runStrategy($algo, $currentTradeStatus);
+
+            if($currentTradeStatus == TradeTypes::TRADE_BUY) {
                 if($algo->getStopLoss()) {
                     $stopLoss = $this->strategies->stopLosses($openTradePrice, $algo->getStopLoss())->isShort();
                 } else {
@@ -153,7 +155,7 @@ class BotAlgorithmManager
                 $short = false;
             }
 
-            if(($result->isLong()) && $openTradePrice == 0) {
+            if(($result->isLong()) && $currentTradeStatus == TradeTypes::TRADE_SELL) {
                 $openTradePrice = $currentCandle->getClosePrice();
 
                 $trade = $this->newTestTrade($currentCandle, TradeTypes::TRADE_BUY);
@@ -163,7 +165,7 @@ class BotAlgorithmManager
 
                 $this->logger->info(json_encode($trade));
             }
-            if(($result->isShort() || $short) && $openTradePrice > 0) {
+            if(($result->isShort() || $short) && $currentTradeStatus == TradeTypes::TRADE_BUY) {
                 $profit = ($currentCandle->getClosePrice()/$openTradePrice);
                 $percentage = ($profit - 1) * 100;
                 $compoundedProfit *= $profit;

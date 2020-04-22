@@ -270,7 +270,7 @@ class TestController extends AbstractController
             $algo->setCurrencyPair($currencyPair);
             $algo->setName($request->request->get('name'));
             $algo->setTimeFrame($request->request->get('time_frame'));
-            $algo->setStrategy($request->request->get('strategy'));
+            $algo->setEntryStrategy($request->request->get('strategy'));
             $algo->setStopLoss($request->request->get('stop_loss'));
             $algo->setTakeProfit($request->request->get('take_profit'));
             $algo->setObservations($request->request->get('observations'));
@@ -303,7 +303,7 @@ class TestController extends AbstractController
         }
         $algo->setName($request->request->get('name'));
         $algo->setTimeFrame($request->request->get('time_frame'));
-        $algo->setStrategy($request->request->get('strategy'));
+        $algo->setEntryStrategy($request->request->get('strategy'));
         $algo->setStopLoss($request->request->get('stop_loss'));
         $algo->setTakeProfit($request->request->get('take_profit'));
         $algo->setObservations($request->request->get('observations'));

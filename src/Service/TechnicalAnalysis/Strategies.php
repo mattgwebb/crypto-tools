@@ -17,6 +17,7 @@ use App\Entity\TechnicalAnalysis\IndicatorTypes;
 use App\Entity\TechnicalAnalysis\PivotPoint;
 use App\Entity\TechnicalAnalysis\PivotTypes;
 use App\Entity\TechnicalAnalysis\TrendLine;
+use App\Entity\Trade\TradeTypes;
 use App\Exceptions\TechnicalAnalysis\IndicatorNotSupported;
 
 class Strategies
@@ -938,11 +939,18 @@ class Strategies
 
     /**
      * @param BotAlgorithm $algo
+     * @param int $currentTradeType
      * @return bool|StrategyResult
      */
-    public function runStrategy(BotAlgorithm $algo)
+    public function runStrategy(BotAlgorithm $algo, int $currentTradeType = TradeTypes::TRADE_SELL)
     {
-        $strategy = $algo->getStrategy();
+        if($currentTradeType == TradeTypes::TRADE_SELL) {
+            $strategy = $algo->getEntryStrategy();
+        } else if($currentTradeType == TradeTypes::TRADE_BUY) {
+            $strategy = $algo->getExitStrategy();
+        } else {
+            return false;
+        }
 
         if(!in_array($strategy, self::STRATEGY_LIST)) {
             return false;
@@ -954,7 +962,7 @@ class Strategies
                 return false;
             }
             return call_user_func(array($this,$strategy), $config->getSmallPeriod(), $config->getLongPeriod());
-        } else if($strategy == StrategyTypes::RSI_BOLLINGER || $strategy == StrategyTypes::RSI_MACD) {
+        } else if(in_array($strategy, [StrategyTypes::RSI_BOLLINGER, StrategyTypes::RSI_MACD, StrategyTypes::RSI])) {
             $config = $algo->getRsiConfig();
             if(!$config) {
                 return false;

@@ -39,7 +39,12 @@ class BotAlgorithm implements \JsonSerializable
     /**
      * @ORM\Column(type="string")
      */
-    private $strategy;
+    private $entryStrategy;
+
+    /**
+     * @ORM\Column(type="string")
+     */
+    private $exitStrategy;
 
     /**
      * @ORM\Column(type="integer")
@@ -130,17 +135,33 @@ class BotAlgorithm implements \JsonSerializable
     /**
      * @return mixed
      */
-    public function getStrategy()
+    public function getEntryStrategy()
     {
-        return $this->strategy;
+        return $this->entryStrategy;
     }
 
     /**
-     * @param mixed $strategy
+     * @param mixed $entryStrategy
      */
-    public function setStrategy($strategy): void
+    public function setEntryStrategy($entryStrategy): void
     {
-        $this->strategy = $strategy;
+        $this->entryStrategy = $entryStrategy;
+    }
+
+    /**
+     * @return mixed
+     */
+    public function getExitStrategy()
+    {
+        return $this->exitStrategy;
+    }
+
+    /**
+     * @param mixed $exitStrategy
+     */
+    public function setExitStrategy($exitStrategy): void
+    {
+        $this->exitStrategy = $exitStrategy;
     }
 
     /**
@@ -326,7 +347,8 @@ class BotAlgorithm implements \JsonSerializable
             "id" => $this->getId(),
             "symbol" => $this->getCurrencyPair()->getSymbol(),
             "time_frame" => $this->getTimeFrame(),
-            "strategy" => $this->getStrategy(),
+            "entry_strategy" => $this->getEntryStrategy(),
+            "exit_strategy" => $this->getExitStrategy(),
             "stop_loss" => $this->getStopLoss(),
             "take_profit" => $this->getTakeProfit()
         ];
