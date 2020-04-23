@@ -12,7 +12,7 @@ use Doctrine\Common\Persistence\ManagerRegistry;
  * @method MovingAverageCrossoverConfig[]    findAll()
  * @method MovingAverageCrossoverConfig[]    findBy(array $criteria, array $orderBy = null, $limit = null, $offset = null)
  */
-class EmaCrossoverConfigRepository extends ServiceEntityRepository
+class MovingAverageCrossoverConfigRepository extends ServiceEntityRepository
 {
     public function __construct(ManagerRegistry $registry)
     {

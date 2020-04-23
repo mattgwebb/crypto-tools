@@ -6,7 +6,7 @@ use App\Entity\Algorithm\BotAlgorithm;
 use Doctrine\ORM\Mapping as ORM;
 
 /**
- * @ORM\Entity(repositoryClass="App\Repository\AlgorithmConfig\EmaCrossoverConfigRepository")
+ * @ORM\Entity(repositoryClass="App\Repository\AlgorithmConfig\MovingAverageCrossoverConfigRepository")
  * @ORM\Table(name="algo_ma_crossover_config")
  */
 class MovingAverageCrossoverConfig
