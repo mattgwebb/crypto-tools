@@ -25,6 +25,8 @@ class Strategies
 
     const STRATEGY_LIST = [
         StrategyTypes::RSI,
+        StrategyTypes::MA,
+        StrategyTypes::EMA,
         StrategyTypes::BOLLINGER_BANDS,
         StrategyTypes::MACD,
         StrategyTypes::RSI_BOLLINGER,
@@ -103,6 +105,40 @@ class Strategies
             $result->setTradeResult(StrategyResult::TRADE_SHORT);
         } else {
             $result->setTradeResult(StrategyResult::NO_TRADE);
+        }
+        return $result;
+    }
+
+    /**
+     * @param int $period
+     * @return StrategyResult
+     */
+    public function ma(int $period = 20) : StrategyResult
+    {
+        $result = new StrategyResult();
+        $ma = $this->indicators->ma($this->data['close'], $period);
+
+        if($this->currentPrice > $ma) {
+            $result->setTradeResult(StrategyResult::TRADE_LONG);
+        } else if($this->currentPrice < $ma) {
+            $result->setTradeResult(StrategyResult::TRADE_SHORT);
+        }
+        return $result;
+    }
+
+    /**
+     * @param int $period
+     * @return StrategyResult
+     */
+    public function ema(int $period = 20) : StrategyResult
+    {
+        $result = new StrategyResult();
+        $ema = $this->indicators->ema($this->data['close'], $period);
+
+        if($this->currentPrice > $ema) {
+            $result->setTradeResult(StrategyResult::TRADE_LONG);
+        } else if($this->currentPrice < $ema) {
+            $result->setTradeResult(StrategyResult::TRADE_SHORT);
         }
         return $result;
     }
@@ -982,6 +1018,12 @@ class Strategies
             }
             return call_user_func(array($this,$strategy), $config->getPValue(), $config->getQValue(),
                 $config->getOscillatorIndicator(), $config->getMaIndicator(), $config->getMaPeriod());
+        } else if(in_array($strategy, [StrategyTypes::MA, StrategyTypes::EMA])) {
+            $config = $algo->getMaConfig();
+            if(!$config) {
+                return false;
+            }
+            return call_user_func(array($this,$strategy), $config->getPeriod());
         } else {
             return call_user_func(array($this,$strategy));
         }

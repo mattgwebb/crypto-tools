@@ -7,6 +7,8 @@ namespace App\Entity\Algorithm;
 abstract class StrategyTypes
 {
     const RSI = "rsi";
+    const MA = "ma";
+    const EMA = "ema";
     const BOLLINGER_BANDS = "bollingerBands";
     const MACD = "macd";
     const RSI_BOLLINGER = "rsiAndBollinger";

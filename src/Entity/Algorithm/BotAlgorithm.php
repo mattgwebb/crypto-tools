@@ -4,6 +4,7 @@ namespace App\Entity\Algorithm;
 
 use App\Entity\AlgorithmConfig\AdaptivePQConfig;
 use App\Entity\AlgorithmConfig\DivergenceConfig;
+use App\Entity\AlgorithmConfig\MovingAverageConfig;
 use App\Entity\AlgorithmConfig\MovingAverageCrossoverConfig;
 use App\Entity\AlgorithmConfig\RsiConfig;
 use App\Entity\Trade\TradeTypes;
@@ -99,6 +100,12 @@ class BotAlgorithm implements \JsonSerializable
      * @var AdaptivePQConfig
      */
     private $adaptivePQConfig;
+
+    /**
+     * @ORM\OneToOne(targetEntity="App\Entity\AlgorithmConfig\MovingAverageConfig", mappedBy="algo")
+     * @var MovingAverageConfig
+     */
+    private $maConfig;
 
     /**
      * @return mixed
@@ -332,6 +339,22 @@ class BotAlgorithm implements \JsonSerializable
     public function setAdaptivePQConfig(AdaptivePQConfig $adaptivePQConfig): void
     {
         $this->adaptivePQConfig = $adaptivePQConfig;
+    }
+
+    /**
+     * @return MovingAverageConfig
+     */
+    public function getMaConfig(): MovingAverageConfig
+    {
+        return $this->maConfig;
+    }
+
+    /**
+     * @param MovingAverageConfig $maConfig
+     */
+    public function setMaConfig(MovingAverageConfig $maConfig): void
+    {
+        $this->maConfig = $maConfig;
     }
 
     /**
