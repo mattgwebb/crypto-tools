@@ -16,6 +16,7 @@ use App\Entity\Algorithm\StrategyTypes;
 use App\Entity\TechnicalAnalysis\IndicatorTypes;
 use App\Entity\TechnicalAnalysis\PivotPoint;
 use App\Entity\TechnicalAnalysis\PivotTypes;
+use App\Entity\TechnicalAnalysis\Strategy;
 use App\Entity\TechnicalAnalysis\TrendLine;
 use App\Entity\Trade\TradeTypes;
 use App\Exceptions\TechnicalAnalysis\IndicatorNotSupported;
@@ -976,56 +977,91 @@ class Strategies
     /**
      * @param BotAlgorithm $algo
      * @param int $currentTradeType
-     * @return bool|StrategyResult
+     * @return StrategyResult
      */
-    public function runStrategy(BotAlgorithm $algo, int $currentTradeType = TradeTypes::TRADE_SELL)
+    public function runStrategies(BotAlgorithm $algo, int $currentTradeType = TradeTypes::TRADE_SELL)
     {
+        $strategyResult = new StrategyResult();
+
         if($currentTradeType == TradeTypes::TRADE_SELL) {
-            $strategy = $algo->getEntryStrategy();
+            $strategies = $algo->getEntryStrategies();
         } else if($currentTradeType == TradeTypes::TRADE_BUY) {
-            $strategy = $algo->getExitStrategy();
+            $strategies = $algo->getExitStrategies();
         } else {
-            return false;
+            return $strategyResult;
         }
 
-        if(!in_array($strategy, self::STRATEGY_LIST)) {
-            return false;
+        $results = [
+            StrategyResult::TRADE_SHORT => 0,
+            StrategyResult::NO_TRADE => 0,
+            StrategyResult::TRADE_LONG => 0
+        ];
+
+        /** @var Strategy $strategy */
+        foreach($strategies as $strategy) {
+            $result = $this->runStrategy($algo, $strategy);
+            $results[$result->getTradeResult()]++;
         }
 
-        if($strategy == StrategyTypes::EMA_CROSSOVER || $strategy == StrategyTypes::MA_CROSSOVER) {
+        $totalResults = array_sum($results);
+
+        if($results[StrategyResult::TRADE_SHORT] == $totalResults) {
+            $strategyResult->setTradeResult(StrategyResult::TRADE_SHORT);
+        } else if($results[StrategyResult::TRADE_LONG] == $totalResults) {
+            $strategyResult->setTradeResult(StrategyResult::TRADE_LONG);
+        }
+        return $strategyResult;
+    }
+
+    /**
+     * @param BotAlgorithm $algo
+     * @param Strategy $strategy
+     * @return StrategyResult
+     */
+    private function runStrategy(BotAlgorithm $algo, Strategy $strategy)
+    {
+        $noResult = new StrategyResult();
+
+        $strategyName = $strategy->getName();
+
+        if(!in_array($strategyName, self::STRATEGY_LIST)) {
+            return $noResult;
+        }
+
+        if($strategyName == StrategyTypes::EMA_CROSSOVER || $strategyName == StrategyTypes::MA_CROSSOVER) {
             $config = $algo->getMaCrossoverConfig();
             if(!$config) {
-                return false;
+                return $noResult;
             }
-            return call_user_func(array($this,$strategy), $config->getSmallPeriod(), $config->getLongPeriod());
-        } else if(in_array($strategy, [StrategyTypes::RSI_BOLLINGER, StrategyTypes::RSI_MACD, StrategyTypes::RSI])) {
+            return call_user_func(array($this,$strategyName), $config->getSmallPeriod(), $config->getLongPeriod());
+        } else if(in_array($strategyName, [StrategyTypes::RSI_BOLLINGER, StrategyTypes::RSI_MACD, StrategyTypes::RSI])) {
             $config = $algo->getRsiConfig();
             if(!$config) {
-                return false;
+                return $noResult;
             }
-            return call_user_func(array($this,$strategy), $config->getSellOver(), $config->getBuyUnder(), $config->getPeriod());
-        } else if(in_array($strategy,[StrategyTypes::RSI_DIVERGENCE, StrategyTypes::OBV_DIVERGENCE, StrategyTypes::CHAIKIN_DIVERGENCE])) {
+            return call_user_func(array($this,$strategyName), $config->getSellOver(), $config->getBuyUnder(), $config->getPeriod());
+        } else if(in_array($strategyName,[StrategyTypes::RSI_DIVERGENCE, StrategyTypes::OBV_DIVERGENCE, StrategyTypes::CHAIKIN_DIVERGENCE])) {
             $config = $algo->getDivergenceConfig();
             if(!$config) {
-                return false;
+                return $noResult;
             }
-            return call_user_func(array($this,$strategy), $config->getLastCandles(), $config->getMinCandleDifference(),
+            return call_user_func(array($this,$strategyName), $config->getLastCandles(), $config->getMinCandleDifference(),
                 $config->getMinDivergencePercentage(), $config->isRegularDivergences(), $config->isHiddenDivergences());
-        } else if($strategy == StrategyTypes::ADAPTIVE_PQ) {
+        } else if($strategyName == StrategyTypes::ADAPTIVE_PQ) {
             $config = $algo->getAdaptivePQConfig();
             if(!$config) {
-                return false;
+                return $noResult;
             }
-            return call_user_func(array($this,$strategy), $config->getPValue(), $config->getQValue(),
+            return call_user_func(array($this,$strategyName), $config->getPValue(), $config->getQValue(),
                 $config->getOscillatorIndicator(), $config->getMaIndicator(), $config->getMaPeriod());
-        } else if(in_array($strategy, [StrategyTypes::MA, StrategyTypes::EMA])) {
+        } else if(in_array($strategyName, [StrategyTypes::MA, StrategyTypes::EMA])) {
             $config = $algo->getMaConfig();
             if(!$config) {
-                return false;
+                return $noResult;
             }
-            return call_user_func(array($this,$strategy), $config->getPeriod());
+            return call_user_func(array($this,$strategyName), $config->getPeriod());
         } else {
-            return call_user_func(array($this,$strategy));
+            return call_user_func(array($this,$strategyName));
         }
     }
 }

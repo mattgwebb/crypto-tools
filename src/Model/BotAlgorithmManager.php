@@ -136,7 +136,7 @@ class BotAlgorithmManager
             $currentTradeStatus = $openTradePrice > 0 ? TradeTypes::TRADE_BUY : TradeTypes::TRADE_SELL;
 
             $this->strategies->setData($auxData);
-            $result = $this->strategies->runStrategy($algo, $currentTradeStatus);
+            $result = $this->strategies->runStrategies($algo, $currentTradeStatus);
 
             if($currentTradeStatus == TradeTypes::TRADE_BUY) {
                 if($algo->getStopLoss()) {
@@ -276,7 +276,7 @@ class BotAlgorithmManager
     public function runAlgo(BotAlgorithm $algo, $candles)
     {
         $this->strategies->setData($candles);
-        return $this->strategies->runStrategy($algo);
+        return $this->strategies->runStrategies($algo);
     }
 
     /**

@@ -8,6 +8,7 @@ use App\Entity\AlgorithmConfig\MovingAverageConfig;
 use App\Entity\AlgorithmConfig\MovingAverageCrossoverConfig;
 use App\Entity\AlgorithmConfig\RsiConfig;
 use App\Entity\Trade\TradeTypes;
+use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\ORM\Mapping as ORM;
 
 /**
@@ -36,16 +37,6 @@ class BotAlgorithm implements \JsonSerializable
      * @ORM\Column(type="integer")
      */
     private $timeFrame;
-
-    /**
-     * @ORM\Column(type="string")
-     */
-    private $entryStrategy;
-
-    /**
-     * @ORM\Column(type="string")
-     */
-    private $exitStrategy;
 
     /**
      * @ORM\Column(type="integer")
@@ -78,6 +69,11 @@ class BotAlgorithm implements \JsonSerializable
     private $mode = AlgoModes::NOT_ACTIVE;
 
     /**
+     * @ORM\OneToMany(targetEntity="App\Entity\Algorithm\AlgorithmStrategy", mappedBy="algo")
+     */
+    private $strategies;
+
+    /**
      * @ORM\OneToOne(targetEntity="App\Entity\AlgorithmConfig\MovingAverageCrossoverConfig", mappedBy="algo")
      * @var MovingAverageCrossoverConfig
      */
@@ -106,6 +102,46 @@ class BotAlgorithm implements \JsonSerializable
      * @var MovingAverageConfig
      */
     private $maConfig;
+
+    /**
+     * BotAlgorithm constructor.
+     */
+    public function __construct()
+    {
+        $this->strategies = new ArrayCollection();
+    }
+
+    /**
+     * @return ArrayCollection
+     */
+    public function getEntryStrategies()
+    {
+        $strategies = new ArrayCollection();
+
+        /** @var AlgorithmStrategy $algoStrategy */
+        foreach($this->strategies as $algoStrategy) {
+            if($algoStrategy->isForEntry()) {
+                $strategies->add($algoStrategy->getStrategy());
+            }
+        }
+        return $strategies;
+    }
+
+    /**
+     * @return ArrayCollection
+     */
+    public function getExitStrategies()
+    {
+        $strategies = new ArrayCollection();
+
+        /** @var AlgorithmStrategy $algoStrategy */
+        foreach($this->strategies as $algoStrategy) {
+            if($algoStrategy->isForExit()) {
+                $strategies->add($algoStrategy->getStrategy());
+            }
+        }
+        return $strategies;
+    }
 
     /**
      * @return mixed
@@ -137,38 +173,6 @@ class BotAlgorithm implements \JsonSerializable
     public function setTimeFrame($timeFrame): void
     {
         $this->timeFrame = $timeFrame;
-    }
-
-    /**
-     * @return mixed
-     */
-    public function getEntryStrategy()
-    {
-        return $this->entryStrategy;
-    }
-
-    /**
-     * @param mixed $entryStrategy
-     */
-    public function setEntryStrategy($entryStrategy): void
-    {
-        $this->entryStrategy = $entryStrategy;
-    }
-
-    /**
-     * @return mixed
-     */
-    public function getExitStrategy()
-    {
-        return $this->exitStrategy;
-    }
-
-    /**
-     * @param mixed $exitStrategy
-     */
-    public function setExitStrategy($exitStrategy): void
-    {
-        $this->exitStrategy = $exitStrategy;
     }
 
     /**
@@ -370,8 +374,6 @@ class BotAlgorithm implements \JsonSerializable
             "id" => $this->getId(),
             "symbol" => $this->getCurrencyPair()->getSymbol(),
             "time_frame" => $this->getTimeFrame(),
-            "entry_strategy" => $this->getEntryStrategy(),
-            "exit_strategy" => $this->getExitStrategy(),
             "stop_loss" => $this->getStopLoss(),
             "take_profit" => $this->getTakeProfit()
         ];
