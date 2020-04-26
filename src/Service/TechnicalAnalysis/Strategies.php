@@ -90,9 +90,10 @@ class Strategies
      * @param float $rsiSell
      * @param float $rsiBuy
      * @param int $period
+     * @param bool $crossOnly
      * @return StrategyResult
      */
-    public function rsi(float $rsiSell = 70.00, float $rsiBuy = 30.00, int $period = 14) : StrategyResult
+    public function rsi(float $rsiSell = 70.00, float $rsiBuy = 30.00, int $period = 14, bool $crossOnly = false) : StrategyResult
     {
         $result = new StrategyResult();
         $rsi = $this->indicators->rsi($this->data, $period);
@@ -410,12 +411,14 @@ class Strategies
     /**
      * @param int $stochBuy
      * @param int $stochSell
+     * @param int $period
+     * @param bool $crossOnly
      * @return StrategyResult
      */
-    public function stoch(int $stochBuy = 20, int $stochSell = 80) : StrategyResult
+    public function stoch(int $stochSell = 80, int $stochBuy = 20, int $period = 14, bool $crossOnly = false) : StrategyResult
     {
         $result = new StrategyResult();
-        $stoch = $this->indicators->stoch($this->data);
+        $stoch = $this->indicators->stoch($this->data, $period);
 
         if($stoch < $stochBuy) {
             $result->setTradeResult(StrategyResult::TRADE_LONG);
@@ -1001,11 +1004,12 @@ class Strategies
      */
     private function runOscillatorStrategy(BotAlgorithm $algo, Strategy $strategy)
     {
-        $config = $algo->getRsiConfig();
+        $config = $algo->getOscillatorConfig();
         if(!$config) {
             return new StrategyResult();
         }
-        return call_user_func(array($this,$strategy->getName()), $config->getSellOver(), $config->getBuyUnder(), $config->getPeriod());
+        return call_user_func(array($this,$strategy->getName()), $config->getSellOver(), $config->getBuyUnder(),
+            $config->getPeriod(), $config->isCrossOnly());
     }
 
     /**

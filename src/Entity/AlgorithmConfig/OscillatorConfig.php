@@ -6,10 +6,10 @@ use App\Entity\Algorithm\BotAlgorithm;
 use Doctrine\ORM\Mapping as ORM;
 
 /**
- * @ORM\Entity(repositoryClass="App\Repository\AlgorithmConfig\RsiConfigRepository")
- * @ORM\Table(name="algo_rsi_config")
+ * @ORM\Entity(repositoryClass="App\Repository\AlgorithmConfig\OscillatorConfigRepository")
+ * @ORM\Table(name="algo_oscillator_config")
  */
-class RsiConfig
+class OscillatorConfig
 {
 
     /**
@@ -36,6 +36,12 @@ class RsiConfig
      * @var int
      */
     private $calculationPeriod;
+
+    /**
+     * @ORM\Column(type="boolean")
+     * @var bool
+     */
+    private $crossOnly;
 
     /**
      * @return BotAlgorithm
@@ -99,5 +105,21 @@ class RsiConfig
     public function setPeriod(int $period): void
     {
         $this->calculationPeriod = $period;
+    }
+
+    /**
+     * @return bool
+     */
+    public function isCrossOnly(): bool
+    {
+        return $this->crossOnly;
+    }
+
+    /**
+     * @param bool $crossOnly
+     */
+    public function setCrossOnly(bool $crossOnly): void
+    {
+        $this->crossOnly = $crossOnly;
     }
 }

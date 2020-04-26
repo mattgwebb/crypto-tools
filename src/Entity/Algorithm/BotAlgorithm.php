@@ -6,7 +6,7 @@ use App\Entity\AlgorithmConfig\AdaptivePQConfig;
 use App\Entity\AlgorithmConfig\DivergenceConfig;
 use App\Entity\AlgorithmConfig\MovingAverageConfig;
 use App\Entity\AlgorithmConfig\MovingAverageCrossoverConfig;
-use App\Entity\AlgorithmConfig\RsiConfig;
+use App\Entity\AlgorithmConfig\OscillatorConfig;
 use App\Entity\Trade\TradeTypes;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\ORM\Mapping as ORM;
@@ -80,10 +80,10 @@ class BotAlgorithm implements \JsonSerializable
     private $maCrossoverConfig;
 
     /**
-     * @ORM\OneToOne(targetEntity="App\Entity\AlgorithmConfig\RsiConfig", mappedBy="algo")
-     * @var RsiConfig
+     * @ORM\OneToOne(targetEntity="App\Entity\AlgorithmConfig\OscillatorConfig", mappedBy="algo")
+     * @var OscillatorConfig
      */
-    private $rsiConfig;
+    private $oscillatorConfig;
 
     /**
      * @ORM\OneToOne(targetEntity="App\Entity\AlgorithmConfig\DivergenceConfig", mappedBy="algo")
@@ -298,19 +298,19 @@ class BotAlgorithm implements \JsonSerializable
     }
 
     /**
-     * @return RsiConfig
+     * @return OscillatorConfig
      */
-    public function getRsiConfig(): RsiConfig
+    public function getOscillatorConfig(): OscillatorConfig
     {
-        return $this->rsiConfig;
+        return $this->oscillatorConfig;
     }
 
     /**
-     * @param RsiConfig $rsiConfig
+     * @param OscillatorConfig $oscillatorConfig
      */
-    public function setRsiConfig(RsiConfig $rsiConfig): void
+    public function setOscillatorConfig(OscillatorConfig $oscillatorConfig): void
     {
-        $this->rsiConfig = $rsiConfig;
+        $this->oscillatorConfig = $oscillatorConfig;
     }
 
     /**
