@@ -30,9 +30,6 @@ class Strategies
         StrategyTypes::EMA,
         StrategyTypes::BOLLINGER_BANDS,
         StrategyTypes::MACD,
-        StrategyTypes::RSI_BOLLINGER,
-        StrategyTypes::RSI_MACD,
-        StrategyTypes::MACD_BOLLINGER,
         StrategyTypes::SUPPORT_RESISTANCE,
         StrategyTypes::RSI_DIVERGENCE,
         StrategyTypes::OBV_DIVERGENCE,
@@ -173,67 +170,6 @@ class Strategies
         if($macd > 0) {
             $result->setTradeResult(StrategyResult::TRADE_LONG);
         } else {
-            $result->setTradeResult(StrategyResult::TRADE_SHORT);
-        }
-        return $result;
-    }
-
-    /**
-     * @param float $rsiSell
-     * @param float $rsiBuy
-     * @param int $period
-     * @return StrategyResult
-     */
-    public function rsiAndBollinger(float $rsiSell = 70.00, float $rsiBuy = 30.00, int $period = 14) : StrategyResult
-    {
-        $result = new StrategyResult();
-
-        $bollingerResult = $this->bollingerBands();
-        $rsiResult = $this->rsi($rsiSell, $rsiBuy, $period);
-
-        if($rsiResult->isLong() && $bollingerResult->isLong()) {
-            $result->setTradeResult(StrategyResult::TRADE_LONG);
-        } else if($rsiResult->isShort() && $bollingerResult->isShort()) {
-            $result->setTradeResult(StrategyResult::TRADE_SHORT);
-        }
-        return $result;
-    }
-
-    /**
-     * @param float $rsiSell
-     * @param float $rsiBuy
-     * @param int $period
-     * @return StrategyResult
-     */
-    public function rsiAndMacd(float $rsiSell = 70.00, float $rsiBuy = 30.00, int $period = 14) : StrategyResult
-    {
-        $result = new StrategyResult();
-
-        $macdResult = $this->macd();
-        $rsiResult = $this->rsi($rsiSell, $rsiBuy, $period);
-
-        if($macdResult->isLong() && $rsiResult->isLong()) {
-            $result->setTradeResult(StrategyResult::TRADE_LONG);
-        } else if($macdResult->isShort() && $rsiResult->isShort()) {
-            $result->setTradeResult(StrategyResult::TRADE_SHORT);
-        }
-
-        return $result;
-    }
-
-    /**
-     * @return StrategyResult
-     */
-    public function macdAndBollinger() : StrategyResult
-    {
-        $result = new StrategyResult();
-
-        $bollingerResult = $this->bollingerBands();
-        $macdResult = $this->macd();
-
-        if($macdResult->isLong() && $bollingerResult->isLong()) {
-            $result->setTradeResult(StrategyResult::TRADE_LONG);
-        } else if($macdResult->isShort() && $bollingerResult->isShort()) {
             $result->setTradeResult(StrategyResult::TRADE_SHORT);
         }
         return $result;

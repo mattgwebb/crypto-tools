@@ -11,9 +11,6 @@ abstract class StrategyTypes
     const EMA = "ema";
     const BOLLINGER_BANDS = "bollingerBands";
     const MACD = "macd";
-    const RSI_BOLLINGER = "rsiAndBollinger";
-    const RSI_MACD = "rsiAndMacd";
-    const MACD_BOLLINGER = "macdAndBollinger";
     const SUPPORT_RESISTANCE = "supportAndResistance";
     const RSI_DIVERGENCE = "rsiDivergence";
     const OBV_DIVERGENCE = "obvDivergence";
