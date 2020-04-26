@@ -26,4 +26,25 @@ abstract class StrategyTypes
     const ADX_MOM = "adxMom";
     const STOCH = "stoch";
     const GUPPY_CROSSOVER = "guppyCrossover";
+
+    const DIVERGENCE_STRATEGIES = [
+        self::RSI_DIVERGENCE,
+        self::OBV_DIVERGENCE,
+        self::CHAIKIN_DIVERGENCE
+    ];
+
+    const OSCILLATOR_STRATEGIES = [
+        self::RSI,
+        self::STOCH
+    ];
+
+    const CROSSOVER_STRATEGIES = [
+        self::MA_CROSSOVER,
+        self::EMA_CROSSOVER
+    ];
+
+    const MOVING_AVERAGE_STRATEGIES = [
+        self::MA,
+        self::EMA
+    ];
 }

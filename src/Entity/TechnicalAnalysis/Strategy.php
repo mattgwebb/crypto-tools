@@ -2,6 +2,7 @@
 
 namespace App\Entity\TechnicalAnalysis;
 
+use App\Entity\Algorithm\StrategyTypes;
 use Doctrine\ORM\Mapping as ORM;
 
 /**
@@ -72,5 +73,37 @@ class Strategy
     public function setDescription($description): void
     {
         $this->description = $description;
+    }
+
+    /**
+     * @return bool
+     */
+    public function isDivergenceStrategy()
+    {
+        return in_array($this->getName(), StrategyTypes::DIVERGENCE_STRATEGIES);
+    }
+
+    /**
+     * @return bool
+     */
+    public function isOscillatorStrategy()
+    {
+        return in_array($this->getName(), StrategyTypes::OSCILLATOR_STRATEGIES);
+    }
+
+    /**
+     * @return bool
+     */
+    public function isCrossoverStrategy()
+    {
+        return in_array($this->getName(), StrategyTypes::CROSSOVER_STRATEGIES);
+    }
+
+    /**
+     * @return bool
+     */
+    public function isMovingAverageStrategy()
+    {
+        return in_array($this->getName(), StrategyTypes::MOVING_AVERAGE_STRATEGIES);
     }
 }

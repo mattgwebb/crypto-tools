@@ -1028,40 +1028,90 @@ class Strategies
             return $noResult;
         }
 
-        if($strategyName == StrategyTypes::EMA_CROSSOVER || $strategyName == StrategyTypes::MA_CROSSOVER) {
-            $config = $algo->getMaCrossoverConfig();
-            if(!$config) {
-                return $noResult;
-            }
-            return call_user_func(array($this,$strategyName), $config->getSmallPeriod(), $config->getLongPeriod());
-        } else if(in_array($strategyName, [StrategyTypes::RSI_BOLLINGER, StrategyTypes::RSI_MACD, StrategyTypes::RSI])) {
-            $config = $algo->getRsiConfig();
-            if(!$config) {
-                return $noResult;
-            }
-            return call_user_func(array($this,$strategyName), $config->getSellOver(), $config->getBuyUnder(), $config->getPeriod());
-        } else if(in_array($strategyName,[StrategyTypes::RSI_DIVERGENCE, StrategyTypes::OBV_DIVERGENCE, StrategyTypes::CHAIKIN_DIVERGENCE])) {
-            $config = $algo->getDivergenceConfig();
-            if(!$config) {
-                return $noResult;
-            }
-            return call_user_func(array($this,$strategyName), $config->getLastCandles(), $config->getMinCandleDifference(),
-                $config->getMinDivergencePercentage(), $config->isRegularDivergences(), $config->isHiddenDivergences());
+        if($strategy->isCrossoverStrategy()) {
+            return $this->runCrossoverStrategy($algo, $strategy);
+        } else if($strategy->isOscillatorStrategy()) {
+            return $this->runOscillatorStrategy($algo, $strategy);
+        } else if($strategy->isDivergenceStrategy()) {
+            return $this->runDivergenceStrategy($algo, $strategy);
         } else if($strategyName == StrategyTypes::ADAPTIVE_PQ) {
-            $config = $algo->getAdaptivePQConfig();
-            if(!$config) {
-                return $noResult;
-            }
-            return call_user_func(array($this,$strategyName), $config->getPValue(), $config->getQValue(),
-                $config->getOscillatorIndicator(), $config->getMaIndicator(), $config->getMaPeriod());
-        } else if(in_array($strategyName, [StrategyTypes::MA, StrategyTypes::EMA])) {
-            $config = $algo->getMaConfig();
-            if(!$config) {
-                return $noResult;
-            }
-            return call_user_func(array($this,$strategyName), $config->getPeriod());
+            return $this->runAdaptivePQStrategy($algo,$strategy);
+        } else if($strategy->isMovingAverageStrategy()) {
+            return $this->runMovingAverageStrategy($algo, $strategy);
         } else {
             return call_user_func(array($this,$strategyName));
         }
+    }
+
+    /**
+     * @param BotAlgorithm $algo
+     * @param Strategy $strategy
+     * @return StrategyResult
+     */
+    private function runDivergenceStrategy(BotAlgorithm $algo, Strategy $strategy)
+    {
+        $config = $algo->getDivergenceConfig();
+        if(!$config) {
+            return new StrategyResult();
+        }
+        return call_user_func(array($this,$strategy->getName()), $config->getLastCandles(), $config->getMinCandleDifference(),
+            $config->getMinDivergencePercentage(), $config->isRegularDivergences(), $config->isHiddenDivergences());
+    }
+
+    /**
+     * @param BotAlgorithm $algo
+     * @param Strategy $strategy
+     * @return StrategyResult
+     */
+    private function runOscillatorStrategy(BotAlgorithm $algo, Strategy $strategy)
+    {
+        $config = $algo->getRsiConfig();
+        if(!$config) {
+            return new StrategyResult();
+        }
+        return call_user_func(array($this,$strategy->getName()), $config->getSellOver(), $config->getBuyUnder(), $config->getPeriod());
+    }
+
+    /**
+     * @param BotAlgorithm $algo
+     * @param Strategy $strategy
+     * @return StrategyResult
+     */
+    private function runCrossoverStrategy(BotAlgorithm $algo, Strategy $strategy)
+    {
+        $config = $algo->getMaCrossoverConfig();
+        if(!$config) {
+            return new StrategyResult();
+        }
+        return call_user_func(array($this,$strategy->getName()), $config->getSmallPeriod(), $config->getLongPeriod());
+    }
+
+    /**
+     * @param BotAlgorithm $algo
+     * @param Strategy $strategy
+     * @return StrategyResult
+     */
+    private function runAdaptivePQStrategy(BotAlgorithm $algo, Strategy $strategy)
+    {
+        $config = $algo->getAdaptivePQConfig();
+        if(!$config) {
+            return new StrategyResult();
+        }
+        return call_user_func(array($this,$strategy->getName()), $config->getPValue(), $config->getQValue(),
+            $config->getOscillatorIndicator(), $config->getMaIndicator(), $config->getMaPeriod());
+    }
+
+    /**
+     * @param BotAlgorithm $algo
+     * @param Strategy $strategy
+     * @return StrategyResult
+     */
+    private function runMovingAverageStrategy(BotAlgorithm $algo, Strategy $strategy)
+    {
+        $config = $algo->getMaConfig();
+        if(!$config) {
+            return new StrategyResult();
+        }
+        return call_user_func(array($this,$strategy->getName()), $config->getPeriod());
     }
 }
