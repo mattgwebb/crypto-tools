@@ -9,7 +9,6 @@ use App\Entity\Data\Candle;
 use App\Entity\TechnicalAnalysis\DivergenceIndicators;
 use App\Entity\TechnicalAnalysis\DivergenceLine;
 use App\Entity\TechnicalAnalysis\DivergenceTypes;
-use App\Entity\TechnicalAnalysis\IndicatorPoint;
 use App\Entity\TechnicalAnalysis\IndicatorPointList;
 use App\Entity\Algorithm\StrategyResult;
 use App\Entity\Algorithm\StrategyTypes;
@@ -98,12 +97,20 @@ class Strategies
         $result = new StrategyResult();
         $rsi = $this->indicators->rsi($this->data, $period);
 
-        if($rsi < $rsiBuy) {
-            $result->setTradeResult(StrategyResult::TRADE_LONG);
-        } else if($rsi > $rsiSell) {
-            $result->setTradeResult(StrategyResult::TRADE_SHORT);
+        if($crossOnly) {
+            $rsiPrior = $this->indicators->rsi($this->data, $period, true);
+
+            if($rsi >= $rsiBuy && $rsiPrior < $rsiBuy) {
+                $result->setTradeResult(StrategyResult::TRADE_LONG);
+            } else if($rsi <= $rsiSell && $rsiPrior > $rsiSell) {
+                $result->setTradeResult(StrategyResult::TRADE_SHORT);
+            }
         } else {
-            $result->setTradeResult(StrategyResult::NO_TRADE);
+            if($rsi < $rsiBuy) {
+                $result->setTradeResult(StrategyResult::TRADE_LONG);
+            } else if($rsi > $rsiSell) {
+                $result->setTradeResult(StrategyResult::TRADE_SHORT);
+            }
         }
         return $result;
     }
@@ -418,12 +425,22 @@ class Strategies
     public function stoch(int $stochSell = 80, int $stochBuy = 20, int $period = 14, bool $crossOnly = false) : StrategyResult
     {
         $result = new StrategyResult();
-        $stoch = $this->indicators->stoch($this->data, $period);
+        $stoch = $this->indicators->stoch($this->data, $period, 3);
 
-        if($stoch < $stochBuy) {
-            $result->setTradeResult(StrategyResult::TRADE_LONG);
-        } else if($stoch > $stochSell) {
-            $result->setTradeResult(StrategyResult::TRADE_SHORT);
+        if($crossOnly) {
+            $stochPrior = $this->indicators->stoch($this->data, $period, 3,true);
+
+            if($stoch >= $stochBuy && $stochPrior < $stochBuy) {
+                $result->setTradeResult(StrategyResult::TRADE_LONG);
+            } else if($stoch <= $stochSell && $stochPrior > $stochSell) {
+                $result->setTradeResult(StrategyResult::TRADE_SHORT);
+            }
+        } else {
+            if($stoch < $stochBuy) {
+                $result->setTradeResult(StrategyResult::TRADE_LONG);
+            } else if($stoch > $stochSell) {
+                $result->setTradeResult(StrategyResult::TRADE_SHORT);
+            }
         }
         return $result;
     }

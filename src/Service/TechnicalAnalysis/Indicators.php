@@ -59,6 +59,7 @@ class Indicators
      * @param array $data
      * @param int $period
      *
+     * @param bool $prior
      * @return float
      * Relative Strength Index indicator as a buy/sell signal.
      *
@@ -68,11 +69,12 @@ class Indicators
      * RSI can also be used to confirm trend formations. If you think a trend is forming, wait for
      * RSI to go above or below 50 (depending on if you’re looking at an uptrend or downtrend) before you enter a trade.
      */
-    public function rsi($data, $period=14)
+    public function rsi($data, $period=14, $prior=false)
     {
-        $rsi = trader_rsi ($data['close'], $period);
-        $rsi = array_pop($rsi);
-        return $rsi;
+        $rsiArray = trader_rsi ($data['close'], $period);
+        $rsi = @array_pop($rsiArray) ?? 0;
+        $rsi_prior = @array_pop($rsiArray) ?? 0;
+        return ($prior ? $rsi_prior : $rsi);
     }
 
     /**
@@ -172,13 +174,15 @@ class Indicators
      * @param $data
      * @param int $fastKPeriod
      * @param int $slowKPeriod
+     * @param bool $prior
      * @return float
      */
-    public function stoch($data, int $fastKPeriod = 14, int $slowKPeriod = 3)
+    public function stoch($data, int $fastKPeriod = 14, int $slowKPeriod = 3, $prior = false)
     {
-        $stoch = trader_stoch($data['high'], $data['low'], $data['close'], $fastKPeriod, $slowKPeriod);
-        $stoch = array_pop($stoch[0]);
-        return $stoch;
+        $stochArray = trader_stoch($data['high'], $data['low'], $data['close'], $fastKPeriod, $slowKPeriod);
+        $stoch = array_pop($stochArray[0]);
+        $stoch_prior = array_pop($stochArray[0]);
+        return ($prior ? $stoch_prior : $stoch);
     }
 
     /**
