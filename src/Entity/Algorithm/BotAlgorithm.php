@@ -59,6 +59,16 @@ class BotAlgorithm implements \JsonSerializable
     private $name;
 
     /**
+     * @ORM\Column(type="text")
+     */
+    private $entryStrategyCombination;
+
+    /**
+     * @ORM\Column(type="text")
+     */
+    private $exitStrategyCombination;
+
+    /**
      * @ORM\Column(type="smallint")
      */
     private $tradeStatus = TradeTypes::TRADE_SELL;
@@ -359,6 +369,38 @@ class BotAlgorithm implements \JsonSerializable
     public function setMaConfig(MovingAverageConfig $maConfig): void
     {
         $this->maConfig = $maConfig;
+    }
+
+    /**
+     * @return mixed
+     */
+    public function getEntryStrategyCombination()
+    {
+        return $this->entryStrategyCombination;
+    }
+
+    /**
+     * @param mixed $entryStrategyCombination
+     */
+    public function setEntryStrategyCombination($entryStrategyCombination): void
+    {
+        $this->entryStrategyCombination = $entryStrategyCombination;
+    }
+
+    /**
+     * @return mixed
+     */
+    public function getExitStrategyCombination()
+    {
+        return $this->exitStrategyCombination;
+    }
+
+    /**
+     * @param mixed $exitStrategyCombination
+     */
+    public function setExitStrategyCombination($exitStrategyCombination): void
+    {
+        $this->exitStrategyCombination = $exitStrategyCombination;
     }
 
     /**

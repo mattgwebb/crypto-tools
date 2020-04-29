@@ -5,6 +5,7 @@ namespace App\Service\TechnicalAnalysis;
 
 
 use App\Entity\Algorithm\BotAlgorithm;
+use App\Entity\Algorithm\StrategyConfig;
 use App\Entity\Data\Candle;
 use App\Entity\TechnicalAnalysis\DivergenceIndicators;
 use App\Entity\TechnicalAnalysis\DivergenceLine;
@@ -19,6 +20,7 @@ use App\Entity\TechnicalAnalysis\Strategy;
 use App\Entity\TechnicalAnalysis\TrendLine;
 use App\Entity\Trade\TradeTypes;
 use App\Exceptions\TechnicalAnalysis\IndicatorNotSupported;
+use App\Service\Algorithm\StrategyLanguageParser;
 
 class Strategies
 {
@@ -49,6 +51,11 @@ class Strategies
     private $indicators;
 
     /**
+     * @var StrategyLanguageParser
+     */
+    private $strategyLanguageParser;
+
+    /**
      * @var array
      */
     private $data;
@@ -71,10 +78,12 @@ class Strategies
     /**
      * Strategies constructor.
      * @param Indicators $indicators
+     * @param StrategyLanguageParser $strategyLanguageParser
      */
-    public function __construct(Indicators $indicators)
+    public function __construct(Indicators $indicators, StrategyLanguageParser $strategyLanguageParser)
     {
         $this->indicators = $indicators;
+        $this->strategyLanguageParser = $strategyLanguageParser;
     }
 
     /**
@@ -940,9 +949,9 @@ class Strategies
         $strategyResult = new StrategyResult();
 
         if($currentTradeType == TradeTypes::TRADE_SELL) {
-            $strategies = $algo->getEntryStrategies();
+            $strategies = $this->strategyLanguageParser->getStrategies($algo->getEntryStrategyCombination());
         } else if($currentTradeType == TradeTypes::TRADE_BUY) {
-            $strategies = $algo->getExitStrategies();
+            $strategies = $this->strategyLanguageParser->getStrategies($algo->getExitStrategyCombination());
         } else {
             return $strategyResult;
         }
@@ -953,8 +962,8 @@ class Strategies
             StrategyResult::TRADE_LONG => 0
         ];
 
-        /** @var Strategy $strategy */
-        foreach($strategies as $strategy) {
+        /** @var StrategyConfig $strategy */
+        foreach($strategies->getStrategyConfigList() as $strategy) {
             $result = $this->runStrategy($algo, $strategy);
             $results[$result->getTradeResult()]++;
         }
@@ -971,33 +980,43 @@ class Strategies
 
     /**
      * @param BotAlgorithm $algo
-     * @param Strategy $strategy
+     * @param StrategyConfig $strategyConfig
      * @return StrategyResult
      */
-    private function runStrategy(BotAlgorithm $algo, Strategy $strategy)
+    private function runStrategy(BotAlgorithm $algo, StrategyConfig $strategyConfig)
     {
-        $noResult = new StrategyResult();
-
-        $strategyName = $strategy->getName();
-
-        if(!in_array($strategyName, self::STRATEGY_LIST)) {
-            return $noResult;
-        }
-
-        if($strategy->isCrossoverStrategy()) {
-            return $this->runCrossoverStrategy($algo, $strategy);
-        } else if($strategy->isOscillatorStrategy()) {
-            return $this->runOscillatorStrategy($algo, $strategy);
-        } else if($strategy->isDivergenceStrategy()) {
-            return $this->runDivergenceStrategy($algo, $strategy);
-        } else if($strategyName == StrategyTypes::ADAPTIVE_PQ) {
-            return $this->runAdaptivePQStrategy($algo,$strategy);
-        } else if($strategy->isMovingAverageStrategy()) {
-            return $this->runMovingAverageStrategy($algo, $strategy);
-        } else {
-            return call_user_func(array($this,$strategyName));
-        }
+        return call_user_func_array(array($this,$strategyConfig->getStrategy()->getName()), $strategyConfig->getConfigParams());
     }
+
+//    /**
+//     * @param BotAlgorithm $algo
+//     * @param Strategy $strategy
+//     * @return StrategyResult
+//     */
+//    private function runStrategy(BotAlgorithm $algo, Strategy $strategy)
+//    {
+//        $noResult = new StrategyResult();
+//
+//        $strategyName = $strategy->getName();
+//
+//        if(!in_array($strategyName, self::STRATEGY_LIST)) {
+//            return $noResult;
+//        }
+//
+//        if($strategy->isCrossoverStrategy()) {
+//            return $this->runCrossoverStrategy($algo, $strategy);
+//        } else if($strategy->isOscillatorStrategy()) {
+//            return $this->runOscillatorStrategy($algo, $strategy);
+//        } else if($strategy->isDivergenceStrategy()) {
+//            return $this->runDivergenceStrategy($algo, $strategy);
+//        } else if($strategyName == StrategyTypes::ADAPTIVE_PQ) {
+//            return $this->runAdaptivePQStrategy($algo,$strategy);
+//        } else if($strategy->isMovingAverageStrategy()) {
+//            return $this->runMovingAverageStrategy($algo, $strategy);
+//        } else {
+//            return call_user_func(array($this,$strategyName));
+//        }
+//    }
 
     /**
      * @param BotAlgorithm $algo
