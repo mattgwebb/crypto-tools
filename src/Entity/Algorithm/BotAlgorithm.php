@@ -79,6 +79,11 @@ class BotAlgorithm implements \JsonSerializable
     private $mode = AlgoModes::NOT_ACTIVE;
 
     /**
+     * @ORM\Column(type="smallint")
+     */
+    private $category;
+
+    /**
      * @ORM\OneToMany(targetEntity="App\Entity\Algorithm\AlgorithmStrategy", mappedBy="algo")
      */
     private $strategies;
@@ -415,6 +420,8 @@ class BotAlgorithm implements \JsonSerializable
         return [
             "id" => $this->getId(),
             "symbol" => $this->getCurrencyPair()->getSymbol(),
+            "entry_strategies" => $this->getEntryStrategyCombination(),
+            "exit_strategies" => $this->getExitStrategyCombination(),
             "time_frame" => $this->getTimeFrame(),
             "stop_loss" => $this->getStopLoss(),
             "take_profit" => $this->getTakeProfit()

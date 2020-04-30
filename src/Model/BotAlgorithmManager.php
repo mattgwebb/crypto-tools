@@ -384,6 +384,12 @@ class BotAlgorithmManager
         $testResult->setEndTime($finishTime);
         $testResult->setTimeFrame($algo->getTimeFrame());
 
+        $extra = [
+            "entry_strategies" => $algo->getEntryStrategyCombination(),
+            "exit_strategies" => $algo->getExitStrategyCombination()
+        ];
+        $testResult->setObservations(json_encode($extra));
+
         $this->entityManager->persist($testResult);
         $this->entityManager->flush();
     }
