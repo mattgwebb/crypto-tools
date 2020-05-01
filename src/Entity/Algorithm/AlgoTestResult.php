@@ -67,6 +67,12 @@ class AlgoTestResult
     private $trades;
 
     /**
+     * @ORM\Column(type="integer")
+     * @var int
+     */
+    private $invalidatedTrades;
+
+    /**
      * @return BotAlgorithm
      */
     public function getAlgo(): BotAlgorithm
@@ -192,5 +198,21 @@ class AlgoTestResult
     public function setTimeFrame(int $timeFrame): void
     {
         $this->timeFrame = $timeFrame;
+    }
+
+    /**
+     * @return int
+     */
+    public function getInvalidatedTrades(): int
+    {
+        return $this->invalidatedTrades;
+    }
+
+    /**
+     * @param int $invalidatedTrades
+     */
+    public function setInvalidatedTrades(int $invalidatedTrades): void
+    {
+        $this->invalidatedTrades = $invalidatedTrades;
     }
 }

@@ -123,6 +123,7 @@ class BotAlgorithmManager
         $compoundedProfit = 1;
 
         $trades = [];
+        $invalidatedTrades = 0;
 
         for($i=$lastPositionCandles; $i < count($candles); $i++) {
             $auxData = array_slice($candles, $i - $lastPositionCandles, $candlesToLoad);
@@ -174,7 +175,14 @@ class BotAlgorithmManager
                 $trade['extra_data'] = $result->getExtraData();
                 $trade["percentage"] = round($percentage, 2);
                 $trade["stopLoss_takeProfit"] = $short;
-                $trade['invalidation'] = $result->isFromInvalidation();
+
+                if($result->isFromInvalidation()) {
+                    $trade['invalidation'] = true;
+                    $invalidatedTrades++;
+                } else {
+                    $trade['invalidation'] = false;
+                }
+
                 $trades[] = $trade;
 
                 $this->logger->info(json_encode($trade));
@@ -186,7 +194,8 @@ class BotAlgorithmManager
         $compoundedPercentage = ($compoundedProfit  - 1) * 100;
 
         if(isset($currentCandle)) {
-            $this->saveAlgoTestResult($algo, $compoundedPercentage, count($trades), $initialFrom, $currentCandle->getCloseTime());
+            $this->saveAlgoTestResult($algo, $compoundedPercentage, count($trades), $invalidatedTrades,
+                $initialFrom, $currentCandle->getCloseTime());
         }
 
         $trade = "percentage $compoundedPercentage";
@@ -371,10 +380,12 @@ class BotAlgorithmManager
      * @param BotAlgorithm $algo
      * @param float $percentage
      * @param int $numTrades
+     * @param int $invalidatedTrades
      * @param int $startTime
      * @param int $finishTime
      */
-    private function saveAlgoTestResult(BotAlgorithm $algo, float $percentage, int $numTrades, int $startTime, int $finishTime)
+    private function saveAlgoTestResult(BotAlgorithm $algo, float $percentage, int $numTrades, int $invalidatedTrades,
+                                        int $startTime, int $finishTime)
     {
         $testResult = new AlgoTestResult();
         $testResult->setAlgo($algo);
@@ -384,6 +395,7 @@ class BotAlgorithmManager
         $testResult->setStartTime($startTime);
         $testResult->setEndTime($finishTime);
         $testResult->setTimeFrame($algo->getTimeFrame());
+        $testResult->setInvalidatedTrades($invalidatedTrades);
 
         $extra = [
             "entry_strategies" => $algo->getEntryStrategyCombination(),
