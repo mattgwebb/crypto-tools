@@ -69,6 +69,11 @@ class BotAlgorithm implements \JsonSerializable
     private $exitStrategyCombination;
 
     /**
+     * @ORM\Column(type="text")
+     */
+    private $invalidationStrategyCombination;
+
+    /**
      * @ORM\Column(type="smallint")
      */
     private $tradeStatus = TradeTypes::TRADE_SELL;
@@ -409,6 +414,22 @@ class BotAlgorithm implements \JsonSerializable
     }
 
     /**
+     * @return mixed
+     */
+    public function getInvalidationStrategyCombination()
+    {
+        return $this->invalidationStrategyCombination;
+    }
+
+    /**
+     * @param mixed $invalidationStrategyCombination
+     */
+    public function setInvalidationStrategyCombination($invalidationStrategyCombination): void
+    {
+        $this->invalidationStrategyCombination = $invalidationStrategyCombination;
+    }
+
+    /**
      * Specify data which should be serialized to JSON
      * @link https://php.net/manual/en/jsonserializable.jsonserialize.php
      * @return mixed data which can be serialized by <b>json_encode</b>,
@@ -422,6 +443,7 @@ class BotAlgorithm implements \JsonSerializable
             "symbol" => $this->getCurrencyPair()->getSymbol(),
             "entry_strategies" => $this->getEntryStrategyCombination(),
             "exit_strategies" => $this->getExitStrategyCombination(),
+            "invalidation_strategies" => $this->getInvalidationStrategyCombination(),
             "time_frame" => $this->getTimeFrame(),
             "stop_loss" => $this->getStopLoss(),
             "take_profit" => $this->getTakeProfit()

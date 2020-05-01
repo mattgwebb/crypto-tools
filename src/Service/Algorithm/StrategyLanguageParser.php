@@ -8,10 +8,12 @@ use App\Entity\Algorithm\StrategyCombination;
 use App\Entity\Algorithm\StrategyConfig;
 use App\Entity\TechnicalAnalysis\Strategy;
 use App\Repository\TechnicalAnalysis\StrategyRepository;
-use Doctrine\Common\Collections\ArrayCollection;
 
 class StrategyLanguageParser
 {
+    const AND_OPERATOR = '&&';
+    const OR_OPERATOR = '||';
+
     /**
      * @var StrategyRepository
      */
@@ -46,12 +48,12 @@ class StrategyLanguageParser
 
         $strategyString = str_replace(' ', '', $strategyString);
 
-        if(strpos($strategyString, '||') !== false) {
-            $strategyCombination->setOperator('||');
-        } else if(strpos($strategyString, '&&') !== false)  {
-            $strategyCombination->setOperator('&&');
+        if(strpos($strategyString, self::OR_OPERATOR) !== false) {
+            $strategyCombination->setOperator(self::OR_OPERATOR);
+        } else if(strpos($strategyString, self::AND_OPERATOR) !== false)  {
+            $strategyCombination->setOperator(self::AND_OPERATOR);
         } else {
-            $strategyCombination->setOperator('&&');
+            $strategyCombination->setOperator(self::AND_OPERATOR);
         }
 
         $rawStrategies = explode($strategyCombination->getOperator(), $strategyString);

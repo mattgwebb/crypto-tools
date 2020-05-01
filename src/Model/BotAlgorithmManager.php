@@ -174,6 +174,7 @@ class BotAlgorithmManager
                 $trade['extra_data'] = $result->getExtraData();
                 $trade["percentage"] = round($percentage, 2);
                 $trade["stopLoss_takeProfit"] = $short;
+                $trade['invalidation'] = $result->isFromInvalidation();
                 $trades[] = $trade;
 
                 $this->logger->info(json_encode($trade));

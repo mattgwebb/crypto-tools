@@ -5,6 +5,7 @@ namespace App\Service\TechnicalAnalysis;
 
 
 use App\Entity\Algorithm\BotAlgorithm;
+use App\Entity\Algorithm\StrategyCombination;
 use App\Entity\Algorithm\StrategyConfig;
 use App\Entity\Data\Candle;
 use App\Entity\TechnicalAnalysis\DivergenceIndicators;
@@ -946,15 +947,35 @@ class Strategies
      */
     public function runStrategies(BotAlgorithm $algo, int $currentTradeType = TradeTypes::TRADE_SELL)
     {
-        $strategyResult = new StrategyResult();
-
         if($currentTradeType == TradeTypes::TRADE_SELL) {
             $strategies = $this->strategyLanguageParser->getStrategies($algo->getEntryStrategyCombination());
         } else if($currentTradeType == TradeTypes::TRADE_BUY) {
             $strategies = $this->strategyLanguageParser->getStrategies($algo->getExitStrategyCombination());
         } else {
-            return $strategyResult;
+            return new StrategyResult();
         }
+
+        $strategyResult = $this->getStrategyResult($algo, $strategies, $currentTradeType);
+
+        if($currentTradeType == TradeTypes::TRADE_BUY && !$strategyResult->isShort()
+            && $algo->getInvalidationStrategyCombination()) {
+            $strategies = $this->strategyLanguageParser->getStrategies($algo->getInvalidationStrategyCombination());
+            $strategyResult = $this->getStrategyResult($algo, $strategies, $currentTradeType);
+            $strategyResult->setFromInvalidation(true);
+        }
+
+        return $strategyResult;
+    }
+
+    /**
+     * @param BotAlgorithm $algo
+     * @param StrategyCombination $strategies
+     * @param int $currentTradeType
+     * @return StrategyResult
+     */
+    private function getStrategyResult(BotAlgorithm $algo, StrategyCombination $strategies, int $currentTradeType)
+    {
+        $strategyResult = new StrategyResult();
 
         $results = [
             StrategyResult::TRADE_SHORT => 0,
@@ -970,10 +991,18 @@ class Strategies
 
         $totalResults = array_sum($results);
 
-        if($results[StrategyResult::TRADE_SHORT] == $totalResults) {
-            $strategyResult->setTradeResult(StrategyResult::TRADE_SHORT);
-        } else if($results[StrategyResult::TRADE_LONG] == $totalResults) {
-            $strategyResult->setTradeResult(StrategyResult::TRADE_LONG);
+        if($strategies->getOperator() == StrategyLanguageParser::AND_OPERATOR) {
+            if($results[StrategyResult::TRADE_SHORT] == $totalResults) {
+                $strategyResult->setTradeResult(StrategyResult::TRADE_SHORT);
+            } else if($results[StrategyResult::TRADE_LONG] == $totalResults) {
+                $strategyResult->setTradeResult(StrategyResult::TRADE_LONG);
+            }
+        } else if($strategies->getOperator() == StrategyLanguageParser::OR_OPERATOR) {
+            if($currentTradeType == TradeTypes::TRADE_SELL && $results[StrategyResult::TRADE_LONG] >= 1) {
+                $strategyResult->setTradeResult(StrategyResult::TRADE_LONG);
+            } else if($currentTradeType == TradeTypes::TRADE_BUY && $results[StrategyResult::TRADE_SHORT] >= 1) {
+                $strategyResult->setTradeResult(StrategyResult::TRADE_SHORT);
+            }
         }
         return $strategyResult;
     }

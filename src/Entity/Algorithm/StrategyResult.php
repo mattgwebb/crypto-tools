@@ -12,6 +12,8 @@ class StrategyResult implements \JsonSerializable
 
     private $tradeResult = self::NO_TRADE;
 
+    private $fromInvalidation = false;
+
     private $extraData = [];
 
     /**
@@ -71,6 +73,21 @@ class StrategyResult implements \JsonSerializable
         $this->extraData = $extraData;
     }
 
+    /**
+     * @return bool
+     */
+    public function isFromInvalidation(): bool
+    {
+        return $this->fromInvalidation;
+    }
+
+    /**
+     * @param bool $fromInvalidation
+     */
+    public function setFromInvalidation(bool $fromInvalidation): void
+    {
+        $this->fromInvalidation = $fromInvalidation;
+    }
 
     /**
      * Specify data which should be serialized to JSON
