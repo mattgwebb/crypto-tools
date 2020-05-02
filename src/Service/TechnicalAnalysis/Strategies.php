@@ -1016,7 +1016,7 @@ class Strategies
      */
     private function runStrategy(StrategyConfig $strategyConfig)
     {
-        if(!in_array($strategyConfig->getStrategy()->getName(), self::STRATEGY_LIST)) {
+        if(!method_exists($this, $strategyConfig->getStrategy()->getName())) {
             throw new StrategyNotFoundException();
         }
         return call_user_func_array(array($this,$strategyConfig->getStrategy()->getName()), $strategyConfig->getConfigParams());
