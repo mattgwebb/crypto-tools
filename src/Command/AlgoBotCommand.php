@@ -113,12 +113,6 @@ class AlgoBotCommand extends Command
         try {
             $this->log($algo, "RUNNING BOT USING ALGO ".$algo->getId()." ".$algo->getName());
 
-            /*if($this->algoManager->checkStopLossAndTakeProfit($algo, $lastPrice)->isShort()) {
-                $this->output->writeln(["NEW SHORT TRADE (STOP LOSS/TAKE PROFIT)"]);
-                $this->newOrder($algo, TradeTypes::TRADE_SELL, $lastPrice);
-                return;
-            }*/
-
             if($lastCandleId) {
                 /** @var Candle $lastCandle */
                 $lastCandle = $this->candleManager->getCandle($lastCandleId);

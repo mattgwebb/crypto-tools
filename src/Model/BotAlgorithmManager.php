@@ -138,24 +138,9 @@ class BotAlgorithmManager
             $currentTradeStatus = $openTradePrice > 0 ? TradeTypes::TRADE_BUY : TradeTypes::TRADE_SELL;
 
             $this->strategies->setData($auxData);
+            $this->strategies->setCurrentTradePrice($openTradePrice);
             $result = $this->strategies->runStrategies($algo, $currentTradeStatus);
 
-            if($currentTradeStatus == TradeTypes::TRADE_BUY) {
-                if($algo->getStopLoss()) {
-                    $stopLoss = $this->strategies->stopLosses($openTradePrice, $algo->getStopLoss())->isShort();
-                } else {
-                    $stopLoss = false;
-                }
-                if($algo->getTakeProfit()) {
-                    $takeProfit = $this->strategies->takeProfit($openTradePrice, $algo->getTakeProfit())->isShort();
-                } else {
-                    $takeProfit = false;
-                }
-
-                $short = $stopLoss || $takeProfit;
-            } else {
-                $short = false;
-            }
 
             if(($result->isLong()) && $currentTradeStatus == TradeTypes::TRADE_SELL) {
                 $openTradePrice = $currentCandle->getClosePrice();
@@ -167,7 +152,7 @@ class BotAlgorithmManager
 
                 $this->logger->info(json_encode($trade));
             }
-            if(($result->isShort() || $short) && $currentTradeStatus == TradeTypes::TRADE_BUY) {
+            if($result->isShort() && $currentTradeStatus == TradeTypes::TRADE_BUY) {
                 $profit = ($currentCandle->getClosePrice()/$openTradePrice);
                 $percentage = ($profit - 1) * 100;
                 $compoundedProfit *= $profit;
@@ -175,7 +160,6 @@ class BotAlgorithmManager
                 $trade = $this->newTestTrade($currentCandle, TradeTypes::TRADE_SELL);
                 $trade['extra_data'] = $result->getExtraData();
                 $trade["percentage"] = round($percentage, 2);
-                $trade["stopLoss_takeProfit"] = $short;
 
                 if($result->isFromInvalidation()) {
                     $trade['invalidation'] = true;
@@ -292,38 +276,6 @@ class BotAlgorithmManager
     }
 
     /**
-     * @param BotAlgorithm $algo
-     * @param float $currentPrice
-     * @return StrategyResult
-     */
-    public function checkStopLossAndTakeProfit(BotAlgorithm $algo, float $currentPrice)
-    {
-        $result = new StrategyResult();
-
-        try {
-            $lastPrice = $this->tradeRepository->getAlgoLastBuyTradePrice($algo);
-        } catch (\Exception $e) {
-            return $result;
-        }
-
-        if(!$lastPrice) {
-            return $result;
-        }
-
-        if($algo->isLong() ) {
-            $this->strategies->setCurrentPrice($currentPrice);
-
-            if($algo->getStopLoss() != 0) {
-                $result = $this->strategies->stopLosses($lastPrice, $algo->getStopLoss());
-            }
-            if($result->isShort() && $algo->getTakeProfit() != 0) {
-                $result = $this->strategies->takeProfit($lastPrice, $algo->getTakeProfit());
-            }
-        }
-        return $result;
-    }
-
-    /**
      * @param int $id
      * @return BotAlgorithm|null
      */
@@ -401,7 +353,8 @@ class BotAlgorithmManager
 
         $extra = [
             "entry_strategies" => $algo->getEntryStrategyCombination(),
-            "exit_strategies" => $algo->getExitStrategyCombination()
+            "exit_strategies" => $algo->getExitStrategyCombination(),
+            "invalidation_strategies" => $algo->getInvalidationStrategyCombination()
         ];
         $testResult->setObservations(json_encode($extra));
 

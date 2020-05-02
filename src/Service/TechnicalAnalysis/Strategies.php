@@ -73,6 +73,11 @@ class Strategies
     private $currentClose;
 
     /**
+     * @var float
+     */
+    private $currentTradePrice;
+
+    /**
      * @var array
      */
     private $candles;
@@ -649,15 +654,18 @@ class Strategies
     }
 
     /**
-     * @param $tradePrice
      * @param $percentage
      * @return StrategyResult
      */
-    public function stopLosses($tradePrice, $percentage)
+    public function stopLoss($percentage)
     {
         $result = new StrategyResult();
 
-        $stopLossPrice = $tradePrice * (1-($percentage/100));
+        if(!$this->currentTradePrice) {
+            return $result;
+        }
+
+        $stopLossPrice = $this->currentTradePrice * (1-($percentage/100));
         if($this->currentPrice <= $stopLossPrice) {
             $result->setTradeResult(StrategyResult::TRADE_SHORT);
         }
@@ -665,15 +673,18 @@ class Strategies
     }
 
     /**
-     * @param $tradePrice
      * @param $percentage
      * @return StrategyResult
      */
-    public function takeProfit($tradePrice, $percentage)
+    public function takeProfit($percentage)
     {
         $result = new StrategyResult();
 
-        $takeProfitPrice = $tradePrice * (1+($percentage/100));
+        if(!$this->currentTradePrice) {
+            return $result;
+        }
+
+        $takeProfitPrice = $this->currentTradePrice * (1+($percentage/100));
         if($this->currentPrice >= $takeProfitPrice) {
             $result->setTradeResult(StrategyResult::TRADE_SHORT);
         }
@@ -931,6 +942,14 @@ class Strategies
         $this->currentPrice = $candle->getClosePrice();
         $this->currentClose = $candle->getCloseTime();
         $this->candles = $candles;
+    }
+
+    /**
+     * @param float $currentTradePrice
+     */
+    public function setCurrentTradePrice(float $currentTradePrice): void
+    {
+        $this->currentTradePrice = $currentTradePrice;
     }
 
     /**
