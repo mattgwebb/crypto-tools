@@ -7,6 +7,7 @@ namespace App\Service\Algorithm;
 use App\Entity\Algorithm\StrategyCombination;
 use App\Entity\Algorithm\StrategyConfig;
 use App\Entity\TechnicalAnalysis\Strategy;
+use App\Exceptions\Algorithm\StrategyNotFoundException;
 use App\Repository\TechnicalAnalysis\StrategyRepository;
 
 class StrategyLanguageParser
@@ -36,7 +37,7 @@ class StrategyLanguageParser
     /**
      * @param string $strategyString
      * @return StrategyCombination
-     * @throws \Exception
+     * @throws StrategyNotFoundException
      */
     public function getStrategies(string $strategyString)
     {
@@ -85,12 +86,12 @@ class StrategyLanguageParser
     /**
      * @param string $name
      * @return mixed
-     * @throws \Exception
+     * @throws StrategyNotFoundException
      */
     private function getStrategy(string $name)
     {
         if(!isset($this->strategyList[$name])) {
-            throw new \Exception();
+            throw new StrategyNotFoundException();
         }
         return $this->strategyList[$name];
     }

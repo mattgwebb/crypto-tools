@@ -20,6 +20,7 @@ use App\Entity\TechnicalAnalysis\PivotTypes;
 use App\Entity\TechnicalAnalysis\Strategy;
 use App\Entity\TechnicalAnalysis\TrendLine;
 use App\Entity\Trade\TradeTypes;
+use App\Exceptions\Algorithm\StrategyNotFoundException;
 use App\Exceptions\TechnicalAnalysis\IndicatorNotSupported;
 use App\Service\Algorithm\StrategyLanguageParser;
 
@@ -944,6 +945,7 @@ class Strategies
      * @param BotAlgorithm $algo
      * @param int $currentTradeType
      * @return StrategyResult
+     * @throws StrategyNotFoundException
      */
     public function runStrategies(BotAlgorithm $algo, int $currentTradeType = TradeTypes::TRADE_SELL)
     {
@@ -955,12 +957,12 @@ class Strategies
             return new StrategyResult();
         }
 
-        $strategyResult = $this->getStrategyResult($algo, $strategies, $currentTradeType);
+        $strategyResult = $this->getStrategyResult($strategies, $currentTradeType);
 
         if($currentTradeType == TradeTypes::TRADE_BUY && !$strategyResult->isShort()
             && $algo->getInvalidationStrategyCombination()) {
             $strategies = $this->strategyLanguageParser->getStrategies($algo->getInvalidationStrategyCombination());
-            $strategyResult = $this->getStrategyResult($algo, $strategies, $currentTradeType);
+            $strategyResult = $this->getStrategyResult($strategies, $currentTradeType);
             $strategyResult->setFromInvalidation(true);
         }
 
@@ -968,12 +970,12 @@ class Strategies
     }
 
     /**
-     * @param BotAlgorithm $algo
      * @param StrategyCombination $strategies
      * @param int $currentTradeType
      * @return StrategyResult
+     * @throws StrategyNotFoundException
      */
-    private function getStrategyResult(BotAlgorithm $algo, StrategyCombination $strategies, int $currentTradeType)
+    private function getStrategyResult(StrategyCombination $strategies, int $currentTradeType)
     {
         $strategyResult = new StrategyResult();
 
@@ -985,7 +987,7 @@ class Strategies
 
         /** @var StrategyConfig $strategy */
         foreach($strategies->getStrategyConfigList() as $strategy) {
-            $result = $this->runStrategy($algo, $strategy);
+            $result = $this->runStrategy($strategy);
             $results[$result->getTradeResult()]++;
         }
 
@@ -1008,12 +1010,15 @@ class Strategies
     }
 
     /**
-     * @param BotAlgorithm $algo
      * @param StrategyConfig $strategyConfig
      * @return StrategyResult
+     * @throws StrategyNotFoundException
      */
-    private function runStrategy(BotAlgorithm $algo, StrategyConfig $strategyConfig)
+    private function runStrategy(StrategyConfig $strategyConfig)
     {
+        if(!in_array($strategyConfig->getStrategy()->getName(), self::STRATEGY_LIST)) {
+            throw new StrategyNotFoundException();
+        }
         return call_user_func_array(array($this,$strategyConfig->getStrategy()->getName()), $strategyConfig->getConfigParams());
     }
 

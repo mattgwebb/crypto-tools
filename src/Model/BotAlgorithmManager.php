@@ -15,6 +15,7 @@ use App\Entity\Data\ExternalIndicatorDataType;
 use App\Entity\Data\TimeFrames;
 use App\Entity\Trade\Trade;
 use App\Entity\Trade\TradeTypes;
+use App\Exceptions\Algorithm\StrategyNotFoundException;
 use App\Repository\Algorithm\BotAlgorithmRepository;
 use App\Repository\Data\CandleRepository;
 use App\Repository\Data\CurrencyPairRepository;
@@ -104,7 +105,7 @@ class BotAlgorithmManager
      * @param int $to
      * @param int $candlesToLoad
      * @return array
-     * @throws \Exception
+     * @throws StrategyNotFoundException
      */
     public function runTest(BotAlgorithm $algo, int $from = 0, int $to = 0,
                             int $candlesToLoad = self::CANDLES_TO_LOAD)
@@ -281,7 +282,8 @@ class BotAlgorithmManager
     /**
      * @param BotAlgorithm $algo
      * @param Candle[] $candles
-     * @return StrategyResult|bool
+     * @return StrategyResult
+     * @throws StrategyNotFoundException
      */
     public function runAlgo(BotAlgorithm $algo, $candles)
     {
