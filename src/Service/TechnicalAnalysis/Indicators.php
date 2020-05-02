@@ -80,6 +80,20 @@ class Indicators
     /**
      * @param $data
      * @param int $period
+     * @param bool $prior
+     * @return float
+     */
+    public function mfi($data, $period=14, $prior=false)
+    {
+        $mfiArray = trader_mfi ($data['high'], $data['low'], $data['close'], $data['volume'], $period);
+        $mfi = @array_pop($mfiArray) ?? 0;
+        $mfi_prior = @array_pop($mfiArray) ?? 0;
+        return ($prior ? $mfi_prior : $mfi);
+    }
+
+    /**
+     * @param $data
+     * @param int $period
      * @return mixed
      */
     public function rsiPeriod($data, $period=14)

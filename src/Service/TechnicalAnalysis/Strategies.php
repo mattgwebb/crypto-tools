@@ -462,6 +462,36 @@ class Strategies
     }
 
     /**
+     * @param int $mfiSell
+     * @param int $mfiBuy
+     * @param int $period
+     * @param bool $crossOnly
+     * @return StrategyResult
+     */
+    public function mfi(int $mfiSell = 80, int $mfiBuy = 20, int $period = 14, bool $crossOnly = false) : StrategyResult
+    {
+        $result = new StrategyResult();
+        $mfi = $this->indicators->mfi($this->data, $period);
+
+        if($crossOnly) {
+            $mfiPrior = $this->indicators->mfi($this->data, $period, true);
+
+            if($mfi >= $mfiBuy && $mfiPrior < $mfiBuy) {
+                $result->setTradeResult(StrategyResult::TRADE_LONG);
+            } else if($mfi <= $mfiSell && $mfiPrior > $mfiSell) {
+                $result->setTradeResult(StrategyResult::TRADE_SHORT);
+            }
+        } else {
+            if($mfi < $mfiBuy) {
+                $result->setTradeResult(StrategyResult::TRADE_LONG);
+            } else if($mfi > $mfiSell) {
+                $result->setTradeResult(StrategyResult::TRADE_SHORT);
+            }
+        }
+        return $result;
+    }
+
+    /**
      * @param int $type
      * @param int $previousCandles
      * @param int $minCandleDifference
