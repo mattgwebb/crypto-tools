@@ -349,6 +349,21 @@ class Strategies
      * @param bool $hiddenDivergence
      * @return StrategyResult
      */
+    public function mfiDivergence(int $previousCandles = 10, int $minCandleDifference = 2, int $minDivergencePercentage = 20,
+                                      bool $regularDivergence = true, bool $hiddenDivergence = true): StrategyResult
+    {
+        return $this->indicatorDivergence(DivergenceIndicators::MFI, $previousCandles, $minCandleDifference, $minDivergencePercentage,
+            $regularDivergence, $hiddenDivergence);
+    }
+
+    /**
+     * @param int $previousCandles
+     * @param int $minCandleDifference
+     * @param int $minDivergencePercentage
+     * @param bool $regularDivergence
+     * @param bool $hiddenDivergence
+     * @return StrategyResult
+     */
     public function obvDivergence(int $previousCandles = 10, int $minCandleDifference = 2, int $minDivergencePercentage = 20,
                                   bool $regularDivergence = true, bool $hiddenDivergence = true): StrategyResult
     {
@@ -523,6 +538,8 @@ class Strategies
             $indicatorPeriod = $this->indicators->obvPeriod($this->data);
         } else if($type == DivergenceIndicators::CHAIKIN) {
             $indicatorPeriod = $this->indicators->chaikinOscillatorPeriod($this->data);
+        } else if($type == DivergenceIndicators::MFI) {
+            $indicatorPeriod = $this->indicators->mfiPeriod($this->data);
         } else {
             return $result;
         }

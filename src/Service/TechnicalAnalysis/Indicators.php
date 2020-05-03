@@ -96,6 +96,17 @@ class Indicators
      * @param int $period
      * @return mixed
      */
+    public function mfiPeriod($data, $period=14)
+    {
+        $mfi = trader_mfi ($data['high'], $data['low'], $data['close'], $data['volume'], $period);
+        return $mfi;
+    }
+
+    /**
+     * @param $data
+     * @param int $period
+     * @return mixed
+     */
     public function rsiPeriod($data, $period=14)
     {
         $rsi = trader_rsi ($data['close'], $period);
