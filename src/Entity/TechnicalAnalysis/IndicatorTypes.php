@@ -8,4 +8,7 @@ abstract class IndicatorTypes
 {
     const RSI = 'rsi';
     const EMA = 'ema';
+    const CHAIKIN = 'chaikin';
+    const OBV = 'obv';
+    const MFI = 'mfi';
 }

@@ -58,6 +58,11 @@ class Strategies
     private $strategyLanguageParser;
 
     /**
+     * @var DivergenceStrategies
+     */
+    private $divergenceStrategies;
+
+    /**
      * @var array
      */
     private $data;
@@ -86,11 +91,14 @@ class Strategies
      * Strategies constructor.
      * @param Indicators $indicators
      * @param StrategyLanguageParser $strategyLanguageParser
+     * @param DivergenceStrategies $divergenceStrategies
      */
-    public function __construct(Indicators $indicators, StrategyLanguageParser $strategyLanguageParser)
+    public function __construct(Indicators $indicators, StrategyLanguageParser $strategyLanguageParser,
+                                DivergenceStrategies $divergenceStrategies)
     {
         $this->indicators = $indicators;
         $this->strategyLanguageParser = $strategyLanguageParser;
+        $this->divergenceStrategies = $divergenceStrategies;
     }
 
     /**
@@ -312,6 +320,7 @@ class Strategies
     }
 
     /**
+     * @param string $indicator
      * @param int $previousCandles
      * @param int $minCandleDifference
      * @param int $minDivergencePercentage
@@ -319,56 +328,12 @@ class Strategies
      * @param bool $hiddenDivergence
      * @return StrategyResult
      */
-    public function rsiDivergence(int $previousCandles = 10, int $minCandleDifference = 2, int $minDivergencePercentage = 20,
-                                  bool $regularDivergence = true, bool $hiddenDivergence = true): StrategyResult
+    public function divergence(string $indicator, int $previousCandles = 10, int $minCandleDifference = 2,
+                                        int $minDivergencePercentage = 20, bool $regularDivergence = true,
+                                        bool $hiddenDivergence = true): StrategyResult
     {
-        return $this->indicatorDivergence(DivergenceIndicators::RSI, $previousCandles, $minCandleDifference, $minDivergencePercentage,
-            $regularDivergence, $hiddenDivergence);
-    }
-
-    /**
-     * @param int $previousCandles
-     * @param int $minCandleDifference
-     * @param int $minDivergencePercentage
-     * @param bool $regularDivergence
-     * @param bool $hiddenDivergence
-     * @return StrategyResult
-     */
-    public function chaikinDivergence(int $previousCandles = 10, int $minCandleDifference = 2, int $minDivergencePercentage = 20,
-                                  bool $regularDivergence = true, bool $hiddenDivergence = true): StrategyResult
-    {
-        return $this->indicatorDivergence(DivergenceIndicators::CHAIKIN, $previousCandles, $minCandleDifference, $minDivergencePercentage,
-            $regularDivergence, $hiddenDivergence);
-    }
-
-    /**
-     * @param int $previousCandles
-     * @param int $minCandleDifference
-     * @param int $minDivergencePercentage
-     * @param bool $regularDivergence
-     * @param bool $hiddenDivergence
-     * @return StrategyResult
-     */
-    public function mfiDivergence(int $previousCandles = 10, int $minCandleDifference = 2, int $minDivergencePercentage = 20,
-                                      bool $regularDivergence = true, bool $hiddenDivergence = true): StrategyResult
-    {
-        return $this->indicatorDivergence(DivergenceIndicators::MFI, $previousCandles, $minCandleDifference, $minDivergencePercentage,
-            $regularDivergence, $hiddenDivergence);
-    }
-
-    /**
-     * @param int $previousCandles
-     * @param int $minCandleDifference
-     * @param int $minDivergencePercentage
-     * @param bool $regularDivergence
-     * @param bool $hiddenDivergence
-     * @return StrategyResult
-     */
-    public function obvDivergence(int $previousCandles = 10, int $minCandleDifference = 2, int $minDivergencePercentage = 20,
-                                  bool $regularDivergence = true, bool $hiddenDivergence = true): StrategyResult
-    {
-        return $this->indicatorDivergence(DivergenceIndicators::OBV, $previousCandles, $minCandleDifference, $minDivergencePercentage,
-            $regularDivergence, $hiddenDivergence);
+        return $this->divergenceStrategies->indicatorDivergence($this->data, $indicator, $previousCandles, $minCandleDifference,
+            $minDivergencePercentage, $regularDivergence, $hiddenDivergence);
     }
 
     /**
@@ -507,121 +472,6 @@ class Strategies
     }
 
     /**
-     * @param int $type
-     * @param int $previousCandles
-     * @param int $minCandleDifference
-     * @param int $minDivergencePercentage
-     * @param bool $regularDivergence
-     * @param bool $hiddenDivergence
-     * @return StrategyResult
-     */
-    private function indicatorDivergence(int $type, int $previousCandles, int $minCandleDifference, int $minDivergencePercentage,
-                                         bool $regularDivergence, bool $hiddenDivergence): StrategyResult
-    {
-        $divergenceTypes = [];
-
-        if($regularDivergence) {
-            $divergenceTypes[] = DivergenceTypes::BULLISH_REGULAR_DIVERGENCE;
-            $divergenceTypes[] = DivergenceTypes::BEARISH_REGULAR_DIVERGENCE;
-        }
-
-        if($hiddenDivergence) {
-            $divergenceTypes[] = DivergenceTypes::BULLISH_HIDDEN_DIVERGENCE;
-            $divergenceTypes[] = DivergenceTypes::BEARISH_HIDDEN_DIVERGENCE;
-        }
-
-        $result = new StrategyResult();
-
-        if($type == DivergenceIndicators::RSI) {
-            $indicatorPeriod = $this->indicators->rsiPeriod($this->data);
-        } else if($type == DivergenceIndicators::OBV) {
-            $indicatorPeriod = $this->indicators->obvPeriod($this->data);
-        } else if($type == DivergenceIndicators::CHAIKIN) {
-            $indicatorPeriod = $this->indicators->chaikinOscillatorPeriod($this->data);
-        } else if($type == DivergenceIndicators::MFI) {
-            $indicatorPeriod = $this->indicators->mfiPeriod($this->data);
-        } else {
-            return $result;
-        }
-
-        $indicatorPeriod = array_values($indicatorPeriod);
-        $indicatorPeriod = array_slice($indicatorPeriod, $previousCandles * (-1));
-        $indicatorPeriod = array_reverse($indicatorPeriod);
-
-        $lastOpenTimes = array_slice($this->data['open_time'], $previousCandles * (-1));
-        $lastOpenTimes = array_reverse($lastOpenTimes);
-
-        $lastCloses = array_slice($this->data['close'], $previousCandles * (-1));
-        $lastCloses = array_reverse($lastCloses);
-
-        $priceRange = $this->getRange($lastCloses);
-        $indicatorRange = $this->getRange($indicatorPeriod);
-
-        $indicatorPoints = new IndicatorPointList($indicatorPeriod, $lastOpenTimes, $lastCloses);
-
-        $orderedIndicatorPointsAsc = $indicatorPoints->getOrderedList();
-
-        $divergenceLines = [];
-
-        foreach($orderedIndicatorPointsAsc as $lowPoint) {
-            if($lowPoint->getPeriod() >= $minCandleDifference) {
-                $line = $indicatorPoints->getValidLine($lowPoint->getPeriod(), true);
-                if($line) {
-                    $this->checkDivergence($line, $lastCloses, $minDivergencePercentage, $priceRange, $indicatorRange, true);
-                    if(in_array($line->getType(), $divergenceTypes)) {
-                        $divergenceLines[] = $line;
-                    }
-                }
-            }
-        }
-
-        $orderedIndicatorPointsDesc = $indicatorPoints->getOrderedList(true);
-
-        foreach($orderedIndicatorPointsDesc as $highPoint) {
-            if($highPoint->getPeriod() >= $minCandleDifference) {
-                $line = $indicatorPoints->getValidLine($highPoint->getPeriod(), false);
-                if($line) {
-                    $this->checkDivergence($line, $lastCloses, $minDivergencePercentage, $priceRange, $indicatorRange,false);
-                    if(in_array($line->getType(), $divergenceTypes)) {
-                        $divergenceLines[] = $line;
-                    }
-                }
-            }
-        }
-        $finalLine = [];
-
-        if($divergenceLines) {
-            if(count($divergenceLines) > 1) {
-                usort($divergenceLines, function(DivergenceLine $a, DivergenceLine $b)
-                { return($a->getPercentageDivergenceWithPrice() < $b->getPercentageDivergenceWithPrice()); });
-            }
-            /** @var DivergenceLine $finalLine */
-            $finalLine = $divergenceLines[0];
-
-            if($finalLine->hasBullishDivergence()) {
-                $result->setTradeResult(StrategyResult::TRADE_LONG);
-            } else if($finalLine->hasBearishDivergence()) {
-                $result->setTradeResult(StrategyResult::TRADE_SHORT);
-            }
-        }
-        $result->setExtraData(['divergence_line' => $finalLine]);
-
-        return $result;
-    }
-
-    /**
-     * @param array $values
-     * @return float
-     */
-    private function getRange(array $values)
-    {
-        $smallest = min($values);
-        $biggest = max($values);
-
-        return $biggest - $smallest;
-    }
-
-    /**
      * @param $period1
      * @param $period1Prior
      * @param $period2
@@ -639,47 +489,6 @@ class Strategies
             $result->setTradeResult(StrategyResult::TRADE_SHORT);
         }
         return $result;
-    }
-
-    /**
-     * @param DivergenceLine $line
-     * @param array $lastCloses
-     * @param int $minDivergencePercentage
-     * @param float $priceRange
-     * @param float $indicatorRange
-     * @param bool $lower
-     */
-    private function checkDivergence(DivergenceLine $line, array $lastCloses, int $minDivergencePercentage,
-                                     float $priceRange, float $indicatorRange, bool $lower)
-    {
-        $firstPeriod = $line->getFirstPoint()->getPeriod();
-        $secondPeriod = $line->getSecondPoint()->getPeriod();
-
-        $firstPeriodClose = $lastCloses[$firstPeriod];
-        $secondPeriodClose = $lastCloses[$secondPeriod];
-
-        $priceClosePercentageChange = (($secondPeriodClose - $firstPeriodClose) / $priceRange) * 100;
-        $indicatorPercentageChange = (($line->getSecondPoint()->getValue() - $line->getFirstPoint()->getValue()) / $indicatorRange) * 100;
-
-        $indicatorUpPriceDown = $indicatorPercentageChange < 0 && $priceClosePercentageChange > 0;
-        $indicatorDownPriceUp = $indicatorPercentageChange > 0 && $priceClosePercentageChange < 0;
-
-        $line->setPercentageDivergenceWithPrice(abs($priceClosePercentageChange - $indicatorPercentageChange));
-        if($line->getPercentageDivergenceWithPrice() >= $minDivergencePercentage) {
-            if($lower) {
-                if($indicatorDownPriceUp) {
-                    $line->setType(DivergenceTypes::BULLISH_HIDDEN_DIVERGENCE);
-                } else if($indicatorUpPriceDown) {
-                    $line->setType(DivergenceTypes::BULLISH_REGULAR_DIVERGENCE);
-                }
-            } else {
-                if($indicatorDownPriceUp) {
-                    $line->setType(DivergenceTypes::BEARISH_REGULAR_DIVERGENCE);
-                } else if($indicatorUpPriceDown) {
-                    $line->setType(DivergenceTypes::BEARISH_HIDDEN_DIVERGENCE);
-                }
-            }
-        }
     }
 
     /**
