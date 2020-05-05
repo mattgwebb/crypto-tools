@@ -63,6 +63,11 @@ class Strategies
     private $divergenceStrategies;
 
     /**
+     * @var MovingAverageStrategies
+     */
+    private $movingAverageStrategies;
+
+    /**
      * @var array
      */
     private $data;
@@ -92,13 +97,15 @@ class Strategies
      * @param Indicators $indicators
      * @param StrategyLanguageParser $strategyLanguageParser
      * @param DivergenceStrategies $divergenceStrategies
+     * @param MovingAverageStrategies $movingAverageStrategies
      */
     public function __construct(Indicators $indicators, StrategyLanguageParser $strategyLanguageParser,
-                                DivergenceStrategies $divergenceStrategies)
+                                DivergenceStrategies $divergenceStrategies, MovingAverageStrategies $movingAverageStrategies)
     {
         $this->indicators = $indicators;
         $this->strategyLanguageParser = $strategyLanguageParser;
         $this->divergenceStrategies = $divergenceStrategies;
+        $this->movingAverageStrategies = $movingAverageStrategies;
     }
 
     /**
@@ -145,15 +152,7 @@ class Strategies
      */
     public function ma(int $period = 20) : StrategyResult
     {
-        $result = new StrategyResult();
-        $ma = $this->indicators->ma($this->data['close'], $period);
-
-        if($this->currentPrice > $ma) {
-            $result->setTradeResult(StrategyResult::TRADE_LONG);
-        } else if($this->currentPrice < $ma) {
-            $result->setTradeResult(StrategyResult::TRADE_SHORT);
-        }
-        return $result;
+        return $this->movingAverageStrategies->ma($this->data, $this->currentPrice, $period);
     }
 
     /**
@@ -162,15 +161,7 @@ class Strategies
      */
     public function ema(int $period = 20) : StrategyResult
     {
-        $result = new StrategyResult();
-        $ema = $this->indicators->ema($this->data['close'], $period);
-
-        if($this->currentPrice > $ema) {
-            $result->setTradeResult(StrategyResult::TRADE_LONG);
-        } else if($this->currentPrice < $ema) {
-            $result->setTradeResult(StrategyResult::TRADE_SHORT);
-        }
-        return $result;
+        return $this->movingAverageStrategies->ema($this->data, $this->currentPrice, $period);
     }
 
     /**

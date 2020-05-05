@@ -10,22 +10,8 @@ use App\Entity\TechnicalAnalysis\DivergenceTypes;
 use App\Entity\TechnicalAnalysis\IndicatorPointList;
 use App\Entity\TechnicalAnalysis\IndicatorTypes;
 
-class DivergenceStrategies
+class DivergenceStrategies extends AbstractStrategyService
 {
-
-    /**
-     * @var Indicators
-     */
-    private $indicators;
-
-    /**
-     * DivergenceStrategies constructor.
-     * @param Indicators $indicators
-     */
-    public function __construct(Indicators $indicators)
-    {
-        $this->indicators = $indicators;
-    }
 
     /**
      * @param array $data
