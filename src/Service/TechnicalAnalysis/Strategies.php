@@ -64,6 +64,11 @@ class Strategies
     private $movingAverageStrategies;
 
     /**
+     * @var OscillatorStrategies
+     */
+    private $oscillatorStrategies;
+
+    /**
      * @var array
      */
     private $data;
@@ -94,14 +99,17 @@ class Strategies
      * @param StrategyLanguageParser $strategyLanguageParser
      * @param DivergenceStrategies $divergenceStrategies
      * @param MovingAverageStrategies $movingAverageStrategies
+     * @param OscillatorStrategies $oscillatorStrategies
      */
     public function __construct(Indicators $indicators, StrategyLanguageParser $strategyLanguageParser,
-                                DivergenceStrategies $divergenceStrategies, MovingAverageStrategies $movingAverageStrategies)
+                                DivergenceStrategies $divergenceStrategies, MovingAverageStrategies $movingAverageStrategies,
+                                OscillatorStrategies $oscillatorStrategies)
     {
         $this->indicators = $indicators;
         $this->strategyLanguageParser = $strategyLanguageParser;
         $this->divergenceStrategies = $divergenceStrategies;
         $this->movingAverageStrategies = $movingAverageStrategies;
+        $this->oscillatorStrategies = $oscillatorStrategies;
     }
 
     /**
@@ -121,25 +129,7 @@ class Strategies
      */
     public function rsi(float $rsiSell = 70.00, float $rsiBuy = 30.00, int $period = 14, bool $crossOnly = false) : StrategyResult
     {
-        $result = new StrategyResult();
-        $rsi = $this->indicators->rsi($this->data, $period);
-
-        if($crossOnly) {
-            $rsiPrior = $this->indicators->rsi($this->data, $period, true);
-
-            if($rsi >= $rsiBuy && $rsiPrior < $rsiBuy) {
-                $result->setTradeResult(StrategyResult::TRADE_LONG);
-            } else if($rsi <= $rsiSell && $rsiPrior > $rsiSell) {
-                $result->setTradeResult(StrategyResult::TRADE_SHORT);
-            }
-        } else {
-            if($rsi < $rsiBuy) {
-                $result->setTradeResult(StrategyResult::TRADE_LONG);
-            } else if($rsi > $rsiSell) {
-                $result->setTradeResult(StrategyResult::TRADE_SHORT);
-            }
-        }
-        return $result;
+        return $this->oscillatorStrategies->rsi($this->data, $rsiSell, $rsiBuy, $period, $crossOnly);
     }
 
     /**
@@ -324,25 +314,7 @@ class Strategies
      */
     public function stoch(int $stochSell = 80, int $stochBuy = 20, int $period = 14, bool $crossOnly = false) : StrategyResult
     {
-        $result = new StrategyResult();
-        $stoch = $this->indicators->stoch($this->data, $period, 3);
-
-        if($crossOnly) {
-            $stochPrior = $this->indicators->stoch($this->data, $period, 3,true);
-
-            if($stoch >= $stochBuy && $stochPrior < $stochBuy) {
-                $result->setTradeResult(StrategyResult::TRADE_LONG);
-            } else if($stoch <= $stochSell && $stochPrior > $stochSell) {
-                $result->setTradeResult(StrategyResult::TRADE_SHORT);
-            }
-        } else {
-            if($stoch < $stochBuy) {
-                $result->setTradeResult(StrategyResult::TRADE_LONG);
-            } else if($stoch > $stochSell) {
-                $result->setTradeResult(StrategyResult::TRADE_SHORT);
-            }
-        }
-        return $result;
+        return $this->oscillatorStrategies->stoch($this->data, $stochSell, $stochBuy, $period, $crossOnly);
     }
 
     /**
@@ -354,25 +326,7 @@ class Strategies
      */
     public function mfi(int $mfiSell = 80, int $mfiBuy = 20, int $period = 14, bool $crossOnly = false) : StrategyResult
     {
-        $result = new StrategyResult();
-        $mfi = $this->indicators->mfi($this->data, $period);
-
-        if($crossOnly) {
-            $mfiPrior = $this->indicators->mfi($this->data, $period, true);
-
-            if($mfi >= $mfiBuy && $mfiPrior < $mfiBuy) {
-                $result->setTradeResult(StrategyResult::TRADE_LONG);
-            } else if($mfi <= $mfiSell && $mfiPrior > $mfiSell) {
-                $result->setTradeResult(StrategyResult::TRADE_SHORT);
-            }
-        } else {
-            if($mfi < $mfiBuy) {
-                $result->setTradeResult(StrategyResult::TRADE_LONG);
-            } else if($mfi > $mfiSell) {
-                $result->setTradeResult(StrategyResult::TRADE_SHORT);
-            }
-        }
-        return $result;
+        return $this->oscillatorStrategies->mfi($this->data, $mfiSell, $mfiBuy, $period, $crossOnly);
     }
 
     /**
