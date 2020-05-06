@@ -74,6 +74,11 @@ class Strategies
     private $trendLineStrategies;
 
     /**
+     * @var DeviationStrategies
+     */
+    private $deviationStrategies;
+
+    /**
      * @var array
      */
     private $data;
@@ -106,10 +111,12 @@ class Strategies
      * @param MovingAverageStrategies $movingAverageStrategies
      * @param OscillatorStrategies $oscillatorStrategies
      * @param TrendLineStrategies $trendLineStrategies
+     * @param DeviationStrategies $deviationStrategies
      */
     public function __construct(Indicators $indicators, StrategyLanguageParser $strategyLanguageParser,
                                 DivergenceStrategies $divergenceStrategies, MovingAverageStrategies $movingAverageStrategies,
-                                OscillatorStrategies $oscillatorStrategies, TrendLineStrategies $trendLineStrategies)
+                                OscillatorStrategies $oscillatorStrategies, TrendLineStrategies $trendLineStrategies,
+                                DeviationStrategies $deviationStrategies)
     {
         $this->indicators = $indicators;
         $this->strategyLanguageParser = $strategyLanguageParser;
@@ -117,6 +124,7 @@ class Strategies
         $this->movingAverageStrategies = $movingAverageStrategies;
         $this->oscillatorStrategies = $oscillatorStrategies;
         $this->trendLineStrategies = $trendLineStrategies;
+        $this->deviationStrategies = $deviationStrategies;
     }
 
     /**
@@ -162,17 +170,7 @@ class Strategies
      */
     public function bollingerBands() : StrategyResult
     {
-        $result = new StrategyResult();
-        list($highBand, $lowBand) = $this->indicators->bollingerBands($this->data);
-
-        if($this->currentPrice < $lowBand) {
-            $result->setTradeResult(StrategyResult::TRADE_LONG);
-        } else if($this->currentPrice > $highBand) {
-            $result->setTradeResult(StrategyResult::TRADE_SHORT);
-        } else {
-            $result->setTradeResult(StrategyResult::NO_TRADE);
-        }
-        return $result;
+        return $this->deviationStrategies->bollingerBands($this->data, $this->currentPrice);
     }
 
     /**
