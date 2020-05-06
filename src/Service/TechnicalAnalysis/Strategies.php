@@ -8,10 +8,6 @@ use App\Entity\Algorithm\BotAlgorithm;
 use App\Entity\Algorithm\StrategyCombination;
 use App\Entity\Algorithm\StrategyConfig;
 use App\Entity\Data\Candle;
-use App\Entity\TechnicalAnalysis\DivergenceIndicators;
-use App\Entity\TechnicalAnalysis\DivergenceLine;
-use App\Entity\TechnicalAnalysis\DivergenceTypes;
-use App\Entity\TechnicalAnalysis\IndicatorPointList;
 use App\Entity\Algorithm\StrategyResult;
 use App\Entity\Algorithm\StrategyTypes;
 use App\Entity\TechnicalAnalysis\IndicatorTypes;
@@ -187,15 +183,7 @@ class Strategies
      */
     public function macd()
     {
-        $result = new StrategyResult();
-        $macd = $this->indicators->macd($this->data);
-
-        if($macd > 0) {
-            $result->setTradeResult(StrategyResult::TRADE_LONG);
-        } else {
-            $result->setTradeResult(StrategyResult::TRADE_SHORT);
-        }
-        return $result;
+        return $this->movingAverageStrategies->macd($this->data);
     }
 
     /**
@@ -203,31 +191,7 @@ class Strategies
      */
     public function emaScalp() : StrategyResult
     {
-        $result = new StrategyResult();
-        $red = $redp = $green = $greenp = [];
-
-        $e1 = [2,3,4,5,6,7,8,9,10,11,12,13,14,15];      // red
-        $e3 = [44,47,50,53,56,59,62,65,68,71,74];       // green
-        foreach ($e1 as $e) {
-            $red[] = $this->indicators->ema($this->data['close'], $e);
-            $redp[] = $this->indicators->ema($this->data['close'], $e, 1); // prior
-        }
-        $red_avg = (array_sum($red)/count($red));
-        $redp_avg = (array_sum($redp)/count($redp));
-
-
-        foreach ($e3 as $e) {
-            $green[] = $this->indicators->ema($this->data['close'], $e);
-        }
-        $green_avg = (array_sum($green)/count($green));
-
-        if ($red_avg < $green_avg && $redp_avg > $green_avg){
-            $result->setTradeResult(StrategyResult::TRADE_LONG);
-        }
-        if ($red_avg > $green_avg && $redp_avg < $green_avg){
-            $result->setTradeResult(StrategyResult::TRADE_SHORT);
-        }
-        return $result;
+        return $this->movingAverageStrategies->emaScalp($this->data);
     }
 
     /**
@@ -237,15 +201,7 @@ class Strategies
      */
     public function emaCrossover($period1 = 10, $period2 = 20) : StrategyResult
     {
-        $period1EMA = $this->indicators->ema($this->data['close'], $period1);
-        $period1PriorEMA = $this->indicators->ema($this->data['close'], $period1, 1); // prior
-
-        $period2EMA = $this->indicators->ema($this->data['close'], $period2);
-        $period2PriorEMA = $this->indicators->ema($this->data['close'], $period2, 1); // prior
-
-        //error_log("period 1 $period1EMA period 1 prior $period1PriorEMA period 2 $period2EMA period 2 prior $period2PriorEMA");
-
-        return $this->checkCrossMovingAverages($period1EMA, $period1PriorEMA, $period2EMA, $period2PriorEMA);
+        return $this->movingAverageStrategies->emaCrossover($this->data, $period1, $period2);
     }
 
     /**
@@ -255,13 +211,8 @@ class Strategies
      */
     public function maCrossover($period1 = 10, $period2 = 50) : StrategyResult
     {
-        $period1MA = $this->indicators->ma($this->data['close'], $period1);
-        $period1PriorMA = $this->indicators->ma($this->data['close'], $period1, 1); // prior
+        return $this->movingAverageStrategies->maCrossover($this->data, $period1, $period2);
 
-        $period2MA = $this->indicators->ma($this->data['close'], $period2);
-        $period2PriorMA = $this->indicators->ma($this->data['close'], $period2, 1); // prior
-
-        return $this->checkCrossMovingAverages($period1MA, $period1PriorMA, $period2MA, $period2PriorMA);
     }
 
     /**
@@ -269,45 +220,7 @@ class Strategies
      */
     public function guppyCrossover() : StrategyResult
     {
-        $result = new StrategyResult();
-
-        $shortPeriods = [3,5,8,10,12,15];
-        $longPeriods = [30,35,40,45,50,60];
-
-        $currentShortEMAs = $priorShortEMAs = $currentLongEMAs = $priorLongEMAs = [];
-
-        foreach ($shortPeriods as $shortPeriod) {
-            $currentShortEMAs[] = $this->indicators->ema($this->data['close'], $shortPeriod);
-            $priorShortEMAs[] = $this->indicators->ema($this->data['close'], $shortPeriod, 1);
-        }
-
-        foreach ($longPeriods as $longPeriod) {
-            $currentLongEMAs[] = $this->indicators->ema($this->data['close'], $longPeriod);
-            $priorLongEMAs[] = $this->indicators->ema($this->data['close'], $longPeriod, 1);
-        }
-
-        $minShortEMA = min($currentShortEMAs);
-        $maxShortEMA = max($currentShortEMAs);
-
-        $minPriorShortEMA = min($priorShortEMAs);
-        $maxPriorShortEMA = max($priorShortEMAs);
-
-        $minLongEMA = min($currentLongEMAs);
-        $maxLongEMA = max($currentLongEMAs);
-
-        $minPriorLongEMA = min($priorLongEMAs);
-        $maxPriorLongEMA = max($priorLongEMAs);
-
-        if($minShortEMA >= $maxLongEMA) {
-            if($minPriorShortEMA < $maxPriorLongEMA) {
-                $result->setTradeResult(StrategyResult::TRADE_LONG);
-            }
-        } else if($minLongEMA >= $maxShortEMA) {
-            if($minPriorLongEMA < $maxPriorShortEMA) {
-                $result->setTradeResult(StrategyResult::TRADE_SHORT);
-            }
-        }
-        return $result;
+        return $this->movingAverageStrategies->guppyCrossover($this->data);
     }
 
     /**
@@ -458,26 +371,6 @@ class Strategies
             } else if($mfi > $mfiSell) {
                 $result->setTradeResult(StrategyResult::TRADE_SHORT);
             }
-        }
-        return $result;
-    }
-
-    /**
-     * @param $period1
-     * @param $period1Prior
-     * @param $period2
-     * @param $period2Prior
-     * @return StrategyResult
-     */
-    private function checkCrossMovingAverages($period1, $period1Prior, $period2, $period2Prior) : StrategyResult
-    {
-        $result = new StrategyResult();
-
-        if($period1 > $period2 && $period1Prior <= $period2Prior){
-            $result->setTradeResult(StrategyResult::TRADE_LONG);
-        }
-        if($period1 < $period2 && $period1Prior >= $period2Prior){
-            $result->setTradeResult(StrategyResult::TRADE_SHORT);
         }
         return $result;
     }
