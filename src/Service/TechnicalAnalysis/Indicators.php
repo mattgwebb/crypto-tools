@@ -13,6 +13,7 @@ class Indicators
 
     /**
      * @param array $data
+     * @param bool $prior
      * @param int $period
      * @param int $devup
      * @param int $devdn
@@ -41,7 +42,7 @@ class Indicators
      * Once a breakout occurs, we enter a trade on whatever side the price makes its breakout.
      */
 
-    public function bollingerBands($data, $period=20, $devup=2, $devdn=2)
+    public function bollingerBands($data, $prior = false, $period=20, $devup=2, $devdn=2)
     {
         # array $real [, integer $timePeriod [, float $nbDevUp [, float $nbDevDn [, integer $mAType ]]]]
         $bbands = trader_bbands($data['close'], $period, $devup, $devdn, 0);
@@ -52,7 +53,10 @@ class Indicators
         $lowerLastBand = array_pop($lower);
         $higherLastBand = array_pop($upper);
 
-        return [$higherLastBand, $lowerLastBand];
+        $lowerPriorBand = array_pop($lower);
+        $higherPriorBand = array_pop($upper);
+
+        return ($prior ? [$higherPriorBand, $lowerPriorBand] : [$higherLastBand, $lowerLastBand]);
     }
 
     /**

@@ -40,10 +40,8 @@ class MovingAverageStrategies extends AbstractStrategyService
         $ema = $this->indicators->ema($data['close'], $period);
 
         if($currentPrice > $ema) {
-            error_log("price {$currentPrice} ema $ema");
             $result->setTradeResult(StrategyResult::TRADE_LONG);
         } else if($currentPrice < $ema) {
-            error_log("price {$currentPrice} ema $ema");
             $result->setTradeResult(StrategyResult::TRADE_SHORT);
         }
         return $result;

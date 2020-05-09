@@ -31,7 +31,7 @@ class BotAlgorithmManager
     /**
      * Number of candles passed on to the strategy calculations
      */
-    const CANDLES_TO_LOAD = 201;
+    const CANDLES_TO_LOAD = 400;
 
     /**
      * @var BotAlgorithmRepository

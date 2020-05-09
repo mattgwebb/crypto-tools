@@ -166,11 +166,12 @@ class Strategies
     }
 
     /**
+     * @param bool $crossOnly
      * @return StrategyResult
      */
-    public function bollingerBands() : StrategyResult
+    public function bollingerBands(bool $crossOnly = false) : StrategyResult
     {
-        return $this->deviationStrategies->bollingerBands($this->data, $this->currentPrice);
+        return $this->deviationStrategies->bollingerBands($this->data, $crossOnly);
     }
 
     /**

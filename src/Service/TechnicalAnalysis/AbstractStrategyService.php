@@ -19,4 +19,24 @@ abstract class AbstractStrategyService
     {
         $this->indicators = $indicators;
     }
+
+    /**
+     * @param array $data
+     * @return float
+     */
+    protected function getCurrentPrice(array $data)
+    {
+        $count = count($data['close']);
+        return (float)$data['close'][$count - 1];
+    }
+
+    /**
+     * @param array $data
+     * @return float
+     */
+    protected function getPreviousPrice(array $data)
+    {
+        $count = count($data['close']);
+        return (float)$data['close'][$count - 2];
+    }
 }
