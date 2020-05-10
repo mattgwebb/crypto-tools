@@ -12,18 +12,31 @@ class MovingAverageStrategies extends AbstractStrategyService
     /**
      * @param array $data
      * @param float $currentPrice
+     * @param float $priorPrice
      * @param int $period
+     * @param bool $crossOnly
      * @return StrategyResult
      */
-    public function ma(array $data, float $currentPrice, int $period = 20) : StrategyResult
+    public function ma(array $data, float $currentPrice, float $priorPrice, int $period = 20, bool $crossOnly = false) : StrategyResult
     {
         $result = new StrategyResult();
+
         $ma = $this->indicators->ma($data['close'], $period);
 
-        if($currentPrice > $ma) {
-            $result->setTradeResult(StrategyResult::TRADE_LONG);
-        } else if($currentPrice < $ma) {
-            $result->setTradeResult(StrategyResult::TRADE_SHORT);
+        if($crossOnly) {
+            $priorMa = $this->indicators->ma($data['close'], $period, true);
+
+            if ($currentPrice > $ma && $priorPrice <= $priorMa) {
+                $result->setTradeResult(StrategyResult::TRADE_LONG);
+            } else if ($currentPrice < $ma && $priorPrice >= $priorMa) {
+                $result->setTradeResult(StrategyResult::TRADE_SHORT);
+            }
+        } else {
+            if ($currentPrice > $ma) {
+                $result->setTradeResult(StrategyResult::TRADE_LONG);
+            } else if ($currentPrice < $ma) {
+                $result->setTradeResult(StrategyResult::TRADE_SHORT);
+            }
         }
         return $result;
     }

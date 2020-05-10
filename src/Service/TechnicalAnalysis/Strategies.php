@@ -89,6 +89,11 @@ class Strategies
     private $currentPrice;
 
     /**
+     * @var float
+     */
+    private $priorPrice;
+
+    /**
      * @var int
      */
     private $currentClose;
@@ -149,11 +154,12 @@ class Strategies
 
     /**
      * @param int $period
+     * @param bool $crossOnly
      * @return StrategyResult
      */
-    public function ma(int $period = 20) : StrategyResult
+    public function ma(int $period = 20, bool $crossOnly = false) : StrategyResult
     {
-        return $this->movingAverageStrategies->ma($this->data, $this->currentPrice, $period);
+        return $this->movingAverageStrategies->ma($this->data, $this->currentPrice, $this->priorPrice, $period, $crossOnly);
     }
 
     /**
@@ -171,7 +177,7 @@ class Strategies
      */
     public function bollingerBands(bool $crossOnly = false) : StrategyResult
     {
-        return $this->deviationStrategies->bollingerBands($this->data, $crossOnly);
+        return $this->deviationStrategies->bollingerBands($this->data, $this->currentPrice, $this->priorPrice, $crossOnly);
     }
 
     /**
@@ -424,8 +430,12 @@ class Strategies
             $data['low'][] = $candle->getLowPrice();
         }
         $this->data = $data;
-        $this->currentPrice = $candle->getClosePrice();
-        $this->currentClose = $candle->getCloseTime();
+
+        $count = count($candles);
+        $this->currentPrice = $data['close'][$count - 1];
+        $this->priorPrice = $data['close'][$count - 2];
+        $this->currentClose = $data['close_time'][$count - 1];
+
         $this->candles = $candles;
     }
 
