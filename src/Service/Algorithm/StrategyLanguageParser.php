@@ -14,6 +14,7 @@ class StrategyLanguageParser
 {
     const AND_OPERATOR = '&&';
     const OR_OPERATOR = '||';
+    const NOT_OPERATOR = '!';
 
     /**
      * @var StrategyRepository
@@ -61,6 +62,11 @@ class StrategyLanguageParser
 
         foreach($rawStrategies as $rawStrategy) {
             $strategyConfig = new StrategyConfig();
+
+            if($rawStrategy[0] == self::NOT_OPERATOR) {
+                $strategyConfig->setReverseResult(true);
+                $rawStrategy = substr($rawStrategy, 1);
+            }
 
             $split = explode('(', $rawStrategy);
 

@@ -14,6 +14,11 @@ class StrategyConfig
     private $strategy;
 
     /**
+     * @var bool
+     */
+    private $reverseResult = false;
+
+    /**
      * @var array
      */
     private $configParams = [];
@@ -48,5 +53,21 @@ class StrategyConfig
     public function setConfigParams(array $configParams): void
     {
         $this->configParams = $configParams;
+    }
+
+    /**
+     * @return bool
+     */
+    public function isReverseResult(): bool
+    {
+        return $this->reverseResult;
+    }
+
+    /**
+     * @param bool $reverseResult
+     */
+    public function setReverseResult(bool $reverseResult): void
+    {
+        $this->reverseResult = $reverseResult;
     }
 }

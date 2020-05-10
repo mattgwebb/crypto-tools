@@ -492,6 +492,11 @@ class Strategies
         /** @var StrategyConfig $strategy */
         foreach($strategies->getStrategyConfigList() as $strategy) {
             $result = $this->runStrategy($strategy);
+
+            if($strategy->isReverseResult()) {
+                $result = $this->getReverseResult($result);
+            }
+
             $results[$result->getTradeResult()]++;
         }
 
@@ -524,6 +529,20 @@ class Strategies
             throw new StrategyNotFoundException();
         }
         return call_user_func_array(array($this,$strategyConfig->getStrategy()->getName()), $strategyConfig->getConfigParams());
+    }
+
+    /**
+     * @param StrategyResult $result
+     * @return StrategyResult
+     */
+    private function getReverseResult(StrategyResult $result)
+    {
+        if($result->isLong()) {
+            $result->setTradeResult(StrategyResult::TRADE_SHORT);
+        } else if($result->isShort()) {
+            $result->setTradeResult(StrategyResult::TRADE_LONG);
+        }
+        return $result;
     }
 
 //    /**
