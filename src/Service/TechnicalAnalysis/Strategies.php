@@ -181,6 +181,16 @@ class Strategies
     }
 
     /**
+     * @param int $candlesAgo
+     * @param int $period
+     * @return StrategyResult
+     */
+    public function keltnerSqueeze(int $candlesAgo = 5, int $period = 20) : StrategyResult
+    {
+        return $this->deviationStrategies->keltnerSqueeze($this->data, $candlesAgo, $period, $this->currentPrice);
+    }
+
+    /**
      * @return StrategyResult
      */
     public function macd()

@@ -60,6 +60,38 @@ class Indicators
     }
 
     /**
+     * @param $data
+     * @param int $period
+     * @param int $devup
+     * @param int $devdn
+     * @return array
+     */
+    public function bollingerBandsPeriod($data, $period=20, $devup=2, $devdn=2)
+    {
+        return trader_bbands($data['close'], $period, $devup, $devdn, 0);
+    }
+
+    public function keltnerChannelPeriod($data, $period=20, $devup=2, $devdn=2)
+    {
+        $emaPeriod = trader_ema($data['close'], $period);
+        $atrPeriod = trader_atr($data['high'], $data['low'], $data['close'], 10);
+
+        $channel = [];
+
+        foreach($emaPeriod as $key => $ema) {
+
+            if(!isset($atrPeriod[$key])) {
+                continue;
+            }
+
+            $channel[0][$key] = $ema + ($atrPeriod[$key] * $devup);
+            $channel[1][$key] = $ema;
+            $channel[2][$key] = $ema - ($atrPeriod[$key] * $devdn);
+        }
+        return $channel;
+    }
+
+    /**
      * @param array $data
      * @param int $period
      *
@@ -200,6 +232,7 @@ class Indicators
     }
 
     /**
+     * Returns K values
      * @param $data
      * @param int $fastKPeriod
      * @param int $slowKPeriod

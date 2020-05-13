@@ -38,4 +38,49 @@ class DeviationStrategies extends AbstractStrategyService
         }
         return $result;
     }
+
+    /**
+     * @param array $data
+     * @param int $candlesAgo
+     * @param int $period
+     * @param float $currentPrice
+     * @return StrategyResult
+     */
+    public function keltnerSqueeze(array $data, int $candlesAgo, int $period, float $currentPrice)
+    {
+        $result = new StrategyResult();
+
+        $keltnerChannelPeriod = $this->indicators->keltnerChannelPeriod($data, $period);
+        $bollingerBandsPeriod = $this->indicators->bollingerBandsPeriod($data);
+
+        $lastKey = array_key_last($keltnerChannelPeriod[0]);
+
+        $recentSqueeze = false;
+
+        for($i = $lastKey; $i > ($lastKey - $candlesAgo); $i--) {
+            $bollingerUpperBand = $bollingerBandsPeriod[0][$i];
+            $bollingerLowerBand = $bollingerBandsPeriod[2][$i];
+
+            $keltnerUpperBand = $keltnerChannelPeriod[0][$i];
+            $keltnerLowerBand = $keltnerChannelPeriod[2][$i];
+
+            if($bollingerUpperBand < $keltnerUpperBand && $bollingerLowerBand > $keltnerLowerBand) {
+                $recentSqueeze = true;
+                break;
+            }
+        }
+
+        if($recentSqueeze) {
+            $lastUpperBand = $bollingerBandsPeriod[0][$lastKey];
+            $lastLowerBand = $bollingerBandsPeriod[2][$lastKey];
+
+            if($currentPrice > $lastUpperBand) {
+                $result->setTradeResult(StrategyResult::TRADE_LONG);
+            } else if($currentPrice < $lastLowerBand) {
+                $result->setTradeResult(StrategyResult::TRADE_SHORT);
+            }
+        }
+
+        return $result;
+    }
 }
