@@ -17,10 +17,12 @@ use App\Entity\Trade\Trade;
 use App\Entity\Trade\TradeTypes;
 use App\Exceptions\Algorithm\StrategyNotFoundException;
 use App\Repository\Algorithm\BotAlgorithmRepository;
+use App\Repository\Config\ConfigRepository;
 use App\Repository\Data\CandleRepository;
 use App\Repository\Data\CurrencyPairRepository;
 use App\Repository\Data\ExternalIndicatorDataRepository;
 use App\Repository\Trade\TradeRepository;
+use App\Service\Config\ConfigService;
 use App\Service\TechnicalAnalysis\Strategies;
 use Doctrine\ORM\EntityManagerInterface;
 use Doctrine\ORM\NonUniqueResultException;
@@ -74,6 +76,11 @@ class BotAlgorithmManager
     private $entityManager;
 
     /**
+     * @var ConfigService
+     */
+    private $configService;
+
+    /**
      * BotAlgorithmManager constructor.
      * @param BotAlgorithmRepository $botAlgorithmRepo
      * @param CurrencyPairRepository $currencyRepo
@@ -83,11 +90,12 @@ class BotAlgorithmManager
      * @param TradeRepository $tradeRepository
      * @param ExternalIndicatorDataRepository $externalIndicatorRepository
      * @param EntityManagerInterface $entityManager
+     * @param ConfigService $configService
      */
     public function __construct(BotAlgorithmRepository $botAlgorithmRepo, CurrencyPairRepository $currencyRepo,
                                 CandleRepository $candleRepository, Strategies $strategies, LoggerInterface $algosLogger,
                                 TradeRepository $tradeRepository, ExternalIndicatorDataRepository $externalIndicatorRepository,
-                                EntityManagerInterface $entityManager)
+                                EntityManagerInterface $entityManager, ConfigService $configService)
     {
         $this->botAlgorithmRepo = $botAlgorithmRepo;
         $this->currencyPairRepo = $currencyRepo;
@@ -97,6 +105,7 @@ class BotAlgorithmManager
         $this->tradeRepository = $tradeRepository;
         $this->entityManager = $entityManager;
         $this->externalIndicatorRepository = $externalIndicatorRepository;
+        $this->configService = $configService;
     }
 
     /**
@@ -341,24 +350,36 @@ class BotAlgorithmManager
     private function saveAlgoTestResult(BotAlgorithm $algo, float $percentage, int $numTrades, int $invalidatedTrades,
                                         int $startTime, int $finishTime)
     {
-        $testResult = new AlgoTestResult();
-        $testResult->setAlgo($algo);
-        $testResult->setPercentage($percentage);
-        $testResult->setTimestamp(time());
-        $testResult->setTrades($numTrades);
-        $testResult->setStartTime($startTime);
-        $testResult->setEndTime($finishTime);
-        $testResult->setTimeFrame($algo->getTimeFrame());
-        $testResult->setInvalidatedTrades($invalidatedTrades);
+        if($this->logResults()) {
 
-        $extra = [
-            "entry_strategies" => $algo->getEntryStrategyCombination(),
-            "exit_strategies" => $algo->getExitStrategyCombination(),
-            "invalidation_strategies" => $algo->getInvalidationStrategyCombination()
-        ];
-        $testResult->setObservations(json_encode($extra));
+            $testResult = new AlgoTestResult();
+            $testResult->setAlgo($algo);
+            $testResult->setPercentage($percentage);
+            $testResult->setTimestamp(time());
+            $testResult->setTrades($numTrades);
+            $testResult->setStartTime($startTime);
+            $testResult->setEndTime($finishTime);
+            $testResult->setTimeFrame($algo->getTimeFrame());
+            $testResult->setInvalidatedTrades($invalidatedTrades);
 
-        $this->entityManager->persist($testResult);
-        $this->entityManager->flush();
+            $extra = [
+                "entry_strategies" => $algo->getEntryStrategyCombination(),
+                "exit_strategies" => $algo->getExitStrategyCombination(),
+                "invalidation_strategies" => $algo->getInvalidationStrategyCombination()
+            ];
+            $testResult->setObservations(json_encode($extra));
+
+            $this->entityManager->persist($testResult);
+            $this->entityManager->flush();
+        }
+    }
+
+    /**
+     * @return bool
+     */
+    private function logResults()
+    {
+        $configItem = $this->configService->getConfig('testing', 'log_results');
+        return $configItem ? (bool)$configItem->getValue() : false;
     }
 }
