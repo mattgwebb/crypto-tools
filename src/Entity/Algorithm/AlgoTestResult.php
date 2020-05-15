@@ -73,6 +73,11 @@ class AlgoTestResult
     private $invalidatedTrades;
 
     /**
+     * @ORM\ManyToOne(targetEntity="App\Entity\Data\CurrencyPair")
+     */
+    private $currencyPair;
+
+    /**
      * @return BotAlgorithm
      */
     public function getAlgo(): BotAlgorithm
@@ -214,5 +219,21 @@ class AlgoTestResult
     public function setInvalidatedTrades(int $invalidatedTrades): void
     {
         $this->invalidatedTrades = $invalidatedTrades;
+    }
+
+    /**
+     * @return mixed
+     */
+    public function getCurrencyPair()
+    {
+        return $this->currencyPair;
+    }
+
+    /**
+     * @param mixed $currencyPair
+     */
+    public function setCurrencyPair($currencyPair): void
+    {
+        $this->currencyPair = $currencyPair;
     }
 }

@@ -354,6 +354,7 @@ class BotAlgorithmManager
 
             $testResult = new AlgoTestResult();
             $testResult->setAlgo($algo);
+            $testResult->setCurrencyPair($algo->getCurrencyPair());
             $testResult->setPercentage($percentage);
             $testResult->setTimestamp(time());
             $testResult->setTrades($numTrades);
