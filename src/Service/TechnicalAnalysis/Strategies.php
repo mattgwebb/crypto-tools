@@ -11,10 +11,6 @@ use App\Entity\Data\Candle;
 use App\Entity\Algorithm\StrategyResult;
 use App\Entity\Algorithm\StrategyTypes;
 use App\Entity\TechnicalAnalysis\IndicatorTypes;
-use App\Entity\TechnicalAnalysis\PivotPoint;
-use App\Entity\TechnicalAnalysis\PivotTypes;
-use App\Entity\TechnicalAnalysis\Strategy;
-use App\Entity\TechnicalAnalysis\TrendLine;
 use App\Entity\Trade\TradeTypes;
 use App\Exceptions\Algorithm\StrategyNotFoundException;
 use App\Exceptions\TechnicalAnalysis\IndicatorNotSupported;
@@ -563,108 +559,5 @@ class Strategies
             $result->setTradeResult(StrategyResult::TRADE_LONG);
         }
         return $result;
-    }
-
-//    /**
-//     * @param BotAlgorithm $algo
-//     * @param Strategy $strategy
-//     * @return StrategyResult
-//     */
-//    private function runStrategy(BotAlgorithm $algo, Strategy $strategy)
-//    {
-//        $noResult = new StrategyResult();
-//
-//        $strategyName = $strategy->getName();
-//
-//        if(!in_array($strategyName, self::STRATEGY_LIST)) {
-//            return $noResult;
-//        }
-//
-//        if($strategy->isCrossoverStrategy()) {
-//            return $this->runCrossoverStrategy($algo, $strategy);
-//        } else if($strategy->isOscillatorStrategy()) {
-//            return $this->runOscillatorStrategy($algo, $strategy);
-//        } else if($strategy->isDivergenceStrategy()) {
-//            return $this->runDivergenceStrategy($algo, $strategy);
-//        } else if($strategyName == StrategyTypes::ADAPTIVE_PQ) {
-//            return $this->runAdaptivePQStrategy($algo,$strategy);
-//        } else if($strategy->isMovingAverageStrategy()) {
-//            return $this->runMovingAverageStrategy($algo, $strategy);
-//        } else {
-//            return call_user_func(array($this,$strategyName));
-//        }
-//    }
-
-    /**
-     * @param BotAlgorithm $algo
-     * @param Strategy $strategy
-     * @return StrategyResult
-     */
-    private function runDivergenceStrategy(BotAlgorithm $algo, Strategy $strategy)
-    {
-        $config = $algo->getDivergenceConfig();
-        if(!$config) {
-            return new StrategyResult();
-        }
-        return call_user_func(array($this,$strategy->getName()), $config->getLastCandles(), $config->getMinCandleDifference(),
-            $config->getMinDivergencePercentage(), $config->isRegularDivergences(), $config->isHiddenDivergences());
-    }
-
-    /**
-     * @param BotAlgorithm $algo
-     * @param Strategy $strategy
-     * @return StrategyResult
-     */
-    private function runOscillatorStrategy(BotAlgorithm $algo, Strategy $strategy)
-    {
-        $config = $algo->getOscillatorConfig();
-        if(!$config) {
-            return new StrategyResult();
-        }
-        return call_user_func(array($this,$strategy->getName()), $config->getSellOver(), $config->getBuyUnder(),
-            $config->getPeriod(), $config->isCrossOnly());
-    }
-
-    /**
-     * @param BotAlgorithm $algo
-     * @param Strategy $strategy
-     * @return StrategyResult
-     */
-    private function runCrossoverStrategy(BotAlgorithm $algo, Strategy $strategy)
-    {
-        $config = $algo->getMaCrossoverConfig();
-        if(!$config) {
-            return new StrategyResult();
-        }
-        return call_user_func(array($this,$strategy->getName()), $config->getSmallPeriod(), $config->getLongPeriod());
-    }
-
-    /**
-     * @param BotAlgorithm $algo
-     * @param Strategy $strategy
-     * @return StrategyResult
-     */
-    private function runAdaptivePQStrategy(BotAlgorithm $algo, Strategy $strategy)
-    {
-        $config = $algo->getAdaptivePQConfig();
-        if(!$config) {
-            return new StrategyResult();
-        }
-        return call_user_func(array($this,$strategy->getName()), $config->getPValue(), $config->getQValue(),
-            $config->getOscillatorIndicator(), $config->getMaIndicator(), $config->getMaPeriod());
-    }
-
-    /**
-     * @param BotAlgorithm $algo
-     * @param Strategy $strategy
-     * @return StrategyResult
-     */
-    private function runMovingAverageStrategy(BotAlgorithm $algo, Strategy $strategy)
-    {
-        $config = $algo->getMaConfig();
-        if(!$config) {
-            return new StrategyResult();
-        }
-        return call_user_func(array($this,$strategy->getName()), $config->getPeriod());
     }
 }
