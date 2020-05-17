@@ -61,7 +61,7 @@ class BatchAlgoTestCommand extends Command
     protected function configure()
     {
         $this->addArgument('algo_id', InputArgument::REQUIRED, 'Algo id');
-        $this->addArgument('start_time', InputArgument::REQUIRED, 'Start time');
+        $this->addArgument('start_time', InputArgument::OPTIONAL, 'Start time', 1549022400);
         $this->addArgument('end_time', InputArgument::OPTIONAL, 'End time', 0);
     }
 
