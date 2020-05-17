@@ -24,7 +24,7 @@ class BatchAlgoTestCommand extends Command
         TimeFrames::TIMEFRAME_30M,
         //TimeFrames::TIMEFRAME_45M,
         TimeFrames::TIMEFRAME_1H,
-        //TimeFrames::TIMEFRAME_2H,
+        TimeFrames::TIMEFRAME_2H,
         //TimeFrames::TIMEFRAME_3H,
         TimeFrames::TIMEFRAME_4H,
         TimeFrames::TIMEFRAME_1D,
