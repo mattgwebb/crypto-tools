@@ -129,6 +129,14 @@ class BotAlgorithmManager
         $from -= $lastPositionCandles * ($algo->getTimeFrame() * 60);
         $candles = $this->currencyPairRepo->getCandlesByTimeFrame($algo->getCurrencyPair(), $algo->getTimeFrame(), $from, $to);
 
+        $firstCandle = $candles[$lastPositionCandles];
+        $initialPrice = $firstCandle->getClosePrice();
+
+        $lastCandle = $candles[count($candles)-1];
+        $lastPrice = $lastCandle->getClosePrice();
+
+        $periodPricePercentage = (($lastPrice / $initialPrice) - 1) * 100;
+
         $openTradePrice = 0;
         $compoundedProfit = 1;
 
@@ -188,8 +196,8 @@ class BotAlgorithmManager
         $compoundedPercentage = ($compoundedProfit  - 1) * 100;
 
         if(isset($currentCandle)) {
-            $this->saveAlgoTestResult($algo, $compoundedPercentage, count($trades), $invalidatedTrades,
-                $initialFrom, $currentCandle->getCloseTime());
+            $this->saveAlgoTestResult($algo, $compoundedPercentage, $periodPricePercentage, count($trades),
+                $invalidatedTrades, $initialFrom, $currentCandle->getCloseTime());
         }
 
         $trade = "percentage $compoundedPercentage";
@@ -342,13 +350,14 @@ class BotAlgorithmManager
     /**
      * @param BotAlgorithm $algo
      * @param float $percentage
+     * @param float $periodPercentage
      * @param int $numTrades
      * @param int $invalidatedTrades
      * @param int $startTime
      * @param int $finishTime
      */
-    private function saveAlgoTestResult(BotAlgorithm $algo, float $percentage, int $numTrades, int $invalidatedTrades,
-                                        int $startTime, int $finishTime)
+    private function saveAlgoTestResult(BotAlgorithm $algo, float $percentage, float $periodPercentage, int $numTrades,
+                                        int $invalidatedTrades, int $startTime, int $finishTime)
     {
         if($this->logResults()) {
 
@@ -356,6 +365,7 @@ class BotAlgorithmManager
             $testResult->setAlgo($algo);
             $testResult->setCurrencyPair($algo->getCurrencyPair());
             $testResult->setPercentage($percentage);
+            $testResult->setPriceChangePercentage($periodPercentage);
             $testResult->setTimestamp(time());
             $testResult->setTrades($numTrades);
             $testResult->setStartTime($startTime);

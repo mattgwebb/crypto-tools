@@ -55,6 +55,12 @@ class AlgoTestResult
     private $percentage;
 
     /**
+     * @ORM\Column(type="float")
+     * @var float
+     */
+    private $priceChangePercentage;
+
+    /**
      * @ORM\Column(type="text")
      * @var string
      */
@@ -235,5 +241,21 @@ class AlgoTestResult
     public function setCurrencyPair($currencyPair): void
     {
         $this->currencyPair = $currencyPair;
+    }
+
+    /**
+     * @return float
+     */
+    public function getPriceChangePercentage(): float
+    {
+        return $this->priceChangePercentage;
+    }
+
+    /**
+     * @param float $priceChangePercentage
+     */
+    public function setPriceChangePercentage(float $priceChangePercentage): void
+    {
+        $this->priceChangePercentage = $priceChangePercentage;
     }
 }
