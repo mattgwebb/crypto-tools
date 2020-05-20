@@ -36,6 +36,11 @@ class BotAlgorithmManager
     const CANDLES_TO_LOAD = 400;
 
     /**
+     * Fee per trade
+     */
+    const TRADE_FEE = 0.06 / 100;
+
+    /**
      * @var BotAlgorithmRepository
      */
     private $botAlgorithmRepo;
@@ -140,6 +145,8 @@ class BotAlgorithmManager
         $openTradePrice = 0;
         $compoundedProfit = 1;
 
+        $accumulatedFees = 0;
+
         $trades = [];
         $invalidatedTrades = 0;
 
@@ -168,11 +175,15 @@ class BotAlgorithmManager
                 $trades[] = $trade;
 
                 $this->logger->info(json_encode($trade));
+
+                $accumulatedFees += $compoundedProfit * self::TRADE_FEE;
             }
             if($result->isShort() && $currentTradeStatus == TradeTypes::TRADE_BUY) {
                 $profit = ($currentCandle->getClosePrice()/$openTradePrice);
                 $percentage = ($profit - 1) * 100;
                 $compoundedProfit *= $profit;
+
+                $accumulatedFees += $compoundedProfit * self::TRADE_FEE;
 
                 $trade = $this->newTestTrade($currentCandle, TradeTypes::TRADE_SELL);
                 $trade['extra_data'] = $result->getExtraData();
@@ -193,11 +204,12 @@ class BotAlgorithmManager
             }
         }
 
-        $compoundedPercentage = ($compoundedProfit  - 1) * 100;
+        $compoundedPercentage = ($compoundedProfit - 1) * 100;
+        $compoundedPercentageWithFees = ($compoundedProfit - $accumulatedFees - 1) * 100;
 
         if(isset($currentCandle)) {
-            $this->saveAlgoTestResult($algo, $compoundedPercentage, $periodPricePercentage, count($trades),
-                $invalidatedTrades, $initialFrom, $currentCandle->getCloseTime());
+            $this->saveAlgoTestResult($algo, $compoundedPercentage, $compoundedPercentageWithFees, $periodPricePercentage,
+                count($trades), $invalidatedTrades, $initialFrom, $currentCandle->getCloseTime());
         }
 
         $trade = "percentage $compoundedPercentage";
@@ -350,14 +362,15 @@ class BotAlgorithmManager
     /**
      * @param BotAlgorithm $algo
      * @param float $percentage
+     * @param float $percentageWithFees
      * @param float $periodPercentage
      * @param int $numTrades
      * @param int $invalidatedTrades
      * @param int $startTime
      * @param int $finishTime
      */
-    private function saveAlgoTestResult(BotAlgorithm $algo, float $percentage, float $periodPercentage, int $numTrades,
-                                        int $invalidatedTrades, int $startTime, int $finishTime)
+    private function saveAlgoTestResult(BotAlgorithm $algo, float $percentage, float $percentageWithFees, float $periodPercentage,
+                                        int $numTrades, int $invalidatedTrades, int $startTime, int $finishTime)
     {
         if($this->logResults()) {
 
@@ -365,6 +378,7 @@ class BotAlgorithmManager
             $testResult->setAlgo($algo);
             $testResult->setCurrencyPair($algo->getCurrencyPair());
             $testResult->setPercentage($percentage);
+            $testResult->setPercentageWithFees($percentageWithFees);
             $testResult->setPriceChangePercentage($periodPercentage);
             $testResult->setTimestamp(time());
             $testResult->setTrades($numTrades);

@@ -58,6 +58,12 @@ class AlgoTestResult
      * @ORM\Column(type="float")
      * @var float
      */
+    private $percentageWithFees;
+
+    /**
+     * @ORM\Column(type="float")
+     * @var float
+     */
     private $priceChangePercentage;
 
     /**
@@ -257,5 +263,21 @@ class AlgoTestResult
     public function setPriceChangePercentage(float $priceChangePercentage): void
     {
         $this->priceChangePercentage = $priceChangePercentage;
+    }
+
+    /**
+     * @return float
+     */
+    public function getPercentageWithFees(): float
+    {
+        return $this->percentageWithFees;
+    }
+
+    /**
+     * @param float $percentageWithFees
+     */
+    public function setPercentageWithFees(float $percentageWithFees): void
+    {
+        $this->percentageWithFees = $percentageWithFees;
     }
 }
