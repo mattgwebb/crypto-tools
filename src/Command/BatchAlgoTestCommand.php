@@ -93,11 +93,18 @@ class BatchAlgoTestCommand extends Command
 
         $algo->setCurrencyPair($pair);*/
 
+        $originalTimeFame = $algo->getTimeFrame();
+
         foreach(self::ALL_TIMEFRAMES as $timeFrame) {
             $algo->setTimeFrame($timeFrame);
             $this->algoManager->runTest($algo, $input->getArgument('start_time'), $input->getArgument('end_time'));
             $this->entityManager->clear(Candle::class);
         }
+
+        // TODO find better way to stop the timeframe from updating
+        $algo->setTimeFrame($originalTimeFame);
+        $this->entityManager->persist($algo);
+        $this->entityManager->flush();
 
 //        /** @var Exchange $binanceExchange */
 //        $binanceExchange = $this->entityManager
