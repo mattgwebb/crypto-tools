@@ -17,7 +17,7 @@ class Trade
     private $id;
 
     /**
-     * @ORM\Column(type="integer")
+     * @ORM\Column(type="bigint")
      */
     private $orderId;
 
