@@ -227,6 +227,22 @@ class BotAlgorithm implements \JsonSerializable
     }
 
     /**
+     * @return int
+     */
+    public function getTradeStatus(): int
+    {
+        return $this->tradeStatus;
+    }
+
+    /**
+     * @param int $tradeStatus
+     */
+    public function setTradeStatus(int $tradeStatus): void
+    {
+        $this->tradeStatus = $tradeStatus;
+    }
+
+    /**
      * Specify data which should be serialized to JSON
      * @link https://php.net/manual/en/jsonserializable.jsonserialize.php
      * @return mixed data which can be serialized by <b>json_encode</b>,

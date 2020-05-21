@@ -301,7 +301,7 @@ class BotAlgorithmManager
     public function runAlgo(BotAlgorithm $algo, $candles)
     {
         $this->strategies->setData($candles);
-        return $this->strategies->runStrategies($algo);
+        return $this->strategies->runStrategies($algo, $algo->getTradeStatus());
     }
 
     /**

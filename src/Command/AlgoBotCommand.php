@@ -25,7 +25,7 @@ use Symfony\Component\Console\Output\OutputInterface;
 class AlgoBotCommand extends Command
 {
 
-    const CANDLES_TO_LOAD = 50;
+    const CANDLES_TO_LOAD = 400;
 
     // the name of the command (the part after "bin/console")
     protected static $defaultName = 'app:bot:run';
