@@ -143,7 +143,7 @@ class AlgoBotCommand extends Command
                 $this->log($algo, "NO NEW CANDLE");
             }
         } catch (\Exception $exception) {
-            $this->log($algo, $exception->getMessage());
+            $this->log($algo, "ERROR:".$exception->getMessage());
         }
 
     }
