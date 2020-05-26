@@ -15,7 +15,6 @@ use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputArgument;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
-use Symfony\Component\Debug\ErrorHandler;
 use Symfony\Component\HttpKernel\KernelInterface;
 use Symfony\Component\Process\Process;
 
@@ -76,13 +75,6 @@ class BotCommand extends Command
      */
     protected function execute(InputInterface $input, OutputInterface $output)
     {
-        /** For some reason pthreads doesn´t work in Symfony commands, this is a workaround */
-        /*if ($phpHandler = set_exception_handler(function() {})) {
-            restore_exception_handler();
-            if (is_array($phpHandler) && $phpHandler[0] instanceof ErrorHandler) {
-                $phpHandler[0]->setExceptionHandler(null);
-            }
-        }*/
 
         /** @var CurrencyPair $pair */
         $pair = $this->entityManager
@@ -130,25 +122,6 @@ class BotCommand extends Command
                 sleep(1);
             }
         }
-
-
-        /*$algos = $pair->getAlgos();
-        $pool = new \Pool($algos->count());
-
-        $lastCandleId = !$lastCandle->isEmpty() ? $lastCandle->getId() : 0;
-
-        $kernelEnv = $GLOBALS['kernel']->getEnvironment();
-        $kernelDebug = $GLOBALS['kernel']->isDebug();*/
-
-
-        /** @var BotAlgorithm $algo */
-        /*foreach($algos as $algo) {
-            $pool->submit(new BotProcess($algo->getId(), $lastPrice, $lastCandleId, $kernelEnv, $kernelDebug));
-        }
-
-        while ($pool->collect());
-
-        $pool->shutdown();*/
     }
 
     /**
