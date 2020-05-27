@@ -22,9 +22,9 @@ class Trade
     private $orderId;
 
     /**
-     * @ORM\ManyToOne(targetEntity="App\Entity\Algorithm\BotAlgorithm")
+     * @ORM\ManyToOne(targetEntity="App\Entity\Algorithm\BotAccount")
      */
-    private $algo;
+    private $botAccount;
 
     /**
      * @ORM\Column(type="float")
@@ -90,17 +90,17 @@ class Trade
     /**
      * @return mixed
      */
-    public function getAlgo()
+    public function getBotAccount()
     {
-        return $this->algo;
+        return $this->botAccount;
     }
 
     /**
-     * @param mixed $algo
+     * @param mixed $botAccount
      */
-    public function setAlgo($algo): void
+    public function setBotAccount($botAccount): void
     {
-        $this->algo = $algo;
+        $this->botAccount = $botAccount;
     }
 
     /**

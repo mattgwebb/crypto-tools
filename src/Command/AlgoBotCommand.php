@@ -208,14 +208,14 @@ class AlgoBotCommand extends Command
         $this->log($botAccount, "QUANTITY: $quantity, PRICE: $currentPrice");
 
         if($botAccount->getMode() == AlgoModes::TESTING) {
-            $this->tradeService->newTestTrade($algo, $tradeType, $currentPrice, $quantity);
+            $this->tradeService->newTestTrade($botAccount, $tradeType, $currentPrice, $quantity);
 
             $this->entityManager->persist($botAccount);
         } else if($botAccount->getMode() == AlgoModes::LIVE) {
             /** TODO it´s possible that the price changes and the balance is not enough to buy the amount, the trade needs to be created again */
             try {
                 $trade = $this->tradeService->newMarketTrade($botAccount, $algo->getCurrencyPair(), $tradeType, $quantity);
-                $trade->setAlgo($algo);
+                $trade->setBotAccount($botAccount);
                 $trade->setMode($botAccount->getMode());
                 $trade->setPrice($currentPrice);
                 $this->tradeService->saveTrade($trade);
