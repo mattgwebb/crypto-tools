@@ -202,7 +202,7 @@ class AlgoBotCommand extends Command
             $botAccount->setShort();
         } else return;
 
-        $balance = $this->dataService->loadBalance($currencyToUse);
+        $balance = $this->dataService->loadBalance($botAccount, $currencyToUse);
         $quantity = $this->calculateQuantity($tradeType, $currentPrice, $balance);
 
         $this->log($botAccount, "QUANTITY: $quantity, PRICE: $currentPrice");
@@ -214,7 +214,7 @@ class AlgoBotCommand extends Command
         } else if($botAccount->getMode() == AlgoModes::LIVE) {
             /** TODO it´s possible that the price changes and the balance is not enough to buy the amount, the trade needs to be created again */
             try {
-                $trade = $this->tradeService->newMarketTrade($algo->getCurrencyPair(), $tradeType, $quantity);
+                $trade = $this->tradeService->newMarketTrade($botAccount, $algo->getCurrencyPair(), $tradeType, $quantity);
                 $trade->setAlgo($algo);
                 $trade->setMode($botAccount->getMode());
                 $trade->setPrice($currentPrice);

@@ -15,6 +15,8 @@ use Doctrine\Common\Collections\ArrayCollection;
 
 abstract class ApiInterface extends ThirdPartyAPI
 {
+    const DEFAULT_BOT = 1;
+
     protected $timeFrames = [
         TimeFrames::TIMEFRAME_5M => '5m',
         TimeFrames::TIMEFRAME_15M => '15m',
@@ -27,6 +29,27 @@ abstract class ApiInterface extends ThirdPartyAPI
         TimeFrames::TIMEFRAME_1D > '1d',
         TimeFrames::TIMEFRAME_1W => '1w'
     ];
+
+    /**
+     * @var int
+     */
+    private $botAccountId = self::DEFAULT_BOT;
+
+    /**
+     * @return int
+     */
+    public function getBotAccountId(): int
+    {
+        return $this->botAccountId;
+    }
+
+    /**
+     * @param int $botAccountId
+     */
+    public function setBotAccountId(int $botAccountId): void
+    {
+        $this->botAccountId = $botAccountId;
+    }
 
     /**
      * @param CurrencyPair $currencyPair

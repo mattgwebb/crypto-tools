@@ -360,7 +360,7 @@ class BinanceAPI extends ApiInterface
      */
     private function addSignature(array $query)
     {
-        $secret = $_ENV['BINANCE_BOT_SECRET'];
+        $secret = $_ENV["BINANCE_BOT_{$this->getBotAccountId()}_SECRET"];
         $totalParams = http_build_query($query);
         $query['signature'] = hash_hmac("sha256", $totalParams, $secret);
         return $query;
@@ -372,7 +372,7 @@ class BinanceAPI extends ApiInterface
     private function getKeyHeader()
     {
         return  [
-            'X-MBX-APIKEY' => $_ENV['BINANCE_BOT_KEY']
+            'X-MBX-APIKEY' => $_ENV["BINANCE_BOT_{$this->getBotAccountId()}_KEY"]
         ];
     }
 

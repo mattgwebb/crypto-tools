@@ -5,6 +5,7 @@ namespace App\Service\Trade;
 
 
 use App\Entity\Algorithm\AlgoModes;
+use App\Entity\Algorithm\BotAccount;
 use App\Entity\Algorithm\BotAlgorithm;
 use App\Entity\Data\CurrencyPair;
 use App\Entity\Trade\Trade;
@@ -40,19 +41,20 @@ class TradeService
     }
 
     /**
+     * @param BotAccount $botAccount
      * @param CurrencyPair $currencyPair
      * @param int $side
      * @param float $quantity
      * @return Trade
-     * @throws APINotFoundException
      * @throws APIException
+     * @throws APINotFoundException
      */
-    public function newMarketTrade(CurrencyPair $currencyPair, int $side, float $quantity)
+    public function newMarketTrade(BotAccount $botAccount, CurrencyPair $currencyPair, int $side, float $quantity)
     {
         if(!$this->checkSide($side)) {
             throw new \Exception();
         }
-        $api = $this->getAPI($currencyPair);
+        $api = $this->getAPI($botAccount, $currencyPair);
         if(!$api) {
             throw new APINotFoundException();
         }
@@ -90,6 +92,7 @@ class TradeService
     }
 
     /**
+     * @param BotAccount $botAccount
      * @param CurrencyPair $currencyPair
      * @param float $quantity
      * @param float $price
@@ -97,9 +100,9 @@ class TradeService
      * @return Trade
      * @throws \Exception
      */
-    public function newStopLossLimitTrade(CurrencyPair $currencyPair, float $quantity, float $price, float $stopPrice)
+    public function newStopLossLimitTrade(BotAccount $botAccount, CurrencyPair $currencyPair, float $quantity, float $price, float $stopPrice)
     {
-        $api = $this->getAPI($currencyPair);
+        $api = $this->getAPI($botAccount, $currencyPair);
         if(!$api) {
             throw new \Exception();
         }
@@ -117,12 +120,16 @@ class TradeService
     }
 
     /**
+     * @param BotAccount $botAccount
      * @param CurrencyPair $pair
      * @return ApiInterface|bool
      */
-    private function getAPI(CurrencyPair $pair)
+    private function getAPI(BotAccount $botAccount, CurrencyPair $pair)
     {
-        return $this->apiFactory->getApi($pair->getFirstCurrency()->getExchange());
+        $api = $this->apiFactory->getApi($pair->getFirstCurrency()->getExchange());
+        $api->setBotAccountId($botAccount->getId());
+
+        return $api;
     }
 
     /**

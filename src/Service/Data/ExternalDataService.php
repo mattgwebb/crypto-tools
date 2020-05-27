@@ -4,6 +4,7 @@
 namespace App\Service\Data;
 
 
+use App\Entity\Algorithm\BotAccount;
 use App\Entity\Data\Candle;
 use App\Entity\Data\Currency;
 use App\Entity\Data\CurrencyPair;
@@ -65,13 +66,15 @@ class ExternalDataService
     }
 
     /**
+     * @param BotAccount $botAccount
      * @param Currency $currency
      * @return float
      */
-    public function loadBalance(Currency $currency)
+    public function loadBalance(BotAccount $botAccount, Currency $currency)
     {
         $balance = 0.00;
         $api = ApiFactory::getApi($currency->getExchange());
+        $api->setBotAccountId($botAccount->getId());
 
         $rawBalances = $api->getUserBalance();
         if(isset($rawBalances[$currency->getSymbol()])) {
