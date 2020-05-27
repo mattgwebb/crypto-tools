@@ -5,12 +5,15 @@ namespace App\Command;
 
 
 use App\Entity\Algorithm\AlgoModes;
+use App\Entity\Algorithm\BotAccount;
 use App\Entity\Algorithm\BotAlgorithm;
 use App\Entity\Data\Candle;
 use App\Entity\Trade\TradeTypes;
 use App\Exceptions\API\APIException;
+use App\Exceptions\API\APINotFoundException;
 use App\Model\BotAlgorithmManager;
 use App\Model\CandleManager;
+use App\Service\Algorithm\BotAccountService;
 use App\Service\Data\ExternalDataService;
 use App\Service\ThirdPartyAPIs\TelegramBot;
 use App\Service\Trade\TradeService;
@@ -66,6 +69,11 @@ class AlgoBotCommand extends Command
     private $telegramBot;
 
     /**
+     * @var BotAccountService
+     */
+    private $botAccountService;
+
+    /**
      * BotCommand constructor.
      * @param EntityManagerInterface $entityManager
      * @param ExternalDataService $dataService
@@ -74,10 +82,11 @@ class AlgoBotCommand extends Command
      * @param CandleManager $candleManager
      * @param TradeService $tradeService
      * @param TelegramBot $telegramBot
+     * @param BotAccountService $botAccountService
      */
     public function __construct(EntityManagerInterface $entityManager, ExternalDataService $dataService, LoggerInterface $botsLogger,
                                 BotAlgorithmManager $algoManager, CandleManager $candleManager, TradeService $tradeService,
-                                TelegramBot $telegramBot)
+                                TelegramBot $telegramBot, BotAccountService $botAccountService)
     {
         $this->entityManager= $entityManager;
         $this->dataService = $dataService;
@@ -86,13 +95,14 @@ class AlgoBotCommand extends Command
         $this->candleManager = $candleManager;
         $this->tradeService = $tradeService;
         $this->telegramBot = $telegramBot;
+        $this->botAccountService = $botAccountService;
 
         parent::__construct();
     }
 
     protected function configure()
     {
-        $this->addArgument('algo_id', InputArgument::REQUIRED, 'Algo id');
+        $this->addArgument('bot_account_id', InputArgument::REQUIRED, 'Bot id');
         $this->addArgument('last_price', InputArgument::REQUIRED, 'Last price');
         $this->addArgument('last_candle_id', InputArgument::OPTIONAL, 'Last candle id');
     }
@@ -105,13 +115,14 @@ class AlgoBotCommand extends Command
      */
     protected function execute(InputInterface $input, OutputInterface $output)
     {
-        /** @var BotAlgorithm $algo */
-        $algo = $this->algoManager->getAlgo($input->getArgument('algo_id'));
+        $botAccount = $this->botAccountService->getBotAccount($input->getArgument('bot_account_id'));
         $lastPrice = (float)$input->getArgument('last_price');
         $lastCandleId = (int)$input->getArgument('last_candle_id');
 
+        $algo = $botAccount->getAlgo();
+
         try {
-            $this->log($algo, "RUNNING BOT USING ALGO ".$algo->getId()." ".$algo->getName());
+            $this->log($botAccount, "RUNNING BOT ".$botAccount->getId()." ".$botAccount->getDescription()." USING ALGO ".$algo->getId()." ".$algo->getName());
 
             if($lastCandleId) {
                 /** @var Candle $lastCandle */
@@ -119,46 +130,47 @@ class AlgoBotCommand extends Command
                 $timeFrameSeconds = $algo->getTimeFrame() * 60;
 
                 if($this->checkTimeFrameClose($lastCandle->getCloseTime(), $timeFrameSeconds)) {
-                    $this->log($algo, "CHECKING FOR NEW TRADE");
+                    $this->log($botAccount, "CHECKING FOR NEW TRADE");
 
                     $lastOpen = $this->getLastOpen($timeFrameSeconds);
                     $loadFrom = $this->getTimestampToLoadFrom($lastOpen, $timeFrameSeconds);
 
                     $lastCandles = $this->candleManager->getCandlesByTimeFrame($algo, $loadFrom, $lastOpen);
-                    $result = $this->algoManager->runAlgo($algo, $lastCandles);
+                    $result = $this->algoManager->runAlgo($botAccount, $lastCandles);
 
-                    if($algo->isLong() && $result->isShort()) {
-                        $this->log($algo, "NEW SHORT TRADE");
-                        $this->newOrder($algo, TradeTypes::TRADE_SELL, $lastPrice);
-                    } else if($algo->isShort() && $result->isLong()) {
-                        $this->log($algo, "NEW LONG TRADE");
-                        $this->newOrder($algo, TradeTypes::TRADE_BUY, $lastPrice);
+                    if($botAccount->isLong() && $result->isShort()) {
+                        $this->log($botAccount, "NEW SHORT TRADE");
+                        $this->newOrder($botAccount, TradeTypes::TRADE_SELL, $lastPrice);
+                    } else if($botAccount->isShort() && $result->isLong()) {
+                        $this->log($botAccount, "NEW LONG TRADE");
+                        $this->newOrder($botAccount, TradeTypes::TRADE_BUY, $lastPrice);
                     } else {
-                        $this->log($algo, "NO NEW TRADE");
+                        $this->log($botAccount, "NO NEW TRADE");
                     }
                 } else {
-                    $this->log($algo, "CANDLE NOT CLOSED YET");
+                    $this->log($botAccount, "CANDLE NOT CLOSED YET");
                 }
             } else {
-                $this->log($algo, "NO NEW CANDLE");
+                $this->log($botAccount, "NO NEW CANDLE");
             }
         } catch (\Exception $exception) {
-            $this->log($algo, "ERROR:".$exception->getMessage());
+            $this->log($botAccount, "ERROR:".$exception->getMessage());
         }
 
     }
 
     /**
-     * @param BotAlgorithm $algo
+     * @param BotAccount $botAccount
      * @param string $message
      * @param array $context
      */
-    private function log(BotAlgorithm $algo, string $message, $context = [])
+    private function log(BotAccount $botAccount, string $message, $context = [])
     {
+        $algo = $botAccount->getAlgo();
         try {
             $now = new \DateTime();
             $nowString = $now->format('d-m-Y H:i:s');
-            $this->logger->info("$nowString: (algo {$algo->getId()}) -> $message", $context);
+            $this->logger->info("$nowString: (bot {$botAccount->getId()} algo {$algo->getId()}) -> $message", $context);
         } catch (\Exception $ex) {}
     }
 
@@ -173,44 +185,48 @@ class AlgoBotCommand extends Command
     }
 
     /**
-     * @param BotAlgorithm $algo
+     * @param BotAccount $botAccount
      * @param int $tradeType
      * @param float $currentPrice
-     * @throws \Exception
+     * @throws APINotFoundException
      */
-    private function newOrder(BotAlgorithm $algo, int $tradeType, float $currentPrice)
+    private function newOrder(BotAccount $botAccount, int $tradeType, float $currentPrice)
     {
+        $algo = $botAccount->getAlgo();
+
         if($tradeType == TradeTypes::TRADE_BUY) {
             $currencyToUse = $algo->getCurrencyPair()->getSecondCurrency();
-            $algo->setLong();
+            $botAccount->setLong();
         } else if($tradeType == TradeTypes::TRADE_SELL) {
             $currencyToUse = $algo->getCurrencyPair()->getFirstCurrency();
-            $algo->setShort();
+            $botAccount->setShort();
         } else return;
 
         $balance = $this->dataService->loadBalance($currencyToUse);
         $quantity = $this->calculateQuantity($tradeType, $currentPrice, $balance);
 
-        $this->log($algo, "QUANTITY: $quantity, PRICE: $currentPrice");
+        $this->log($botAccount, "QUANTITY: $quantity, PRICE: $currentPrice");
 
-        if($algo->getMode() == AlgoModes::TESTING) {
+        if($botAccount->getMode() == AlgoModes::TESTING) {
             $this->tradeService->newTestTrade($algo, $tradeType, $currentPrice, $quantity);
-            $this->algoManager->saveAlgo($algo);
-        } else if($algo->getMode() == AlgoModes::LIVE) {
+
+            $this->entityManager->persist($botAccount);
+        } else if($botAccount->getMode() == AlgoModes::LIVE) {
             /** TODO it´s possible that the price changes and the balance is not enough to buy the amount, the trade needs to be created again */
             try {
                 $trade = $this->tradeService->newMarketTrade($algo->getCurrencyPair(), $tradeType, $quantity);
                 $trade->setAlgo($algo);
-                $trade->setMode($algo->getMode());
+                $trade->setMode($botAccount->getMode());
                 $trade->setPrice($currentPrice);
                 $this->tradeService->saveTrade($trade);
 
                 /** TODO check order has been filled before */
                 $this->telegramBot->sendNewTradeMessage($_ENV['TELEGRAM_USER_ID'], $algo, $trade);
-                $this->algoManager->saveAlgo($algo);
+
+                $this->entityManager->persist($botAccount);
 
             } catch (APIException $apiException) {
-                $this->log($algo, "ERROR MAKING TRADE: $apiException");
+                $this->log($botAccount, "ERROR MAKING TRADE: $apiException");
                 $this->telegramBot->sendNewErrorMessage($_ENV['TELEGRAM_USER_ID'], $algo, $apiException);
             }
         }

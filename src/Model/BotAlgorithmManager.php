@@ -5,6 +5,7 @@ namespace App\Model;
 
 
 use App\Entity\Algorithm\AlgoTestResult;
+use App\Entity\Algorithm\BotAccount;
 use App\Entity\Algorithm\BotAlgorithm;
 use App\Entity\Data\Candle;
 use App\Entity\Algorithm\StrategyResult;
@@ -293,32 +294,15 @@ class BotAlgorithmManager
     }
 
     /**
-     * @param BotAlgorithm $algo
+     * @param BotAccount $botAccount
      * @param Candle[] $candles
      * @return StrategyResult
      * @throws StrategyNotFoundException
      */
-    public function runAlgo(BotAlgorithm $algo, $candles)
+    public function runAlgo(BotAccount $botAccount, $candles)
     {
         $this->strategies->setData($candles);
-        return $this->strategies->runStrategies($algo, $algo->getTradeStatus());
-    }
-
-    /**
-     * @param int $id
-     * @return BotAlgorithm|null
-     */
-    public function getAlgo(int $id)
-    {
-        return $this->botAlgorithmRepo->find($id);
-    }
-
-    /**
-     * @param BotAlgorithm $algo
-     */
-    public function saveAlgo(BotAlgorithm $algo)
-    {
-        $this->entityManager->persist($algo);
+        return $this->strategies->runStrategies($botAccount->getAlgo(), $botAccount->getTradeStatus());
     }
 
     /**

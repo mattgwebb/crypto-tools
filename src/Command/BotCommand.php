@@ -5,6 +5,7 @@ namespace App\Command;
 
 
 use App\Entity\Algorithm\AlgoModes;
+use App\Entity\Algorithm\BotAccount;
 use App\Entity\Algorithm\BotAlgorithm;
 use App\Entity\Data\Candle;
 use App\Entity\Data\CurrencyPair;
@@ -97,16 +98,24 @@ class BotCommand extends Command
         $this->log("LATEST CANDLE: ".json_encode($lastCandle));
         $this->log("LATEST PRICE: $lastPrice");
 
-        $algos = $pair->getAlgos();
+        $botAccounts = $this->entityManager
+            ->getRepository(BotAccount::class)
+            ->findAll();
 
         $runningProcesses = [];
 
-        /** @var BotAlgorithm $algo */
-        foreach($algos as $algo) {
-            if($algo->getMode() == AlgoModes::NOT_ACTIVE) {
+        /** @var BotAccount $botAccount */
+        foreach($botAccounts as $botAccount) {
+
+            $algo = $botAccount->getAlgo();
+            if(!$algo || $algo->getCurrencyPair() != $pair){
                 continue;
             }
-            $process = new Process(["php", $this->projectDir."/bin/console", "app:bot:run", $algo->getId(), $lastPrice, $lastCandle->getId(), "--no-debug"]);
+
+            if($botAccount->getMode() == AlgoModes::NOT_ACTIVE) {
+                continue;
+            }
+            $process = new Process(["php", $this->projectDir."/bin/console", "app:bot:run", $botAccount->getId(), $lastPrice, $lastCandle->getId(), "--no-debug"]);
             $process->start();
             $runningProcesses[] = $process;
         }

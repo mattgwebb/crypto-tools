@@ -2,7 +2,6 @@
 
 namespace App\Entity\Algorithm;
 
-use App\Entity\Trade\TradeTypes;
 use Doctrine\ORM\Mapping as ORM;
 
 /**
@@ -60,16 +59,6 @@ class BotAlgorithm implements \JsonSerializable
     /**
      * @ORM\Column(type="smallint")
      */
-    private $tradeStatus = TradeTypes::TRADE_SELL;
-
-    /**
-     * @ORM\Column(type="smallint")
-     */
-    private $mode = AlgoModes::NOT_ACTIVE;
-
-    /**
-     * @ORM\Column(type="smallint")
-     */
     private $category;
 
     /**
@@ -112,31 +101,6 @@ class BotAlgorithm implements \JsonSerializable
         return $this->observations;
     }
 
-    /**
-     * @return bool
-     */
-    public function isLong()
-    {
-        return $this->tradeStatus == TradeTypes::TRADE_BUY;
-    }
-
-    /**
-     * @return bool
-     */
-    public function isShort()
-    {
-        return $this->tradeStatus == TradeTypes::TRADE_SELL;
-    }
-
-    public function setLong()
-    {
-        $this->tradeStatus = TradeTypes::TRADE_BUY;
-    }
-
-    public function setShort()
-    {
-        $this->tradeStatus = TradeTypes::TRADE_SELL;
-    }
 
     /**
      * @return mixed
@@ -160,22 +124,6 @@ class BotAlgorithm implements \JsonSerializable
     public function setObservations($observations): void
     {
         $this->observations = $observations;
-    }
-
-    /**
-     * @return int
-     */
-    public function getMode(): int
-    {
-        return $this->mode;
-    }
-
-    /**
-     * @param int $mode
-     */
-    public function setMode(int $mode): void
-    {
-        $this->mode = $mode;
     }
 
     /**
@@ -224,22 +172,6 @@ class BotAlgorithm implements \JsonSerializable
     public function setInvalidationStrategyCombination($invalidationStrategyCombination): void
     {
         $this->invalidationStrategyCombination = $invalidationStrategyCombination;
-    }
-
-    /**
-     * @return int
-     */
-    public function getTradeStatus(): int
-    {
-        return $this->tradeStatus;
-    }
-
-    /**
-     * @param int $tradeStatus
-     */
-    public function setTradeStatus(int $tradeStatus): void
-    {
-        $this->tradeStatus = $tradeStatus;
     }
 
     /**

@@ -4,6 +4,7 @@
 namespace App\Service\Trade;
 
 
+use App\Entity\Algorithm\AlgoModes;
 use App\Entity\Algorithm\BotAlgorithm;
 use App\Entity\Data\CurrencyPair;
 use App\Entity\Trade\Trade;
@@ -81,7 +82,7 @@ class TradeService
         $trade->setAmount($amount);
         $trade->setTimeStamp(time());
         $trade->setStatus(TradeStatusTypes::FILLED);
-        $trade->setMode($algo->getMode());
+        $trade->setMode(AlgoModes::TESTING);
 
         $this->saveTrade($trade);
 
