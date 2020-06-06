@@ -372,26 +372,49 @@ class Indicators
     }
 
     /**
-     * TODO volume increase percentage over number of candles
      * @param $data
-     * @param int $period
-     * @param float $percentage
-     * @return float
+     * @param int $smallPeriod
+     * @param int $mediumPeriod
+     * @param int $longPeriod
+     * @param int $laggingPeriod
+     * @return array
      */
-    public function volumeIncrease($data, int $period = 10)
+    public function ichimokuCloud($data, int $smallPeriod = 9, int $mediumPeriod = 26, int $longPeriod = 52, int $laggingPeriod = 26)
     {
-        return 10.00;
+        $smallPeriodHighs = array_slice($data['high'], $smallPeriod * (-1));
+        $smallPeriodLows = array_slice($data['low'], $smallPeriod * (-1));
+
+        $mediumPeriodHighs = array_slice($data['high'], $mediumPeriod * (-1));
+        $mediumPeriodLows = array_slice($data['low'], $mediumPeriod * (-1));
+
+        $longPeriodHighs = array_slice($data['high'], $longPeriod * (-1));
+        $longPeriodLows = array_slice($data['low'], $longPeriod * (-1));
+
+        $conversionLine = (array_sum($smallPeriodHighs) + array_sum($smallPeriodLows)) / 2;
+
+        $baseLine = (array_sum($mediumPeriodHighs) + array_sum($mediumPeriodLows)) / 2;
+
+        $leadingSpanA = ($conversionLine + $baseLine) / 2;
+
+        $leadingSpanB = (array_sum($longPeriodHighs) + array_sum($longPeriodLows)) / 2;
+
+        $laggingSpan = $data['close'][count($data['close']) - $laggingPeriod];
+
+        return array($conversionLine, $baseLine, $leadingSpanA, $leadingSpanB, $laggingSpan);
     }
 
     /**
-     * TODO increment percentage of average volume over period
      * @param $data
      * @param int $period
-     * @param float $percentage
-     * @return bool
+     * @return float
      */
-    public function volumePercentage($data, int $period = 10)
+    public function volumeIncreaseAverage($data, int $period = 10)
     {
-        return 10.00;
+        $periodVolume = array_slice($data['volume'], $period * (-1));
+        $averageVolume = array_sum($periodVolume) / 10;
+
+        $currentVolume = $periodVolume[$period - 1];
+
+        return (($currentVolume / $averageVolume) - 1) * 100;
     }
 }

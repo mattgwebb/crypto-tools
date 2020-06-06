@@ -26,6 +26,37 @@ class DivergenceStrategies extends AbstractStrategyService
     public function indicatorDivergence(array $data, string $indicator, int $previousCandles, int $minCandleDifference, int $minDivergencePercentage,
                                          bool $regularDivergence, bool $hiddenDivergence): StrategyResult
     {
+        $result = new StrategyResult();
+
+        $finalLine = $this->getDivergenceLine($data, $indicator, $previousCandles, $minCandleDifference, $minDivergencePercentage,
+            $regularDivergence, $hiddenDivergence);
+
+        if($finalLine) {
+            if($finalLine->hasBullishDivergence()) {
+                $result->setTradeResult(StrategyResult::TRADE_LONG);
+            } else if($finalLine->hasBearishDivergence()) {
+                $result->setTradeResult(StrategyResult::TRADE_SHORT);
+            }
+
+            $result->setExtraData(['divergence_line' => $finalLine]);
+        }
+
+        return $result;
+    }
+
+    /**
+     * @param array $data
+     * @param string $indicator
+     * @param int $previousCandles
+     * @param int $minCandleDifference
+     * @param int $minDivergencePercentage
+     * @param bool $regularDivergence
+     * @param bool $hiddenDivergence
+     * @return DivergenceLine|bool
+     */
+    private function getDivergenceLine(array $data, string $indicator, int $previousCandles, int $minCandleDifference, int $minDivergencePercentage,
+                                         bool $regularDivergence, bool $hiddenDivergence)
+    {
         $divergenceTypes = [];
 
         if($regularDivergence) {
@@ -38,7 +69,6 @@ class DivergenceStrategies extends AbstractStrategyService
             $divergenceTypes[] = DivergenceTypes::BEARISH_HIDDEN_DIVERGENCE;
         }
 
-        $result = new StrategyResult();
 
         if($indicator == IndicatorTypes::RSI) {
             $indicatorPeriod = $this->indicators->rsiPeriod($data);
@@ -48,8 +78,10 @@ class DivergenceStrategies extends AbstractStrategyService
             $indicatorPeriod = $this->indicators->chaikinOscillatorPeriod($data);
         } else if($indicator == IndicatorTypes::MFI) {
             $indicatorPeriod = $this->indicators->mfiPeriod($data);
+        } else if($indicator == IndicatorTypes::VOLUME) {
+            $indicatorPeriod = $data['volume'];
         } else {
-            return $result;
+            return false;
         }
 
         $indicatorPeriod = array_values($indicatorPeriod);
@@ -96,7 +128,6 @@ class DivergenceStrategies extends AbstractStrategyService
                 }
             }
         }
-        $finalLine = [];
 
         if($divergenceLines) {
             if(count($divergenceLines) > 1) {
@@ -106,15 +137,10 @@ class DivergenceStrategies extends AbstractStrategyService
             /** @var DivergenceLine $finalLine */
             $finalLine = $divergenceLines[0];
 
-            if($finalLine->hasBullishDivergence()) {
-                $result->setTradeResult(StrategyResult::TRADE_LONG);
-            } else if($finalLine->hasBearishDivergence()) {
-                $result->setTradeResult(StrategyResult::TRADE_SHORT);
-            }
+            return $finalLine;
+        } else {
+            return false;
         }
-        $result->setExtraData(['divergence_line' => $finalLine]);
-
-        return $result;
     }
 
     /**

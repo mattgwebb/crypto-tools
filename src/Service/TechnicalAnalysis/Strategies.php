@@ -347,6 +347,30 @@ class Strategies
         return $this->oscillatorStrategies->mfi($this->data, $mfiSell, $mfiBuy, $period, $crossOnly);
     }
 
+    public function ichimokuCloud(int $smallPeriod = 9, int $mediumPeriod = 26, int $longPeriod = 52, int $laggingPeriod = 26)
+    {
+        $cloud = $this->indicators->ichimokuCloud($this->data, $smallPeriod, $mediumPeriod, $longPeriod, $laggingPeriod);
+        return new StrategyResult();
+    }
+
+    /**
+     * TODO short trade?
+     * @param int $period
+     * @param int $percentageIncrease
+     * @return StrategyResult
+     */
+    public function volumeIncrease(int $period = 10, int $percentageIncrease = 30) : StrategyResult
+    {
+        $result = new StrategyResult();
+
+        $currentVolumePercentageIncrease = $this->indicators->volumeIncreaseAverage($this->data, $period);
+
+        if($currentVolumePercentageIncrease >= $percentageIncrease) {
+            $result->setTradeResult(StrategyResult::TRADE_LONG);
+        }
+        return $result;
+    }
+
     /**
      * TODO buy/sell after downtrend/uptrend with high volume when volume decreases
      * @return StrategyResult
@@ -508,6 +532,10 @@ class Strategies
         /** @var StrategyConfig $strategy */
         foreach($strategies->getStrategyConfigList() as $strategy) {
             $result = $this->runStrategy($strategy);
+
+            if($result->getExtraData()) {
+                $strategyResult->setExtraData($result->getExtraData());
+            }
 
             if($strategy->isReverseResult()) {
                 $result = $this->getReverseResult($result);

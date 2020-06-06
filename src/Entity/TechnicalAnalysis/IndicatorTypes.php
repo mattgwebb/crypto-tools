@@ -11,4 +11,5 @@ abstract class IndicatorTypes
     const CHAIKIN = 'chaikin';
     const OBV = 'obv';
     const MFI = 'mfi';
+    const VOLUME = 'volume';
 }
