@@ -278,15 +278,10 @@ class BotAlgorithmManager
      * @param int $timeFrame
      * @param int $from
      * @param int $to
-     * @param int $candlesToLoad
      * @return array
      */
-    public function runTrendLinesTest(CurrencyPair $pair, int $timeFrame = 60, int $from = 0, int $to = 0,
-                            int $candlesToLoad = self::CANDLES_TO_LOAD)
+    public function runTrendLinesTest(CurrencyPair $pair, int $timeFrame = 60, int $from = 0, int $to = 0)
     {
-        $lastPositionCandles = $candlesToLoad - 1;
-
-        $from -= $lastPositionCandles * ($timeFrame * 60);
         $candles = $this->currencyPairRepo->getCandlesByTimeFrame($pair, $timeFrame, $from, $to);
 
         $this->strategies->setData($candles);

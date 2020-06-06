@@ -5,6 +5,7 @@ namespace App\Service\TechnicalAnalysis;
 
 
 use App\Entity\Algorithm\StrategyResult;
+use App\Entity\Data\Candle;
 use App\Entity\TechnicalAnalysis\PivotPoint;
 use App\Entity\TechnicalAnalysis\PivotTypes;
 use App\Entity\TechnicalAnalysis\TrendLine;
@@ -34,14 +35,41 @@ class TrendLineStrategies extends AbstractStrategyService
         $lines = $this->getLinePoints($pivotPoints);
 
         foreach($lines as $pivotTouches) {
-            if(count($pivotTouches) < 2) {
+            if(count($pivotTouches) < 3) {
                 continue;
             }
             $lineTouches = array_values($pivotTouches);
 
             $trendLines[] = $this->newTrendLine($lineTouches);
         }
+        $trendLines = $this->removeSimilarTrendLines($trendLines);
         return $trendLines;
+    }
+
+    /**
+     * @param array $trendLines
+     * @return array
+     */
+    private function removeSimilarTrendLines(array $trendLines)
+    {
+        $trendLinesByPrice = [];
+
+        /** @var TrendLine $trendLine */
+        foreach($trendLines as $key => $trendLine) {
+            $newPriceRange = true;
+            foreach($trendLinesByPrice as $price => $mergedTrendLine) {
+                if((abs($trendLine->getStartPrice() - $price) / $price) < 0.015) {
+                    $trendLinesByPrice[$price]->setStartTime(min([$trendLine->getStartTime(), $mergedTrendLine->getStartTime()]));
+                    $trendLinesByPrice[$price]->setEndTime(max([$trendLine->getEndTime(), $mergedTrendLine->getEndTime()]));
+                    $newPriceRange = false;
+                    break;
+                }
+            }
+            if($newPriceRange) {
+                $trendLinesByPrice[$trendLine->getStartPrice()] = $trendLine;
+            }
+        }
+        return array_values($trendLinesByPrice);
     }
 
     /**
@@ -159,33 +187,37 @@ class TrendLineStrategies extends AbstractStrategyService
     }
 
     /**
-     * @param $trendLines
+     * @param array $trendLines
+     * @param array $candles
      * @return StrategyResult
      */
-    private function supportAndResistanceLinesMet($trendLines)
+    private function supportAndResistanceLinesMet(array $trendLines, array $candles)
     {
-        $candles = count($this->data['close']);
-        $previousPrice = $this->data['close'][$candles - 2];
-        $currentPrice = $this->currentPrice;
+        $totalCandles = count($candles);
+
+        /** @var Candle $currentCandle */
+        $currentCandle = $candles[$totalCandles - 1];
+        /** @var Candle $previousCandle */
+        $previousCandle = $candles[$totalCandles - 2];
 
         $result = new StrategyResult();
 
         /** @var TrendLine $trendLine */
         foreach($trendLines as $trendLine) {
-            if(!$this->checkTrendLineTime($trendLine)) {
+            if(!$this->checkTrendLineTime($trendLine, $currentCandle)) {
                 //continue;
             }
-            $linePrice = $this->getTrendLinePrice($trendLine);
+            $linePrice = $this->getTrendLinePrice($trendLine, $currentCandle);
 
             $result->setExtraData(['trend_line' => $trendLine]);
 
             if($trendLine->getType() == TrendLine::TYPE_SUPPORT) {
-                if($currentPrice <= $linePrice && $previousPrice > $linePrice) {
+                if($currentCandle->getClosePrice() <= $linePrice && $previousCandle->getClosePrice() > $linePrice) {
                     $result->setTradeResult(StrategyResult::TRADE_LONG);
                     return $result;
                 }
             } else if($trendLine->getType() == TrendLine::TYPE_RESISTANCE) {
-                if($currentPrice >= $linePrice && $previousPrice < $linePrice) {
+                if($currentCandle->getClosePrice() >= $linePrice && $previousCandle->getClosePrice() < $linePrice) {
                     $result->setTradeResult(StrategyResult::TRADE_SHORT);
                     return $result;
                 }
@@ -195,24 +227,30 @@ class TrendLineStrategies extends AbstractStrategyService
     }
 
     /**
-     * @param $trendLines
+     * @param array $trendLines
+     * @param array $candles
      * @return StrategyResult
      */
-    private function supportAndResistanceLinesBreakouts($trendLines)
+    private function supportAndResistanceLinesBreakouts(array $trendLines, array $candles)
     {
+        $totalCandles = count($candles);
+
+        /** @var Candle $currentCandle */
+        $currentCandle = $candles[$totalCandles - 1];
+
         $result = new StrategyResult();
         foreach($trendLines as $trendLine) {
-            if(!$this->checkTrendLineTime($trendLine)) {
+            if(!$this->checkTrendLineTime($trendLine, $currentCandle)) {
                 continue;
             }
-            $price = $this->getTrendLinePrice($trendLine);
+            $price = $this->getTrendLinePrice($trendLine, $currentCandle);
 
             if($trendLine->getType() == TrendLine::TYPE_SUPPORT) {
-                if($this->currentPrice <= ($price * 0.97)) {
+                if($currentCandle->getClosePrice() <= ($price * 0.97)) {
                     $result->setTradeResult(StrategyResult::TRADE_SHORT);
                 }
             } else if($trendLine->getType() == TrendLine::TYPE_RESISTANCE) {
-                if($this->currentPrice >= ($price * 1.03)) {
+                if($currentCandle->getClosePrice() >= ($price * 1.03)) {
                     $result->setTradeResult(StrategyResult::TRADE_LONG);
                 }
             }
@@ -222,26 +260,29 @@ class TrendLineStrategies extends AbstractStrategyService
 
     /**
      * @param TrendLine $trendLine
+     * @param Candle $currentCandle
      * @return float
      */
-    private function getTrendLinePrice(TrendLine $trendLine)
+    private function getTrendLinePrice(TrendLine $trendLine, Candle $currentCandle)
     {
         if($trendLine->getStartPrice() == $trendLine->getEndPrice()) {
             return $trendLine->getStartPrice();
         }
         $timeRange = $trendLine->getEndTime() - $trendLine->getStartTime();
         $priceRange = $trendLine->getEndPrice() - $trendLine->getStartPrice();
-        $timeDifference = $this->currentClose - $trendLine->getStartTime();
+        $timeDifference = $currentCandle->getCloseTime() - $trendLine->getStartTime();
 
         return $trendLine->getStartPrice() + (($timeDifference / $timeRange) * $priceRange);
     }
 
     /**
      * @param TrendLine $trendLine
+     * @param Candle $currentCandle
      * @return bool
      */
-    private function checkTrendLineTime(TrendLine $trendLine)
+    private function checkTrendLineTime(TrendLine $trendLine, Candle $currentCandle)
     {
-        return $this->currentClose >= $trendLine->getStartTime() && $this->currentClose <= $trendLine->getEndTime();
+        return $currentCandle->getCloseTime() >= $trendLine->getStartTime() &&
+            $currentCandle->getCloseTime() <= $trendLine->getEndTime();
     }
 }
