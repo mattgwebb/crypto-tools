@@ -265,6 +265,9 @@ class Strategies
         if($oscillator == IndicatorTypes::RSI) {
             $oscillatorPeriodData = $this->indicators->rsiPeriod($this->data);
             $oscillatorPeriodData = array_values($oscillatorPeriodData);
+        } else if($oscillator == IndicatorTypes::STOCH) {
+            $oscillatorPeriodData = $this->indicators->stochPeriod($this->data);
+            $oscillatorPeriodData = array_values($oscillatorPeriodData);
         } else {
             throw new IndicatorNotSupported();
         }

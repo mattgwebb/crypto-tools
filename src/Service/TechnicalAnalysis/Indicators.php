@@ -248,6 +248,19 @@ class Indicators
     }
 
     /**
+     * Returns K values
+     * @param $data
+     * @param int $fastKPeriod
+     * @param int $slowKPeriod
+     * @return array
+     */
+    public function stochPeriod($data, int $fastKPeriod = 14, int $slowKPeriod = 3)
+    {
+        $stochArray = trader_stoch($data['high'], $data['low'], $data['close'], $fastKPeriod, $slowKPeriod);
+        return $stochArray[0];
+    }
+
+    /**
      * @param $data
      * @param int $fastPeriod
      * @param int $slowPeriod
