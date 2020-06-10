@@ -325,7 +325,7 @@ class BotAlgorithmManager
         $date->setTimezone(new \DateTimeZone("Europe/Madrid"));
 
         $trade = [
-            "time" => date_format($date, 'D M j G:i:s'),
+            "time" => date_format($date, 'Y D M j G:i:s'),
             "timestamp"=> $currentCandle->getCloseTime() * 1000,
             "price" => $currentCandle->getClosePrice()
         ];
