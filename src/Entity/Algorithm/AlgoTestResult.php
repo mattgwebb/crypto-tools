@@ -93,37 +93,37 @@ class AlgoTestResult
      * @ORM\Column(type="float")
      * @var float
      */
-    private $bestWinner;
+    private $bestWinner = 0.0;
 
     /**
      * @ORM\Column(type="float")
      * @var float
      */
-    private $worstLoser;
+    private $worstLoser = 0.0;
 
     /**
      * @ORM\Column(type="float")
      * @var float
      */
-    private $averageWinner;
+    private $averageWinner = 0.0;
 
     /**
      * @ORM\Column(type="float")
      * @var float
      */
-    private $averageLoser;
+    private $averageLoser = 0.0;
 
     /**
      * @ORM\Column(type="float")
      * @var float
      */
-    private $winPercentage;
+    private $winPercentage = 0.0;
 
     /**
      * @ORM\Column(type="float")
      * @var float
      */
-    private $standardDeviation;
+    private $standardDeviation = 0.0;
 
     /**
      * @return BotAlgorithm

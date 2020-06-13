@@ -353,22 +353,6 @@ class BotAlgorithmManager
     {
         if($this->logResults()) {
 
-            $winningTrades = [];
-            $losingTrades = [];
-
-            foreach($trades as $trade) {
-                if(isset($trade['percentage'])) {
-                    if($trade['percentage'] > 0) {
-                        $winningTrades[] = $trade['percentage'];
-                    } else if($trade['percentage'] < 0) {
-                        $losingTrades[] = $trade['percentage'];
-                    }
-                }
-            }
-
-            $nWinningTrades = count($winningTrades);
-            $nLosingTrades = count($losingTrades);
-
             $testResult = new AlgoTestResult();
             $testResult->setAlgo($algo);
             $testResult->setCurrencyPair($algo->getCurrencyPair());
@@ -382,14 +366,32 @@ class BotAlgorithmManager
             $testResult->setTimeFrame($algo->getTimeFrame());
             $testResult->setInvalidatedTrades($invalidatedTrades);
 
-            $testResult->setBestWinner(max($winningTrades));
-            $testResult->setWorstLoser(min($losingTrades));
+            if($trades) {
+                $winningTrades = [];
+                $losingTrades = [];
 
-            $testResult->setAverageWinner(array_sum($winningTrades) / $nWinningTrades);
-            $testResult->setAverageLoser(array_sum($losingTrades) / $nLosingTrades);
+                foreach($trades as $trade) {
+                    if(isset($trade['percentage'])) {
+                        if($trade['percentage'] > 0) {
+                            $winningTrades[] = $trade['percentage'];
+                        } else if($trade['percentage'] < 0) {
+                            $losingTrades[] = $trade['percentage'];
+                        }
+                    }
+                }
 
-            $testResult->setWinPercentage(($nWinningTrades / ($nWinningTrades + $nLosingTrades)) * 100);
-            $testResult->setStandardDeviation($this->calculateStandardDeviation(array_merge($winningTrades, $losingTrades)));
+                $nWinningTrades = count($winningTrades);
+                $nLosingTrades = count($losingTrades);
+
+                $testResult->setBestWinner(max($winningTrades));
+                $testResult->setWorstLoser(min($losingTrades));
+
+                $testResult->setAverageWinner(array_sum($winningTrades) / $nWinningTrades);
+                $testResult->setAverageLoser(array_sum($losingTrades) / $nLosingTrades);
+
+                $testResult->setWinPercentage(($nWinningTrades / ($nWinningTrades + $nLosingTrades)) * 100);
+                $testResult->setStandardDeviation($this->calculateStandardDeviation(array_merge($winningTrades, $losingTrades)));
+            }
 
             $extra = [
                 "entry_strategies" => $algo->getEntryStrategyCombination(),
