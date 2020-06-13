@@ -210,7 +210,7 @@ class BotAlgorithmManager
 
         if(isset($currentCandle)) {
             $this->saveAlgoTestResult($algo, $compoundedPercentage, $compoundedPercentageWithFees, $periodPricePercentage,
-                count($trades), $invalidatedTrades, $initialFrom, $currentCandle->getCloseTime());
+                $trades, $invalidatedTrades, $initialFrom, $currentCandle->getCloseTime());
         }
 
         $trade = "percentage $compoundedPercentage";
@@ -343,15 +343,31 @@ class BotAlgorithmManager
      * @param float $percentage
      * @param float $percentageWithFees
      * @param float $periodPercentage
-     * @param int $numTrades
+     * @param array $trades
      * @param int $invalidatedTrades
      * @param int $startTime
      * @param int $finishTime
      */
     private function saveAlgoTestResult(BotAlgorithm $algo, float $percentage, float $percentageWithFees, float $periodPercentage,
-                                        int $numTrades, int $invalidatedTrades, int $startTime, int $finishTime)
+                                        array $trades, int $invalidatedTrades, int $startTime, int $finishTime)
     {
         if($this->logResults()) {
+
+            $winningTrades = [];
+            $losingTrades = [];
+
+            foreach($trades as $trade) {
+                if(isset($trade['percentage'])) {
+                    if($trade['percentage'] > 0) {
+                        $winningTrades[] = $trade['percentage'];
+                    } else if($trade['percentage'] < 0) {
+                        $losingTrades[] = $trade['percentage'];
+                    }
+                }
+            }
+
+            $nWinningTrades = count($winningTrades);
+            $nLosingTrades = count($losingTrades);
 
             $testResult = new AlgoTestResult();
             $testResult->setAlgo($algo);
@@ -360,11 +376,20 @@ class BotAlgorithmManager
             $testResult->setPercentageWithFees($percentageWithFees);
             $testResult->setPriceChangePercentage($periodPercentage);
             $testResult->setTimestamp(time());
-            $testResult->setTrades($numTrades);
+            $testResult->setTrades(count($trades));
             $testResult->setStartTime($startTime);
             $testResult->setEndTime($finishTime);
             $testResult->setTimeFrame($algo->getTimeFrame());
             $testResult->setInvalidatedTrades($invalidatedTrades);
+
+            $testResult->setBestWinner(max($winningTrades));
+            $testResult->setWorstLoser(min($losingTrades));
+
+            $testResult->setAverageWinner(array_sum($winningTrades) / $nWinningTrades);
+            $testResult->setAverageLoser(array_sum($losingTrades) / $nLosingTrades);
+
+            $testResult->setWinPercentage(($nWinningTrades / ($nWinningTrades + $nLosingTrades)) * 100);
+            $testResult->setStandardDeviation($this->calculateStandardDeviation(array_merge($winningTrades, $losingTrades)));
 
             $extra = [
                 "entry_strategies" => $algo->getEntryStrategyCombination(),
@@ -385,5 +410,26 @@ class BotAlgorithmManager
     {
         $configItem = $this->configService->getConfig('testing', 'log_results');
         return $configItem ? (bool)$configItem->getValue() : false;
+    }
+
+    /**
+     * @param array $a
+     * @param bool $sample
+     * @return float
+     */
+    private function calculateStandardDeviation(array $a, $sample = false)
+    {
+        $n = count($a);
+        $mean = array_sum($a) / $n;
+        $carry = 0.0;
+
+        foreach ($a as $val) {
+            $d = ((double) $val) - $mean;
+            $carry += $d * $d;
+        }
+        if ($sample) {
+            --$n;
+        }
+        return sqrt($carry / $n);
     }
 }

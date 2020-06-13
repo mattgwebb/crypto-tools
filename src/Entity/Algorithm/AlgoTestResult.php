@@ -90,6 +90,42 @@ class AlgoTestResult
     private $currencyPair;
 
     /**
+     * @ORM\Column(type="float")
+     * @var float
+     */
+    private $bestWinner;
+
+    /**
+     * @ORM\Column(type="float")
+     * @var float
+     */
+    private $worstLoser;
+
+    /**
+     * @ORM\Column(type="float")
+     * @var float
+     */
+    private $averageWinner;
+
+    /**
+     * @ORM\Column(type="float")
+     * @var float
+     */
+    private $averageLoser;
+
+    /**
+     * @ORM\Column(type="float")
+     * @var float
+     */
+    private $winPercentage;
+
+    /**
+     * @ORM\Column(type="float")
+     * @var float
+     */
+    private $standardDeviation;
+
+    /**
      * @return BotAlgorithm
      */
     public function getAlgo(): BotAlgorithm
@@ -279,5 +315,101 @@ class AlgoTestResult
     public function setPercentageWithFees(float $percentageWithFees): void
     {
         $this->percentageWithFees = $percentageWithFees;
+    }
+
+    /**
+     * @return float
+     */
+    public function getBestWinner(): float
+    {
+        return $this->bestWinner;
+    }
+
+    /**
+     * @param float $bestWinner
+     */
+    public function setBestWinner(float $bestWinner): void
+    {
+        $this->bestWinner = $bestWinner;
+    }
+
+    /**
+     * @return float
+     */
+    public function getWorstLoser(): float
+    {
+        return $this->worstLoser;
+    }
+
+    /**
+     * @param float $worstLoser
+     */
+    public function setWorstLoser(float $worstLoser): void
+    {
+        $this->worstLoser = $worstLoser;
+    }
+
+    /**
+     * @return float
+     */
+    public function getAverageWinner(): float
+    {
+        return $this->averageWinner;
+    }
+
+    /**
+     * @param float $averageWinner
+     */
+    public function setAverageWinner(float $averageWinner): void
+    {
+        $this->averageWinner = $averageWinner;
+    }
+
+    /**
+     * @return float
+     */
+    public function getAverageLoser(): float
+    {
+        return $this->averageLoser;
+    }
+
+    /**
+     * @param float $averageLoser
+     */
+    public function setAverageLoser(float $averageLoser): void
+    {
+        $this->averageLoser = $averageLoser;
+    }
+
+    /**
+     * @return float
+     */
+    public function getWinPercentage(): float
+    {
+        return $this->winPercentage;
+    }
+
+    /**
+     * @param float $winPercentage
+     */
+    public function setWinPercentage(float $winPercentage): void
+    {
+        $this->winPercentage = $winPercentage;
+    }
+
+    /**
+     * @return float
+     */
+    public function getStandardDeviation(): float
+    {
+        return $this->standardDeviation;
+    }
+
+    /**
+     * @param float $standardDeviation
+     */
+    public function setStandardDeviation(float $standardDeviation): void
+    {
+        $this->standardDeviation = $standardDeviation;
     }
 }
