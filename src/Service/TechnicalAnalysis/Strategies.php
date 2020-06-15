@@ -74,6 +74,9 @@ class Strategies
      */
     private $deviationStrategies;
 
+    /** @var MarketConditionStrategies */
+    private $marketConditionStrategies;
+
     /**
      * @var array
      */
@@ -113,11 +116,12 @@ class Strategies
      * @param OscillatorStrategies $oscillatorStrategies
      * @param TrendLineStrategies $trendLineStrategies
      * @param DeviationStrategies $deviationStrategies
+     * @param MarketConditionStrategies $marketConditionStrategies
      */
     public function __construct(Indicators $indicators, StrategyLanguageParser $strategyLanguageParser,
                                 DivergenceStrategies $divergenceStrategies, MovingAverageStrategies $movingAverageStrategies,
                                 OscillatorStrategies $oscillatorStrategies, TrendLineStrategies $trendLineStrategies,
-                                DeviationStrategies $deviationStrategies)
+                                DeviationStrategies $deviationStrategies, MarketConditionStrategies $marketConditionStrategies)
     {
         $this->indicators = $indicators;
         $this->strategyLanguageParser = $strategyLanguageParser;
@@ -126,6 +130,7 @@ class Strategies
         $this->oscillatorStrategies = $oscillatorStrategies;
         $this->trendLineStrategies = $trendLineStrategies;
         $this->deviationStrategies = $deviationStrategies;
+        $this->marketConditionStrategies = $marketConditionStrategies;
     }
 
     /**
@@ -447,6 +452,16 @@ class Strategies
     }
 
     /**
+     * @param int $period
+     * @param float $value
+     * @return bool
+     */
+    public function adxOver(int $period = 14, float $value = 20) : bool
+    {
+        return $this->marketConditionStrategies->adxOver($this->data, $period, $value);
+    }
+
+    /**
      * @param Candle[] $candles
      */
     public function setData($candles)
@@ -496,14 +511,27 @@ class Strategies
      */
     public function runStrategies(BotAlgorithm $algo, int $currentTradeType = TradeTypes::TRADE_SELL)
     {
+        $marketConditionsStrategies = '';
+
         if($currentTradeType == TradeTypes::TRADE_SELL) {
             $strategies = $this->strategyLanguageParser->getStrategies($algo->getEntryStrategyCombination());
+            if($algo->getMarketConditionsEntry()) {
+                $marketConditionsStrategies = $this->strategyLanguageParser->getStrategies($algo->getMarketConditionsEntry());
+            }
         } else if($currentTradeType == TradeTypes::TRADE_BUY) {
             $strategies = $this->strategyLanguageParser->getStrategies($algo->getExitStrategyCombination());
+            if($algo->getMarketConditionsExit()) {
+                $marketConditionsStrategies = $this->strategyLanguageParser->getStrategies($algo->getMarketConditionsExit());
+            }
         } else {
             return new StrategyResult();
         }
 
+        if($marketConditionsStrategies) {
+            if(!$this->checkMarketConditions($marketConditionsStrategies)) {
+                return new StrategyResult();
+            }
+        }
         $strategyResult = $this->getStrategyResult($strategies, $currentTradeType);
 
         if($currentTradeType == TradeTypes::TRADE_BUY && !$strategyResult->isShort()
@@ -514,6 +542,23 @@ class Strategies
         }
 
         return $strategyResult;
+    }
+
+
+    /**
+     * @param StrategyCombination $marketConditionsStrategies
+     * @return bool
+     * @throws StrategyNotFoundException
+     */
+    private function checkMarketConditions(StrategyCombination $marketConditionsStrategies)
+    {
+        // TODO only loads first one for the moment
+        $strategyConfig = $marketConditionsStrategies->getStrategyConfigList()[0];
+
+        if(!method_exists($this, $strategyConfig->getStrategy()->getName())) {
+            throw new StrategyNotFoundException();
+        }
+        return call_user_func_array(array($this,$strategyConfig->getStrategy()->getName()), $strategyConfig->getConfigParams());
     }
 
     /**

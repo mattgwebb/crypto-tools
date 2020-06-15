@@ -57,6 +57,16 @@ class BotAlgorithm implements \JsonSerializable
     private $invalidationStrategyCombination;
 
     /**
+     * @ORM\Column(type="text")
+     */
+    private $marketConditionsEntry;
+
+    /**
+     * @ORM\Column(type="text")
+     */
+    private $marketConditionsExit;
+
+    /**
      * @ORM\Column(type="smallint")
      */
     private $category;
@@ -172,6 +182,38 @@ class BotAlgorithm implements \JsonSerializable
     public function setInvalidationStrategyCombination($invalidationStrategyCombination): void
     {
         $this->invalidationStrategyCombination = $invalidationStrategyCombination;
+    }
+
+    /**
+     * @return mixed
+     */
+    public function getMarketConditionsEntry()
+    {
+        return $this->marketConditionsEntry;
+    }
+
+    /**
+     * @param mixed $marketConditionsEntry
+     */
+    public function setMarketConditionsEntry($marketConditionsEntry): void
+    {
+        $this->marketConditionsEntry = $marketConditionsEntry;
+    }
+
+    /**
+     * @return mixed
+     */
+    public function getMarketConditionsExit()
+    {
+        return $this->marketConditionsExit;
+    }
+
+    /**
+     * @param mixed $marketConditionsExit
+     */
+    public function setMarketConditionsExit($marketConditionsExit): void
+    {
+        $this->marketConditionsExit = $marketConditionsExit;
     }
 
     /**
