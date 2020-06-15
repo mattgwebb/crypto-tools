@@ -430,4 +430,15 @@ class Indicators
 
         return (($currentVolume / $averageVolume) - 1) * 100;
     }
+
+    /**
+     * @param $data
+     * @param int $period
+     * @return array
+     */
+    public function priceRangePeriod($data, int $period = 50)
+    {
+        $periodCloses = array_slice($data['close'], $period * (-1));
+        return [min($periodCloses), max($periodCloses)];
+    }
 }

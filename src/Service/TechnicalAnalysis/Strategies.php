@@ -229,11 +229,12 @@ class Strategies
     }
 
     /**
+     * @param bool $onlyCrossover
      * @return StrategyResult
      */
-    public function guppyCrossover() : StrategyResult
+    public function guppyCrossover(bool $onlyCrossover = true) : StrategyResult
     {
-        return $this->movingAverageStrategies->guppyCrossover($this->data);
+        return $this->movingAverageStrategies->guppyCrossover($this->data, $onlyCrossover);
     }
 
     /**

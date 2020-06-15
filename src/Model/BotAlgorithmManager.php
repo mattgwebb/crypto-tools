@@ -395,7 +395,9 @@ class BotAlgorithmManager
 
             $extra = [
                 "entry_strategies" => $algo->getEntryStrategyCombination(),
+                "market_conditions_entry_strategy" => $algo->getMarketConditionsEntry(),
                 "exit_strategies" => $algo->getExitStrategyCombination(),
+                "market_conditions_exit_strategy" => $algo->getMarketConditionsExit(),
                 "invalidation_strategies" => $algo->getInvalidationStrategyCombination()
             ];
             $testResult->setObservations(json_encode($extra));

@@ -229,7 +229,9 @@ class BotAlgorithm implements \JsonSerializable
             "id" => $this->getId(),
             "symbol" => $this->getCurrencyPair()->getSymbol(),
             "entry_strategies" => $this->getEntryStrategyCombination(),
+            "market_conditions_entry_strategy" => $this->getMarketConditionsEntry(),
             "exit_strategies" => $this->getExitStrategyCombination(),
+            "market_conditions_exit_strategy" => $this->getMarketConditionsExit(),
             "invalidation_strategies" => $this->getInvalidationStrategyCombination(),
             "time_frame" => $this->getTimeFrame()
         ];

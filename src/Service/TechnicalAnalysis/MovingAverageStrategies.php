@@ -148,9 +148,10 @@ class MovingAverageStrategies extends AbstractStrategyService
 
     /**
      * @param array $data
+     * @param bool $onlyCrossover
      * @return StrategyResult
      */
-    public function guppyCrossover(array $data) : StrategyResult
+    public function guppyCrossover(array $data, bool $onlyCrossover = true) : StrategyResult
     {
         $result = new StrategyResult();
 
@@ -182,11 +183,14 @@ class MovingAverageStrategies extends AbstractStrategyService
         $maxPriorLongEMA = max($priorLongEMAs);
 
         if($minShortEMA >= $maxLongEMA) {
-            if($minPriorShortEMA < $maxPriorLongEMA) {
-                $result->setTradeResult(StrategyResult::TRADE_LONG);
+            if($minPriorShortEMA < $maxPriorLongEMA || !$onlyCrossover) {
+                //list($rangeLow, $rangeHigh) = $this->indicators->priceRangePeriod($data, 100);
+                //if(($rangeHigh / $rangeLow) > 1.04) {
+                    $result->setTradeResult(StrategyResult::TRADE_LONG);
+                //}
             }
         } else if($minLongEMA >= $maxShortEMA) {
-            if($minPriorLongEMA < $maxPriorShortEMA) {
+            if($minPriorLongEMA < $maxPriorShortEMA || !$onlyCrossover) {
                 $result->setTradeResult(StrategyResult::TRADE_SHORT);
             }
         }
