@@ -7,6 +7,7 @@ namespace App\Service\Algorithm;
 use App\Entity\Algorithm\StrategyCombination;
 use App\Entity\Algorithm\StrategyConfig;
 use App\Entity\TechnicalAnalysis\Strategy;
+use App\Entity\TechnicalAnalysis\StrategyCategories;
 use App\Exceptions\Algorithm\StrategyNotFoundException;
 use App\Repository\TechnicalAnalysis\StrategyRepository;
 
@@ -37,10 +38,11 @@ class StrategyLanguageParser
 
     /**
      * @param string $strategyString
+     * @param int $type
      * @return StrategyCombination
      * @throws StrategyNotFoundException
      */
-    public function getStrategies(string $strategyString)
+    public function getStrategies(string $strategyString, int $type = StrategyCategories::TRADE)
     {
         if(!$this->strategyList) {
             $this->loadStrategies();
@@ -70,7 +72,7 @@ class StrategyLanguageParser
 
             $split = explode('(', $rawStrategy);
 
-            $strategy = $this->getStrategy($split[0]);
+            $strategy = $this->getStrategy($split[0], $type);
             $strategyConfig->setStrategy($strategy);
 
             if(strlen($split[1]) > 1) {
@@ -91,12 +93,13 @@ class StrategyLanguageParser
 
     /**
      * @param string $name
+     * @param int $type
      * @return mixed
      * @throws StrategyNotFoundException
      */
-    private function getStrategy(string $name)
+    private function getStrategy(string $name, int $type)
     {
-        if(!isset($this->strategyList[$name])) {
+        if(!isset($this->strategyList[$name]) || $this->strategyList[$name]->getType() != $type) {
             throw new StrategyNotFoundException();
         }
         return $this->strategyList[$name];

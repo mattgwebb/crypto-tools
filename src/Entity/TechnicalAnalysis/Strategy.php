@@ -28,6 +28,11 @@ class Strategy
     private $description;
 
     /**
+     * @ORM\Column(type="integer")
+     */
+    private $type;
+
+    /**
      * @return mixed
      */
     public function getId()
@@ -73,6 +78,22 @@ class Strategy
     public function setDescription($description): void
     {
         $this->description = $description;
+    }
+
+    /**
+     * @return mixed
+     */
+    public function getType()
+    {
+        return $this->type;
+    }
+
+    /**
+     * @param mixed $type
+     */
+    public function setType($type): void
+    {
+        $this->type = $type;
     }
 
     /**

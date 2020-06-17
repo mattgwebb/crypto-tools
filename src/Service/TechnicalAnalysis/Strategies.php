@@ -11,6 +11,7 @@ use App\Entity\Data\Candle;
 use App\Entity\Algorithm\StrategyResult;
 use App\Entity\Algorithm\StrategyTypes;
 use App\Entity\TechnicalAnalysis\IndicatorTypes;
+use App\Entity\TechnicalAnalysis\StrategyCategories;
 use App\Entity\Trade\TradeTypes;
 use App\Exceptions\Algorithm\StrategyNotFoundException;
 use App\Exceptions\TechnicalAnalysis\IndicatorNotSupported;
@@ -507,12 +508,14 @@ class Strategies
         if($currentTradeType == TradeTypes::TRADE_SELL) {
             $strategies = $this->strategyLanguageParser->getStrategies($algo->getEntryStrategyCombination());
             if($algo->getMarketConditionsEntry()) {
-                $marketConditionsStrategies = $this->strategyLanguageParser->getStrategies($algo->getMarketConditionsEntry());
+                $marketConditionsStrategies = $this->strategyLanguageParser->getStrategies($algo->getMarketConditionsEntry(),
+                    StrategyCategories::MARKET_CONDITIONS);
             }
         } else if($currentTradeType == TradeTypes::TRADE_BUY) {
             $strategies = $this->strategyLanguageParser->getStrategies($algo->getExitStrategyCombination());
             if($algo->getMarketConditionsExit()) {
-                $marketConditionsStrategies = $this->strategyLanguageParser->getStrategies($algo->getMarketConditionsExit());
+                $marketConditionsStrategies = $this->strategyLanguageParser->getStrategies($algo->getMarketConditionsExit(),
+                    StrategyCategories::MARKET_CONDITIONS);
             }
         } else {
             return new StrategyResult();
