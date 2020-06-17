@@ -453,16 +453,6 @@ class Strategies
     }
 
     /**
-     * @param int $period
-     * @param float $value
-     * @return bool
-     */
-    public function adxOver(int $period = 14, float $value = 20) : bool
-    {
-        return $this->marketConditionStrategies->adxOver($this->data, $period, $value);
-    }
-
-    /**
      * @param Candle[] $candles
      */
     public function setData($candles)
@@ -556,10 +546,13 @@ class Strategies
         // TODO only loads first one for the moment
         $strategyConfig = $marketConditionsStrategies->getStrategyConfigList()[0];
 
-        if(!method_exists($this, $strategyConfig->getStrategy()->getName())) {
+        if(!method_exists($this->marketConditionStrategies, $strategyConfig->getStrategy()->getName())) {
             throw new StrategyNotFoundException();
         }
-        return call_user_func_array(array($this,$strategyConfig->getStrategy()->getName()), $strategyConfig->getConfigParams());
+        $params = $strategyConfig->getConfigParams();
+        array_unshift($params, $this->data);
+
+        return call_user_func_array(array($this->marketConditionStrategies, $strategyConfig->getStrategy()->getName()), $params);
     }
 
     /**
