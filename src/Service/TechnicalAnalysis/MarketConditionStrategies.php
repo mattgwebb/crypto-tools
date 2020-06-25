@@ -34,6 +34,23 @@ class MarketConditionStrategies extends AbstractStrategyService
     }
 
     /**
+     * @param array $data
+     * @param float $percentageRange
+     * @param int $period
+     * @return bool
+     */
+    public function notRangingPeriod(array $data, float $percentageRange = 5.00, int $period = 100)
+    {
+        $lastClose = array_pop($data['close']);
+
+        list($rangeLow, $rangeHigh) = $this->indicators->priceRangePeriod($data, $period);
+
+        $existingRange = ($rangeHigh / $rangeLow) <= (1 + ($percentageRange/100));
+
+        return !$existingRange || $lastClose > $rangeHigh;
+    }
+
+    /**
      * @param $firstValue
      * @param $secondValue
      * @param string $operator
