@@ -48,6 +48,11 @@ class CurrencyPair
      */
     private $algos;
 
+    /**
+     * @ORM\Column(type="boolean")
+     */
+    private $loadData;
+
 
     public function __construct()
     {
@@ -153,5 +158,21 @@ class CurrencyPair
     public function setAlgos($algos): void
     {
         $this->algos = $algos;
+    }
+
+    /**
+     * @return mixed
+     */
+    public function isLoadDataActive()
+    {
+        return $this->loadData;
+    }
+
+    /**
+     * @param mixed $loadData
+     */
+    public function setLoadData($loadData): void
+    {
+        $this->loadData = $loadData;
     }
 }

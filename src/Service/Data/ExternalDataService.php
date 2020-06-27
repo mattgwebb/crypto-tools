@@ -101,8 +101,10 @@ class ExternalDataService
             foreach($currencies as $currency) {
                 /** @var CurrencyPair $pair */
                 foreach ($currency->getPairs() as $pair) {
-                    list($newCandles, $lastCandle, $lastPrice) = $this->loadNewCandles($api, $pair);
-                    $updatedPairs[$pair->getSymbol()] = $newCandles;
+                    if($pair->isLoadDataActive()) {
+                        list($newCandles, $lastCandle, $lastPrice) = $this->loadNewCandles($api, $pair);
+                        $updatedPairs[$pair->getSymbol()] = $newCandles;
+                    }
                 }
             }
         }
