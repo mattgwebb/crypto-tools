@@ -383,13 +383,20 @@ class BotAlgorithmManager
                 $nWinningTrades = count($winningTrades);
                 $nLosingTrades = count($losingTrades);
 
-                $testResult->setBestWinner(max($winningTrades));
-                $testResult->setWorstLoser(min($losingTrades));
+                if($nWinningTrades > 0) {
+                    $testResult->setBestWinner(max($winningTrades));
+                    $testResult->setAverageWinner(array_sum($winningTrades) / $nWinningTrades);
+                }
 
-                $testResult->setAverageWinner(array_sum($winningTrades) / $nWinningTrades);
-                $testResult->setAverageLoser(array_sum($losingTrades) / $nLosingTrades);
+                if($nLosingTrades > 0) {
+                    $testResult->setWorstLoser(min($losingTrades));
+                    $testResult->setAverageLoser(array_sum($losingTrades) / $nLosingTrades);
+                }
 
-                $testResult->setWinPercentage(($nWinningTrades / ($nWinningTrades + $nLosingTrades)) * 100);
+                if(($nWinningTrades + $nLosingTrades) > 0) {
+                    $testResult->setWinPercentage(($nWinningTrades / ($nWinningTrades + $nLosingTrades)) * 100);
+                }
+
                 $testResult->setStandardDeviation($this->calculateStandardDeviation(array_merge($winningTrades, $losingTrades)));
             }
 
@@ -424,6 +431,11 @@ class BotAlgorithmManager
     private function calculateStandardDeviation(array $a, $sample = false)
     {
         $n = count($a);
+
+        if($n == 0) {
+            return 0.0;
+        }
+
         $mean = array_sum($a) / $n;
         $carry = 0.0;
 
