@@ -126,6 +126,12 @@ class AlgoTestResult
     private $standardDeviation = 0.0;
 
     /**
+     * @ORM\Column(type="float")
+     * @var float
+     */
+    private $openPosition = 0.0;
+
+    /**
      * @return BotAlgorithm
      */
     public function getAlgo(): BotAlgorithm
@@ -411,5 +417,21 @@ class AlgoTestResult
     public function setStandardDeviation(float $standardDeviation): void
     {
         $this->standardDeviation = $standardDeviation;
+    }
+
+    /**
+     * @return float
+     */
+    public function getOpenPosition(): float
+    {
+        return $this->openPosition;
+    }
+
+    /**
+     * @param float $openPosition
+     */
+    public function setOpenPosition(float $openPosition): void
+    {
+        $this->openPosition = $openPosition;
     }
 }

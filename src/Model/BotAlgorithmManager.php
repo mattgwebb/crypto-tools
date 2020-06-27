@@ -151,6 +151,8 @@ class BotAlgorithmManager
         $trades = [];
         $invalidatedTrades = 0;
 
+        $currentTradeStatus = TradeTypes::TRADE_SELL;
+
         for($i=$lastPositionCandles; $i < count($candles); $i++) {
             $auxData = array_slice($candles, $i - $lastPositionCandles, $candlesToLoad);
             /** TODO delete candles from array after using them
@@ -160,8 +162,6 @@ class BotAlgorithmManager
 
             $currentCandle = $auxData[count($auxData) - 1];
 
-            $currentTradeStatus = $openTradePrice > 0 ? TradeTypes::TRADE_BUY : TradeTypes::TRADE_SELL;
-
             $this->strategies->setData($auxData);
             $this->strategies->setCurrentTradePrice($openTradePrice);
             $result = $this->strategies->runStrategies($algo, $currentTradeStatus);
@@ -169,6 +169,7 @@ class BotAlgorithmManager
 
             if(($result->isLong()) && $currentTradeStatus == TradeTypes::TRADE_SELL) {
                 $openTradePrice = $currentCandle->getClosePrice();
+                $currentTradeStatus = TradeTypes::TRADE_BUY;
 
                 $trade = $this->newTestTrade($currentCandle, TradeTypes::TRADE_BUY);
                 $trade['extra_data'] = $result->getExtraData();
@@ -178,8 +179,8 @@ class BotAlgorithmManager
                 $this->logger->info(json_encode($trade));
 
                 $accumulatedFees += $compoundedProfit * self::TRADE_FEE;
-            }
-            if($result->isShort() && $currentTradeStatus == TradeTypes::TRADE_BUY) {
+
+            } else if($result->isShort() && $currentTradeStatus == TradeTypes::TRADE_BUY) {
                 $profit = ($currentCandle->getClosePrice()/$openTradePrice);
                 $percentage = ($profit - 1) * 100;
                 $compoundedProfit *= $profit;
@@ -202,6 +203,7 @@ class BotAlgorithmManager
                 $this->logger->info(json_encode($trade));
 
                 $openTradePrice = 0;
+                $currentTradeStatus = TradeTypes::TRADE_SELL;
             }
         }
 
@@ -209,7 +211,15 @@ class BotAlgorithmManager
         $compoundedPercentageWithFees = ($compoundedProfit - $accumulatedFees - 1) * 100;
 
         if(isset($currentCandle)) {
-            $this->saveAlgoTestResult($algo, $compoundedPercentage, $compoundedPercentageWithFees, $periodPricePercentage,
+
+            if($currentTradeStatus == TradeTypes::TRADE_BUY) {
+                $profit = ($currentCandle->getClosePrice()/$openTradePrice);
+                $openPositionPercentage = ($profit - 1) * 100;
+            } else {
+                $openPositionPercentage = 0;
+            }
+
+            $this->saveAlgoTestResult($algo, $compoundedPercentage, $openPositionPercentage, $compoundedPercentageWithFees, $periodPricePercentage,
                 $trades, $invalidatedTrades, $initialFrom, $currentCandle->getCloseTime());
         }
 
@@ -341,6 +351,7 @@ class BotAlgorithmManager
     /**
      * @param BotAlgorithm $algo
      * @param float $percentage
+     * @param float $openPositionPercentage
      * @param float $percentageWithFees
      * @param float $periodPercentage
      * @param array $trades
@@ -348,7 +359,7 @@ class BotAlgorithmManager
      * @param int $startTime
      * @param int $finishTime
      */
-    private function saveAlgoTestResult(BotAlgorithm $algo, float $percentage, float $percentageWithFees, float $periodPercentage,
+    private function saveAlgoTestResult(BotAlgorithm $algo, float $percentage, float $openPositionPercentage, float $percentageWithFees, float $periodPercentage,
                                         array $trades, int $invalidatedTrades, int $startTime, int $finishTime)
     {
         if($this->logResults()) {
@@ -365,6 +376,7 @@ class BotAlgorithmManager
             $testResult->setEndTime($finishTime);
             $testResult->setTimeFrame($algo->getTimeFrame());
             $testResult->setInvalidatedTrades($invalidatedTrades);
+            $testResult->setOpenPosition($openPositionPercentage);
 
             if($trades) {
                 $winningTrades = [];
