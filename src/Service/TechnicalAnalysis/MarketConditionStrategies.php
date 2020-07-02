@@ -51,6 +51,28 @@ class MarketConditionStrategies extends AbstractStrategyService
     }
 
     /**
+     * @param array $data
+     * @param int $period
+     * @param float $dev
+     * @return bool
+     */
+    public function notInKeltnerChannel(array $data, int $period = 20, float $dev = 2)
+    {
+        $keltnerChannelPeriod = $this->indicators->keltnerChannelPeriod($data, $period, $dev, $dev);
+        $bollingerBandsPeriod = $this->indicators->bollingerBandsPeriod($data, $period);
+
+        $lastKey = array_key_last($keltnerChannelPeriod[0]);
+
+        $bollingerUpperBand = $bollingerBandsPeriod[0][$lastKey];
+        $bollingerLowerBand = $bollingerBandsPeriod[2][$lastKey];
+
+        $keltnerUpperBand = $keltnerChannelPeriod[0][$lastKey];
+        $keltnerLowerBand = $keltnerChannelPeriod[2][$lastKey];
+
+        return $bollingerUpperBand >= $keltnerUpperBand || $bollingerLowerBand <= $keltnerLowerBand;
+    }
+
+    /**
      * @param $firstValue
      * @param $secondValue
      * @param string $operator
