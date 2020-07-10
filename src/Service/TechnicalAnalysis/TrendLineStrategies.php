@@ -6,22 +6,59 @@ namespace App\Service\TechnicalAnalysis;
 
 use App\Entity\Algorithm\StrategyResult;
 use App\Entity\Data\Candle;
+use App\Entity\Data\CurrencyPair;
+use App\Entity\Data\TimeFrames;
 use App\Entity\TechnicalAnalysis\PivotPoint;
 use App\Entity\TechnicalAnalysis\PivotTypes;
 use App\Entity\TechnicalAnalysis\TrendLine;
+use App\Repository\TechnicalAnalysis\TrendLineRepository;
+use Doctrine\ORM\EntityManagerInterface;
 
 class TrendLineStrategies extends AbstractStrategyService
 {
+
+    /**
+     * @var TrendLineRepository
+     */
+    private $repository;
+
+    /**
+     * @var EntityManagerInterface
+     */
+    private $entityManager;
+
+    /**
+     * @var array
+     */
+    private $trendLines;
+
+    /**
+     * DivergenceStrategies constructor.
+     * @param Indicators $indicators
+     * @param TrendLineRepository $repository
+     * @param EntityManagerInterface $entityManager
+     */
+    public function __construct(Indicators $indicators, TrendLineRepository $repository, EntityManagerInterface $entityManager)
+    {
+        parent::__construct($indicators);
+        $this->repository = $repository;
+        $this->entityManager = $entityManager;
+    }
+
     /**
      * @param array $candles
      * @return StrategyResult
      */
     public function supportAndResistance(array $candles)
     {
-        $trendLines = $this->detectTrendLines($candles);
-        //$linesMetResult = $this->supportAndResistanceLinesMet($trendLines);
-        //$breakoutsResult = $this->supportAndResistanceLinesBreakouts($trendLines);
-        return new StrategyResult();
+        $currentCandle = $candles[count($candles) - 1];
+        $pair = $currentCandle->getCurrencyPair();
+
+        $trendLines = $this->getSavedTrendLines($pair, $currentCandle->getCloseTime());
+
+        $linesMetResult = $this->supportAndResistanceLinesMet($trendLines, $candles);
+        //$breakoutsResult = $this->supportAndResistanceLinesBreakouts($trendLines, $candles);
+        return $linesMetResult;
     }
 
     /**
@@ -211,16 +248,12 @@ class TrendLineStrategies extends AbstractStrategyService
 
             $result->setExtraData(['trend_line' => $trendLine]);
 
-            if($trendLine->getType() == TrendLine::TYPE_SUPPORT) {
-                if($currentCandle->getClosePrice() <= $linePrice && $previousCandle->getClosePrice() > $linePrice) {
-                    $result->setTradeResult(StrategyResult::TRADE_LONG);
-                    return $result;
-                }
-            } else if($trendLine->getType() == TrendLine::TYPE_RESISTANCE) {
-                if($currentCandle->getClosePrice() >= $linePrice && $previousCandle->getClosePrice() < $linePrice) {
-                    $result->setTradeResult(StrategyResult::TRADE_SHORT);
-                    return $result;
-                }
+            if(($currentCandle->getClosePrice() <= $linePrice) && $previousCandle->getClosePrice() > $linePrice) {
+                $result->setTradeResult(StrategyResult::TRADE_LONG);
+                return $result;
+            } else if(($currentCandle->getClosePrice() >= $linePrice) && $previousCandle->getClosePrice() < $linePrice) {
+                $result->setTradeResult(StrategyResult::TRADE_SHORT);
+                return $result;
             }
         }
         return $result;
@@ -284,5 +317,39 @@ class TrendLineStrategies extends AbstractStrategyService
     {
         return $currentCandle->getCloseTime() >= $trendLine->getStartTime() &&
             $currentCandle->getCloseTime() <= $trendLine->getEndTime();
+    }
+
+    /**
+     * @param CurrencyPair $pair
+     * @param int $lastClose
+     * @return TrendLine[]
+     */
+    private function getSavedTrendLines(CurrencyPair $pair, int $lastClose)
+    {
+        $lastDailyClose = $this->getLastClose($lastClose, TimeFrames::TIMEFRAME_1D);
+
+        if(!isset($this->trendLines[$lastDailyClose])) {
+            $trendLines = $this->repository->findBy(['currencyPair' => $pair, 'createdAt' => $lastDailyClose]);
+
+            /** @var TrendLine $trendLine */
+            foreach($trendLines as $trendLine) {
+                $this->trendLines[$lastDailyClose][] = $trendLine;
+            }
+        }
+        return $this->trendLines[$lastDailyClose];
+    }
+
+    /**
+     * @param int $timestamp
+     * @param int $timeFrame
+     * @return int
+     */
+    private function getLastClose(int $timestamp, int $timeFrame)
+    {
+        $timeFrameSeconds = $timeFrame * 60;
+
+        $difference = ($timestamp + 1) % $timeFrameSeconds;
+
+        return $difference == 0 ? $timestamp : $timestamp - $difference;
     }
 }

@@ -14,6 +14,7 @@ use App\Entity\Data\CurrencyPair;
 use App\Entity\Data\ExternalIndicatorData;
 use App\Entity\Data\ExternalIndicatorDataType;
 use App\Entity\Data\TimeFrames;
+use App\Entity\TechnicalAnalysis\TrendLine;
 use App\Entity\Trade\Trade;
 use App\Entity\Trade\TradeTypes;
 use App\Exceptions\Algorithm\StrategyNotFoundException;
@@ -153,6 +154,8 @@ class BotAlgorithmManager
 
         $currentTradeStatus = TradeTypes::TRADE_SELL;
 
+        $currentTradeTrendLine = null;
+
         for($i=$lastPositionCandles; $i < count($candles); $i++) {
             $auxData = array_slice($candles, $i - $lastPositionCandles, $candlesToLoad);
             /** TODO delete candles from array after using them
@@ -168,6 +171,11 @@ class BotAlgorithmManager
 
 
             if(($result->isLong()) && $currentTradeStatus == TradeTypes::TRADE_SELL) {
+
+                if($currentTradeTrendLine && !$this->checkTrendLine($currentTradeTrendLine, $result->getExtraData())) {
+                    continue;
+                }
+
                 $openTradePrice = $currentCandle->getClosePrice();
                 $currentTradeStatus = TradeTypes::TRADE_BUY;
 
@@ -180,7 +188,18 @@ class BotAlgorithmManager
 
                 $accumulatedFees += $compoundedProfit * self::TRADE_FEE;
 
+                if(isset($trade['extra_data']['trend_line'])) {
+                    $currentTradeTrendLine = $trade['extra_data']['trend_line'];
+                } else {
+                    $currentTradeTrendLine = null;
+                }
+
             } else if($result->isShort() && $currentTradeStatus == TradeTypes::TRADE_BUY) {
+
+                if($currentTradeTrendLine && !$this->checkTrendLine($currentTradeTrendLine, $result->getExtraData())) {
+                    continue;
+                }
+
                 $profit = ($currentCandle->getClosePrice()/$openTradePrice);
                 $percentage = ($profit - 1) * 100;
                 $compoundedProfit *= $profit;
@@ -204,6 +223,12 @@ class BotAlgorithmManager
 
                 $openTradePrice = 0;
                 $currentTradeStatus = TradeTypes::TRADE_SELL;
+
+                if(isset($trade['extra_data']['trend_line'])) {
+                    $currentTradeTrendLine = $trade['extra_data']['trend_line'];
+                } else {
+                    $currentTradeTrendLine = null;
+                }
             }
         }
 
@@ -308,6 +333,22 @@ class BotAlgorithmManager
     {
         $this->strategies->setData($candles);
         return $this->strategies->runStrategies($botAccount->getAlgo(), $botAccount->getTradeStatus());
+    }
+
+    /**
+     * @param TrendLine $currentTradeTrendLine
+     * @param array $extraData
+     * @return bool
+     */
+    private function checkTrendLine(TrendLine $currentTradeTrendLine, array $extraData)
+    {
+        if(isset($extraData['trend_line'])) {
+            $tradeTrendLine = $extraData['trend_line'];
+            if((abs($currentTradeTrendLine->getStartPrice() - $tradeTrendLine->getStartPrice()) / $currentTradeTrendLine->getStartPrice()) < 0.015) {
+                return false;
+            }
+        }
+        return true;
     }
 
     /**

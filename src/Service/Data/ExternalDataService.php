@@ -12,6 +12,7 @@ use App\Entity\Data\Exchange;
 use App\Entity\Data\ExternalIndicatorData;
 use App\Entity\Data\ExternalIndicatorDataType;
 use App\Entity\Data\TimeFrames;
+use App\Service\Algorithm\TechnicalAnalysisDataService;
 use App\Service\Exchanges\ApiFactory;
 use App\Service\Exchanges\ApiInterface;
 use App\Service\ThirdPartyAPIs\GreedAndFearIndexAPI;
@@ -31,14 +32,21 @@ class ExternalDataService
     private $parameterBag;
 
     /**
+     * @var TechnicalAnalysisDataService
+     */
+    private $technicalAnalysisDataService;
+
+    /**
      * ExternalDataService constructor.
      * @param EntityManagerInterface $entityManager
      * @param ParameterBagInterface $parameterBag
+     * @param TechnicalAnalysisDataService $technicalAnalysisDataService
      */
-    public function __construct(EntityManagerInterface $entityManager, ParameterBagInterface $parameterBag)
+    public function __construct(EntityManagerInterface $entityManager, ParameterBagInterface $parameterBag, TechnicalAnalysisDataService $technicalAnalysisDataService)
     {
         $this->entityManager = $entityManager;
         $this->parameterBag = $parameterBag;
+        $this->technicalAnalysisDataService = $technicalAnalysisDataService;
     }
 
     /**
@@ -210,6 +218,8 @@ class ExternalDataService
         }
         $this->entityManager->flush();
         //$this->closeJSON($json);
+
+        $this->technicalAnalysisDataService->loadNewData($pair);
 
         return [$totalCandles, $lastCandle, $candle->getClosePrice()];
     }

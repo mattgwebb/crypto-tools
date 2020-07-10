@@ -49,6 +49,16 @@ class TrendLine
      */
     private $currencyPair;
 
+    /**
+     * @ORM\Column(type="integer")
+     */
+    private $createdAt;
+
+    /**
+     * @ORM\Column(type="integer")
+     */
+    private $timeFrame;
+
     public function getId(): ?int
     {
         return $this->id;
@@ -148,5 +158,37 @@ class TrendLine
     public function setCurrencyPair($currencyPair): void
     {
         $this->currencyPair = $currencyPair;
+    }
+
+    /**
+     * @return mixed
+     */
+    public function getTimeFrame()
+    {
+        return $this->timeFrame;
+    }
+
+    /**
+     * @param mixed $timeFrame
+     */
+    public function setTimeFrame($timeFrame): void
+    {
+        $this->timeFrame = $timeFrame;
+    }
+
+    /**
+     * @return mixed
+     */
+    public function getCreatedAt()
+    {
+        return $this->createdAt;
+    }
+
+    /**
+     * @param mixed $createdAt
+     */
+    public function setCreatedAt($createdAt): void
+    {
+        $this->createdAt = $createdAt;
     }
 }
