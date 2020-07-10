@@ -400,10 +400,10 @@ class Strategies
     }
 
     /**
-     * @param $percentage
+     * @param float $percentage
      * @return StrategyResult
      */
-    public function stopLoss($percentage)
+    public function stopLoss(float $percentage)
     {
         $result = new StrategyResult();
 
@@ -419,10 +419,10 @@ class Strategies
     }
 
     /**
-     * @param $percentage
+     * @param float $percentage
      * @return StrategyResult
      */
-    public function takeProfit($percentage)
+    public function takeProfit(float $percentage)
     {
         $result = new StrategyResult();
 
