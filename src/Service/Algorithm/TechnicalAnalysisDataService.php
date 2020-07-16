@@ -64,7 +64,7 @@ class TechnicalAnalysisDataService
         $this->loadNewTrendLines($pair, $allCandles);
     }
 
-    private function loadNewTrendLines(CurrencyPair $pair, array $candles)
+    private function loadNewTrendLines(CurrencyPair $pair, array $candles, int $numberCandlesToCheck = 365, int $minPivotTouches = 4)
     {
         /** @var TrendLine $latestTrendLine */
         $latestTrendLine = $this->trendLineRepository->findOneBy(["currencyPair" => $pair], ["createdAt" => "desc"]);
@@ -81,9 +81,17 @@ class TechnicalAnalysisDataService
                 break;
             }
 
-            $currentCandles = array_slice($candles, 0, $i);
+            $startingPoint = $i - $numberCandlesToCheck + 1;
+            $length = $numberCandlesToCheck;
 
-            $newTrendLines = $this->trendLineStrategies->detectTrendLines($currentCandles);
+            if($startingPoint < 0) {
+                $length += $startingPoint;
+                $startingPoint = 0;
+            }
+
+            $currentCandles = array_slice($candles, $startingPoint, $length);
+
+            $newTrendLines = $this->trendLineStrategies->detectTrendLines($currentCandles, $minPivotTouches);
 
             /** @var TrendLine $trendLine */
             foreach($newTrendLines as $trendLine) {

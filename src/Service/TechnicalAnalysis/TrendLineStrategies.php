@@ -56,6 +56,10 @@ class TrendLineStrategies extends AbstractStrategyService
 
         $trendLines = $this->getSavedTrendLines($pair, $currentCandle->getCloseTime());
 
+        if(!$trendLines) {
+            return new StrategyResult();
+        }
+
         $linesMetResult = $this->supportAndResistanceLinesMet($trendLines, $candles);
         //$breakoutsResult = $this->supportAndResistanceLinesBreakouts($trendLines, $candles);
         return $linesMetResult;
@@ -63,16 +67,17 @@ class TrendLineStrategies extends AbstractStrategyService
 
     /**
      * @param array $candles
+     * @param int $minPivotTouches
      * @return array
      */
-    public function detectTrendLines(array $candles)
+    public function detectTrendLines(array $candles, int $minPivotTouches = 3)
     {
         $trendLines = [];
         $pivotPoints = $this->getPivotPoints($candles);
         $lines = $this->getLinePoints($pivotPoints);
 
         foreach($lines as $pivotTouches) {
-            if(count($pivotTouches) < 3) {
+            if(count($pivotTouches) < $minPivotTouches) {
                 continue;
             }
             $lineTouches = array_values($pivotTouches);
@@ -331,9 +336,13 @@ class TrendLineStrategies extends AbstractStrategyService
         if(!isset($this->trendLines[$lastDailyClose])) {
             $trendLines = $this->repository->findBy(['currencyPair' => $pair, 'createdAt' => $lastDailyClose]);
 
-            /** @var TrendLine $trendLine */
-            foreach($trendLines as $trendLine) {
-                $this->trendLines[$lastDailyClose][] = $trendLine;
+            if(!$trendLines) {
+                $this->trendLines[$lastDailyClose] = [];
+            } else {
+                /** @var TrendLine $trendLine */
+                foreach($trendLines as $trendLine) {
+                    $this->trendLines[$lastDailyClose][] = $trendLine;
+                }
             }
         }
         return $this->trendLines[$lastDailyClose];
