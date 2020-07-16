@@ -458,17 +458,7 @@ class Strategies
      */
     public function setData($candles)
     {
-        $data = [];
-        /** @var Candle $candle */
-        foreach($candles as $candle) {
-            $data['open'][] = $candle->getOpenPrice();
-            $data['close'][] = $candle->getClosePrice();
-            $data['open_time'][] = $candle->getOpenTime();
-            $data['close_time'][] = $candle->getCloseTime();
-            $data['volume'][] = $candle->getVolume();
-            $data['high'][] = $candle->getHighPrice();
-            $data['low'][] = $candle->getLowPrice();
-        }
+        $data = $this->indicators->prepareDataFromCandles($candles);
         $this->data = $data;
 
         $count = count($candles);

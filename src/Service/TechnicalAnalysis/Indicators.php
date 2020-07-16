@@ -3,7 +3,6 @@
 namespace App\Service\TechnicalAnalysis;
 
 use App\Entity\Data\Candle;
-use App\Entity\Algorithm\StrategyResult;
 
 
 class Indicators
@@ -358,15 +357,11 @@ class Indicators
     /**
      * @param $data
      * @param $period
-     * @param bool $prior
      * @return array
      */
-    public function adxPeriod($data, int $period = 14, $prior = false)
+    public function adxPeriod($data, int $period = 14)
     {
-        $adxArray = trader_adx($data['high'], $data['low'], $data['close'], $period);
-        $adx = @array_pop($adxArray) ?? 0;
-        $adx_prior = @array_pop($adxArray) ?? 0;
-        return ($prior ? $adx : $adx_prior);
+        return trader_adx($data['high'], $data['low'], $data['close'], $period);
     }
 
     /**
@@ -440,5 +435,26 @@ class Indicators
     {
         $periodCloses = array_slice($data['close'], $period * (-1));
         return [min($periodCloses), max($periodCloses)];
+    }
+
+    /**
+     * @param array $candles
+     * @return array
+     */
+    public function prepareDataFromCandles(array $candles)
+    {
+        $data = [];
+
+        /** @var Candle $candle */
+        foreach($candles as $candle) {
+            $data['open'][] = $candle->getOpenPrice();
+            $data['close'][] = $candle->getClosePrice();
+            $data['open_time'][] = $candle->getOpenTime();
+            $data['close_time'][] = $candle->getCloseTime();
+            $data['volume'][] = $candle->getVolume();
+            $data['high'][] = $candle->getHighPrice();
+            $data['low'][] = $candle->getLowPrice();
+        }
+        return $data;
     }
 }

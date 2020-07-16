@@ -7,9 +7,13 @@ namespace App\Service\Algorithm;
 use App\Entity\Data\Candle;
 use App\Entity\Data\CurrencyPair;
 use App\Entity\Data\TimeFrames;
+use App\Entity\TechnicalAnalysis\IndicatorTypes;
+use App\Entity\TechnicalAnalysis\IndicatorValue;
 use App\Entity\TechnicalAnalysis\TrendLine;
 use App\Repository\Data\CurrencyPairRepository;
+use App\Repository\TechnicalAnalysis\IndicatorValueRepository;
 use App\Repository\TechnicalAnalysis\TrendLineRepository;
+use App\Service\TechnicalAnalysis\Indicators;
 use App\Service\TechnicalAnalysis\TrendLineStrategies;
 use Doctrine\ORM\EntityManagerInterface;
 
@@ -38,18 +42,34 @@ class TechnicalAnalysisDataService
     private $trendLineRepository;
 
     /**
+     * @var IndicatorValueRepository
+     */
+    private $indicatorValueRepository;
+
+    /**
+     * @var Indicators
+     */
+    private $indicatorsService;
+
+    /**
      * TechnicalAnalysisDataService constructor.
      * @param CurrencyPairRepository $currencyPairRepo
      * @param EntityManagerInterface $entityManager
      * @param TrendLineStrategies $trendLineStrategies
      * @param TrendLineRepository $trendLineRepository
+     * @param IndicatorValueRepository $indicatorValueRepository
+     * @param Indicators $indicatorsService
      */
-    public function __construct(CurrencyPairRepository $currencyPairRepo, EntityManagerInterface $entityManager, TrendLineStrategies $trendLineStrategies, TrendLineRepository $trendLineRepository)
+    public function __construct(CurrencyPairRepository $currencyPairRepo, EntityManagerInterface $entityManager,
+                                TrendLineStrategies $trendLineStrategies, TrendLineRepository $trendLineRepository,
+                                IndicatorValueRepository $indicatorValueRepository, Indicators $indicatorsService)
     {
         $this->currencyPairRepo = $currencyPairRepo;
         $this->entityManager = $entityManager;
         $this->trendLineStrategies = $trendLineStrategies;
         $this->trendLineRepository = $trendLineRepository;
+        $this->indicatorValueRepository = $indicatorValueRepository;
+        $this->indicatorsService = $indicatorsService;
     }
 
     /**
@@ -62,6 +82,8 @@ class TechnicalAnalysisDataService
         $allCandles = $this->currencyPairRepo->getCandlesByTimeFrame($pair, TimeFrames::TIMEFRAME_1D);
 
         $this->loadNewTrendLines($pair, $allCandles);
+
+        $this->loadNewIndicatorValues($pair, $allCandles);
     }
 
     private function loadNewTrendLines(CurrencyPair $pair, array $candles, int $numberCandlesToCheck = 365, int $minPivotTouches = 4)
@@ -77,7 +99,7 @@ class TechnicalAnalysisDataService
             /** @var Candle $candle */
             $candle = $candles[$i];
 
-            if($latestTimestamp && $candle->getCloseTime() < $latestTimestamp) {
+            if($latestTimestamp && $candle->getCloseTime() <= $latestTimestamp) {
                 break;
             }
 
@@ -104,5 +126,36 @@ class TechnicalAnalysisDataService
         }
     }
 
+    /**
+     * @param CurrencyPair $pair
+     * @param array $candles
+     */
+    private function loadNewIndicatorValues(CurrencyPair $pair, array $candles)
+    {
+        /** @var IndicatorValue $latestValue */
+        $latestValue = $this->indicatorValueRepository->findOneBy(["currencyPair" => $pair], ["createdAt" => "desc"]);
+        $latestTimestamp = $latestValue ? $latestValue->getCreatedAt() : false;
 
+        $data = $this->indicatorsService->prepareDataFromCandles($candles);
+
+        $adxPeriod = $this->indicatorsService->adxPeriod($data);
+        $adxPeriod = array_reverse($adxPeriod, true);
+
+        foreach($adxPeriod as $period => $value) {
+            $close = $data['close_time'][$period];
+
+            if($latestTimestamp && $close <= $latestTimestamp) {
+                break;
+            }
+
+            $indicatorValue = new IndicatorValue();
+            $indicatorValue->setValue($value);
+            $indicatorValue->setTimeFrame(TimeFrames::TIMEFRAME_1D);
+            $indicatorValue->setCurrencyPair($pair);
+            $indicatorValue->setCreatedAt($close);
+            $indicatorValue->setIndicator(IndicatorTypes::ADX);
+            $this->entityManager->persist($indicatorValue);
+        }
+        $this->entityManager->flush();
+    }
 }

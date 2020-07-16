@@ -13,4 +13,5 @@ abstract class IndicatorTypes
     const OBV = 'obv';
     const MFI = 'mfi';
     const VOLUME = 'volume';
+    const ADX = 'adx';
 }
