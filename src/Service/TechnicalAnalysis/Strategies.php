@@ -542,8 +542,14 @@ class Strategies
         if(!method_exists($this->marketConditionStrategies, $strategyConfig->getStrategy()->getName())) {
             throw new StrategyNotFoundException();
         }
+
         $params = $strategyConfig->getConfigParams();
-        array_unshift($params, $this->data);
+
+        if($strategyConfig->getStrategy()->getName() == 'savedValue') {
+            array_unshift($params, $this->candles);
+        } else {
+            array_unshift($params, $this->data);
+        }
 
         return call_user_func_array(array($this->marketConditionStrategies, $strategyConfig->getStrategy()->getName()), $params);
     }
