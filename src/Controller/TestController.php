@@ -3,6 +3,7 @@
 namespace App\Controller;
 
 use App\Entity\Algorithm\BotAlgorithm;
+use App\Entity\Algorithm\TestTypes;
 use App\Entity\Data\CurrencyPair;
 use App\Entity\Data\ExternalIndicatorDataType;
 use App\Entity\Data\TimeFrames;
@@ -169,7 +170,7 @@ class TestController extends AbstractController
             ]);
         }
 
-        $trades = $this->manager->runTest($algo, $startTime, $endTime);
+        $trades = $this->manager->runTest($algo, TestTypes::STANDARD_TEST, $startTime, $endTime);
 
         return $this->render('algo_test_result.html.twig', [
             "pair" => $algo->getCurrencyPair(),

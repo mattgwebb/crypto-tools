@@ -132,6 +132,12 @@ class AlgoTestResult
     private $openPosition = 0.0;
 
     /**
+     * @ORM\Column(type="integer")
+     * @var int
+     */
+    private $testType = TestTypes::STANDARD_TEST;
+
+    /**
      * @return BotAlgorithm
      */
     public function getAlgo(): BotAlgorithm
@@ -433,5 +439,21 @@ class AlgoTestResult
     public function setOpenPosition(float $openPosition): void
     {
         $this->openPosition = $openPosition;
+    }
+
+    /**
+     * @return int
+     */
+    public function getTestType(): int
+    {
+        return $this->testType;
+    }
+
+    /**
+     * @param int $testType
+     */
+    public function setTestType(int $testType): void
+    {
+        $this->testType = $testType;
     }
 }
