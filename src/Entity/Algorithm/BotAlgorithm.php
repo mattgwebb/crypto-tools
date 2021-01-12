@@ -69,7 +69,7 @@ class BotAlgorithm implements \JsonSerializable
     /**
      * @ORM\Column(type="smallint")
      */
-    private $category;
+    private $testingPhase = TestingPhases::IMPLEMENTING;
 
     /**
      * @return mixed
@@ -215,6 +215,23 @@ class BotAlgorithm implements \JsonSerializable
     {
         $this->marketConditionsExit = $marketConditionsExit;
     }
+
+    /**
+     * @return mixed
+     */
+    public function getTestingPhase()
+    {
+        return $this->testingPhase;
+    }
+
+    /**
+     * @param mixed $testingPhase
+     */
+    public function setTestingPhase($testingPhase): void
+    {
+        $this->testingPhase = $testingPhase;
+    }
+
 
     /**
      * Specify data which should be serialized to JSON
