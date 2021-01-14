@@ -7,6 +7,9 @@ namespace App\Model;
 use App\Entity\Algorithm\AlgoTestResult;
 use App\Entity\Algorithm\BotAccount;
 use App\Entity\Algorithm\BotAlgorithm;
+use App\Entity\Algorithm\StrategyConfig;
+use App\Entity\Algorithm\TestingPhases;
+use App\Entity\Algorithm\TestTypes;
 use App\Entity\Data\Candle;
 use App\Entity\Algorithm\StrategyResult;
 use App\Entity\Data\Currency;
@@ -17,6 +20,7 @@ use App\Entity\Data\TimeFrames;
 use App\Entity\TechnicalAnalysis\TrendLine;
 use App\Entity\Trade\Trade;
 use App\Entity\Trade\TradeTypes;
+use App\Exceptions\Algorithm\IncorrectTestingPhaseException;
 use App\Exceptions\Algorithm\StrategyNotFoundException;
 use App\Repository\Algorithm\BotAlgorithmRepository;
 use App\Repository\Config\ConfigRepository;
@@ -117,142 +121,84 @@ class BotAlgorithmManager
 
     /**
      * @param BotAlgorithm $algo
+     * @param int $type
      * @param int $from
      * @param int $to
      * @param int $candlesToLoad
      * @return array
      * @throws StrategyNotFoundException
+     * @throws IncorrectTestingPhaseException
      */
-    public function runTest(BotAlgorithm $algo, int $from = 0, int $to = 0,
+    public function runTest(BotAlgorithm $algo, int $type, int $from = 0, int $to = 0,
                             int $candlesToLoad = self::CANDLES_TO_LOAD)
     {
+        if($algo->getTestingPhase() == TestingPhases::LIMITED_TESTING) {
+            throw new IncorrectTestingPhaseException();
+        }
+
         $this->logger->info("********************* New test  ************************");
         $this->logger->info(json_encode($algo));
 
-        $initialFrom = $from;
-
         $lastPositionCandles = $candlesToLoad - 1;
 
-        $from -= $lastPositionCandles * ($algo->getTimeFrame() * 60);
-        $candles = $this->currencyPairRepo->getCandlesByTimeFrame($algo->getCurrencyPair(), $algo->getTimeFrame(), $from, $to);
+        $candles = $this->getCandlesForTest($algo, $from, $to, $candlesToLoad);
 
-        $firstCandle = $candles[$lastPositionCandles];
-        $initialPrice = $firstCandle->getClosePrice();
-
-        $lastCandle = $candles[count($candles)-1];
-        $lastPrice = $lastCandle->getClosePrice();
+        list($initialPrice, $lastPrice) = $this->getFirstAndLastClosePrices($candles, $lastPositionCandles);
 
         $periodPricePercentage = (($lastPrice / $initialPrice) - 1) * 100;
 
-        $openTradePrice = 0;
-        $compoundedProfit = 1;
-
-        $accumulatedFees = 0;
-
-        $trades = [];
-        $invalidatedTrades = 0;
-
-        $currentTradeStatus = TradeTypes::TRADE_SELL;
-
-        $currentTradeTrendLine = null;
-
-        for($i=$lastPositionCandles; $i < count($candles); $i++) {
-            $auxData = array_slice($candles, $i - $lastPositionCandles, $candlesToLoad);
-            /** TODO delete candles from array after using them
-             * TODO for some reason it doesn´t calculate indicators properly
-             */
-            //array_shift($candles);
-
-            $currentCandle = $auxData[count($auxData) - 1];
-
-            $this->strategies->setData($auxData);
-            $this->strategies->setCurrentTradePrice($openTradePrice);
-            $result = $this->strategies->runStrategies($algo, $currentTradeStatus);
-
-
-            if(($result->isLong()) && $currentTradeStatus == TradeTypes::TRADE_SELL) {
-
-                if($currentTradeTrendLine && !$this->checkTrendLine($currentTradeTrendLine, $result->getExtraData())) {
-                    continue;
-                }
-
-                $openTradePrice = $currentCandle->getClosePrice();
-                $currentTradeStatus = TradeTypes::TRADE_BUY;
-
-                $trade = $this->newTestTrade($currentCandle, TradeTypes::TRADE_BUY);
-                $trade['extra_data'] = $result->getExtraData();
-
-                $trades[] = $trade;
-
-                $this->logger->info(json_encode($trade));
-
-                $accumulatedFees += $compoundedProfit * self::TRADE_FEE;
-
-                if(isset($trade['extra_data']['trend_line'])) {
-                    $currentTradeTrendLine = $trade['extra_data']['trend_line'];
-                } else {
-                    $currentTradeTrendLine = null;
-                }
-
-            } else if($result->isShort() && $currentTradeStatus == TradeTypes::TRADE_BUY) {
-
-                if($currentTradeTrendLine && !$this->checkTrendLine($currentTradeTrendLine, $result->getExtraData())) {
-                    continue;
-                }
-
-                $profit = ($currentCandle->getClosePrice()/$openTradePrice);
-                $percentage = ($profit - 1) * 100;
-                $compoundedProfit *= $profit;
-
-                $accumulatedFees += $compoundedProfit * self::TRADE_FEE;
-
-                $trade = $this->newTestTrade($currentCandle, TradeTypes::TRADE_SELL);
-                $trade['extra_data'] = $result->getExtraData();
-                $trade["percentage"] = round($percentage, 2);
-
-                if($result->isFromInvalidation()) {
-                    $trade['invalidation'] = true;
-                    $invalidatedTrades++;
-                } else {
-                    $trade['invalidation'] = false;
-                }
-
-                $trades[] = $trade;
-
-                $this->logger->info(json_encode($trade));
-
-                $openTradePrice = 0;
-                $currentTradeStatus = TradeTypes::TRADE_SELL;
-
-                if(isset($trade['extra_data']['trend_line'])) {
-                    $currentTradeTrendLine = $trade['extra_data']['trend_line'];
-                } else {
-                    $currentTradeTrendLine = null;
-                }
-            }
-        }
-
-        $compoundedPercentage = ($compoundedProfit - 1) * 100;
-        $compoundedPercentageWithFees = ($compoundedProfit - $accumulatedFees - 1) * 100;
-
-        if(isset($currentCandle)) {
-
-            if($currentTradeStatus == TradeTypes::TRADE_BUY) {
-                $profit = ($currentCandle->getClosePrice()/$openTradePrice);
-                $openPositionPercentage = ($profit - 1) * 100;
-            } else {
-                $openPositionPercentage = 0;
-            }
-
-            $this->saveAlgoTestResult($algo, $compoundedPercentage, $openPositionPercentage, $compoundedPercentageWithFees, $periodPricePercentage,
-                $trades, $invalidatedTrades, $initialFrom, $currentCandle->getCloseTime());
-        }
-
-        $trade = "percentage $compoundedPercentage";
-        //$trades[] = $trade;
-        $this->logger->info($trade);
+        $trades = $this->runTestIteration($algo, $type, $candles, $from, $lastPositionCandles, $periodPricePercentage);
 
         return $trades;
+    }
+
+    /**
+     * @param BotAlgorithm $algo
+     * @param int $from
+     * @param int $to
+     * @param int $candlesToLoad
+     * @throws StrategyNotFoundException
+     * @throws IncorrectTestingPhaseException
+     */
+    public function runLimitedTest(BotAlgorithm $algo, int $from = 0, int $to = 0,
+                            int $candlesToLoad = self::CANDLES_TO_LOAD)
+    {
+        if($algo->getTestingPhase() != TestingPhases::LIMITED_TESTING) {
+            throw new IncorrectTestingPhaseException();
+        }
+
+        $this->logger->info("********************* New limited test  ************************");
+        $this->logger->info(json_encode($algo));
+
+        $lastPositionCandles = $candlesToLoad - 1;
+
+        $candles = $this->getCandlesForTest($algo, $from, $to, $candlesToLoad);
+
+        list($initialPrice, $lastPrice) = $this->getFirstAndLastClosePrices($candles, $lastPositionCandles);
+
+        $periodPricePercentage = (($lastPrice / $initialPrice) - 1) * 100;
+
+        list($strategyName, $entryStrategyConfigPossibleValues) = $this->getStrategyPossibleConfigValues($algo->getEntryStrategyCombination());
+
+        $entryCombinations = [];
+        foreach($entryStrategyConfigPossibleValues as $strategyBlock) {
+            $entryCombinations = $this->getAllCombinationsOfArrays($strategyBlock);
+        }
+
+        /*$exitStrategyConfigPossibleValues = $this->getStrategyPossibleConfigValues($algo->getEntryStrategyCombination());
+
+        foreach($exitStrategyConfigPossibleValues as $strategyBlock) {
+            $exitCombinations = $this->getAllCombinationsOfArrays($strategyBlock);
+        }*/
+
+        //ENTRY TESTING: TAKE PROFIT AND STOP LOSS
+        foreach($entryCombinations as $entryCombination) {
+            $testEntryStrategy = $strategyName . "(" . implode(',', $entryCombination) . ")";
+            $algo->setEntryStrategyCombination($testEntryStrategy);
+            $algo->setInvalidationStrategyCombination('stopLoss(10)');
+            $algo->setExitStrategyCombination('takeProfit(10)');
+            $this->runTestIteration($algo, TestTypes::LIMITED_ENTRY, $candles, $from, $lastPositionCandles, $periodPricePercentage);
+        }
     }
 
 
@@ -391,6 +337,7 @@ class BotAlgorithmManager
 
     /**
      * @param BotAlgorithm $algo
+     * @param int $type
      * @param float $percentage
      * @param float $openPositionPercentage
      * @param float $percentageWithFees
@@ -400,7 +347,7 @@ class BotAlgorithmManager
      * @param int $startTime
      * @param int $finishTime
      */
-    private function saveAlgoTestResult(BotAlgorithm $algo, float $percentage, float $openPositionPercentage, float $percentageWithFees, float $periodPercentage,
+    private function saveAlgoTestResult(BotAlgorithm $algo, int $type, float $percentage, float $openPositionPercentage, float $percentageWithFees, float $periodPercentage,
                                         array $trades, int $invalidatedTrades, int $startTime, int $finishTime)
     {
         if($this->logResults()) {
@@ -418,6 +365,7 @@ class BotAlgorithmManager
             $testResult->setTimeFrame($algo->getTimeFrame());
             $testResult->setInvalidatedTrades($invalidatedTrades);
             $testResult->setOpenPosition($openPositionPercentage);
+            $testResult->setTestType($type);
 
             if($trades) {
                 $winningTrades = [];
@@ -500,5 +448,212 @@ class BotAlgorithmManager
             --$n;
         }
         return sqrt($carry / $n);
+    }
+
+    /**
+     * @param BotAlgorithm $algo
+     * @param int $from
+     * @param int $to
+     * @param int $candlesToLoad
+     * @return Candle[]
+     */
+    private function getCandlesForTest(BotAlgorithm $algo, int $from, int $to,
+                                       int $candlesToLoad)
+    {
+        $lastPositionCandles = $candlesToLoad - 1;
+        $from -= $lastPositionCandles * ($algo->getTimeFrame() * 60);
+        return $this->currencyPairRepo->getCandlesByTimeFrame($algo->getCurrencyPair(), $algo->getTimeFrame(), $from, $to);
+    }
+
+    /**
+     * @param Candle[] $candles
+     * @param int $lastPositionCandles
+     * @return array
+     */
+    private function getFirstAndLastClosePrices(array $candles, int $lastPositionCandles)
+    {
+        $firstCandle = $candles[$lastPositionCandles];
+        $lastCandle = $candles[count($candles)-1];
+
+        return [$firstCandle->getClosePrice(), $lastCandle->getClosePrice()];
+    }
+
+    /**
+     * @param BotAlgorithm $algo
+     * @param int $type
+     * @param array $candles
+     * @param int $from
+     * @param int $candlesToLoad
+     * @param float $periodPricePercentage
+     * @return array
+     * @throws StrategyNotFoundException
+     */
+    private function runTestIteration(BotAlgorithm $algo, int $type, array $candles, int $from, int $candlesToLoad, float $periodPricePercentage)
+    {
+        $lastPositionCandles = $candlesToLoad - 1;
+
+        $openTradePrice = $accumulatedFees = $invalidatedTrades = 0;
+        $compoundedProfit = 1;
+
+        $trades = [];
+
+        $currentTradeStatus = TradeTypes::TRADE_SELL;
+
+        $currentTradeTrendLine = null;
+
+        for($i=$lastPositionCandles; $i < count($candles); $i++) {
+            $auxData = array_slice($candles, $i - $lastPositionCandles, $candlesToLoad);
+            /** TODO delete candles from array after using them
+             * TODO for some reason it doesn´t calculate indicators properly
+             */
+            //array_shift($candles);
+
+            $currentCandle = $auxData[count($auxData) - 1];
+
+            $this->strategies->setData($auxData);
+            $this->strategies->setCurrentTradePrice($openTradePrice);
+            $result = $this->strategies->runStrategies($algo, $currentTradeStatus);
+
+
+            if(($result->isLong()) && $currentTradeStatus == TradeTypes::TRADE_SELL) {
+
+                if($currentTradeTrendLine && !$this->checkTrendLine($currentTradeTrendLine, $result->getExtraData())) {
+                    continue;
+                }
+
+                $openTradePrice = $currentCandle->getClosePrice();
+                $currentTradeStatus = TradeTypes::TRADE_BUY;
+
+                $trade = $this->newTestTrade($currentCandle, TradeTypes::TRADE_BUY);
+                $trade['extra_data'] = $result->getExtraData();
+
+                $trades[] = $trade;
+
+                $this->logger->info(json_encode($trade));
+
+                $accumulatedFees += $compoundedProfit * self::TRADE_FEE;
+
+                if(isset($trade['extra_data']['trend_line'])) {
+                    $currentTradeTrendLine = $trade['extra_data']['trend_line'];
+                } else {
+                    $currentTradeTrendLine = null;
+                }
+
+            } else if($result->isShort() && $currentTradeStatus == TradeTypes::TRADE_BUY) {
+
+                if($currentTradeTrendLine && !$this->checkTrendLine($currentTradeTrendLine, $result->getExtraData())) {
+                    continue;
+                }
+
+                $profit = ($currentCandle->getClosePrice()/$openTradePrice);
+                $percentage = ($profit - 1) * 100;
+                $compoundedProfit *= $profit;
+
+                $accumulatedFees += $compoundedProfit * self::TRADE_FEE;
+
+                $trade = $this->newTestTrade($currentCandle, TradeTypes::TRADE_SELL);
+                $trade['extra_data'] = $result->getExtraData();
+                $trade["percentage"] = round($percentage, 2);
+
+                if($result->isFromInvalidation()) {
+                    $trade['invalidation'] = true;
+                    $invalidatedTrades++;
+                } else {
+                    $trade['invalidation'] = false;
+                }
+
+                $trades[] = $trade;
+
+                $this->logger->info(json_encode($trade));
+
+                $openTradePrice = 0;
+                $currentTradeStatus = TradeTypes::TRADE_SELL;
+
+                if(isset($trade['extra_data']['trend_line'])) {
+                    $currentTradeTrendLine = $trade['extra_data']['trend_line'];
+                } else {
+                    $currentTradeTrendLine = null;
+                }
+            }
+        }
+
+        $compoundedPercentage = ($compoundedProfit - 1) * 100;
+        $compoundedPercentageWithFees = ($compoundedProfit - $accumulatedFees - 1) * 100;
+
+        if(isset($currentCandle)) {
+
+            if($currentTradeStatus == TradeTypes::TRADE_BUY) {
+                $profit = ($currentCandle->getClosePrice()/$openTradePrice);
+                $openPositionPercentage = ($profit - 1) * 100;
+            } else {
+                $openPositionPercentage = 0;
+            }
+
+            $this->saveAlgoTestResult($algo, $type, $compoundedPercentage, $openPositionPercentage, $compoundedPercentageWithFees, $periodPricePercentage,
+                $trades, $invalidatedTrades, $from, $currentCandle->getCloseTime());
+        }
+
+        $trade = "percentage $compoundedPercentage";
+        //$trades[] = $trade;
+        $this->logger->info($trade);
+
+        return $trades;
+    }
+
+    /**
+     * @param string $strategyString
+     * @return array
+     * @throws StrategyNotFoundException
+     */
+    private function getStrategyPossibleConfigValues(string $strategyString)
+    {
+        $strategy = $this->strategies->parseStrategy($strategyString);
+
+        $strategyConfigPossibleValues = [];
+
+        $strategyList = $strategy->getStrategyConfigList();
+
+        /** @var StrategyConfig $config */
+        foreach($strategyList as $configKey => $config) {
+            foreach($config->getConfigParams() as $configParamKey => $configParam) {
+                if($configParam[0] == '[' && $configParam[strlen($configParam)-1] == ']') {
+                    $values = substr(substr($configParam, 1),0, -1);
+                    $strategyConfigPossibleValues[$configKey][$configParamKey] = explode('|', $values);
+                } else {
+                    $strategyConfigPossibleValues[$configKey][$configParamKey] = [$configParam];
+                }
+            }
+        }
+        return [$strategyList[0]->getStrategy()->getName(), $strategyConfigPossibleValues];
+    }
+
+    /**
+     * @param $arrays
+     * @param int $i
+     * @return array
+     */
+    private function getAllCombinationsOfArrays($arrays, $i = 0) {
+        if (!isset($arrays[$i])) {
+            return array();
+        }
+        if ($i == count($arrays) - 1) {
+            return $arrays[$i];
+        }
+
+        // get combinations from subsequent arrays
+        $tmp = $this->getAllCombinationsOfArrays($arrays, $i + 1);
+
+        $result = array();
+
+        // concat each array from tmp with each element from $arrays[$i]
+        foreach ($arrays[$i] as $v) {
+            foreach ($tmp as $t) {
+                $result[] = is_array($t) ?
+                    array_merge(array($v), $t) :
+                    array($v, $t);
+            }
+        }
+
+        return $result;
     }
 }

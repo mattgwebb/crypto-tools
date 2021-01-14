@@ -528,6 +528,15 @@ class Strategies
         return $strategyResult;
     }
 
+    /**
+     * @param string $strategy
+     * @return StrategyCombination
+     * @throws StrategyNotFoundException
+     */
+    public function parseStrategy(string $strategy)
+    {
+        return $this->strategyLanguageParser->getStrategies($strategy);
+    }
 
     /**
      * @param StrategyCombination $marketConditionsStrategies
