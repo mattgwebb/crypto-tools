@@ -4,7 +4,6 @@
 namespace App\Model;
 
 
-use App\Entity\Algorithm\AlgoTestResult;
 use App\Entity\Algorithm\BotAccount;
 use App\Entity\Algorithm\BotAlgorithm;
 use App\Entity\Algorithm\StrategyConfig;
@@ -12,18 +11,15 @@ use App\Entity\Algorithm\TestingPhases;
 use App\Entity\Algorithm\TestTypes;
 use App\Entity\Data\Candle;
 use App\Entity\Algorithm\StrategyResult;
-use App\Entity\Data\Currency;
 use App\Entity\Data\CurrencyPair;
 use App\Entity\Data\ExternalIndicatorData;
 use App\Entity\Data\ExternalIndicatorDataType;
-use App\Entity\Data\TimeFrames;
 use App\Entity\TechnicalAnalysis\TrendLine;
-use App\Entity\Trade\Trade;
 use App\Entity\Trade\TradeTypes;
 use App\Exceptions\Algorithm\IncorrectTestingPhaseException;
 use App\Exceptions\Algorithm\StrategyNotFoundException;
+use App\Repository\Algorithm\AlgoTestResultRepository;
 use App\Repository\Algorithm\BotAlgorithmRepository;
-use App\Repository\Config\ConfigRepository;
 use App\Repository\Data\CandleRepository;
 use App\Repository\Data\CurrencyPairRepository;
 use App\Repository\Data\ExternalIndicatorDataRepository;
@@ -31,7 +27,6 @@ use App\Repository\Trade\TradeRepository;
 use App\Service\Config\ConfigService;
 use App\Service\TechnicalAnalysis\Strategies;
 use Doctrine\ORM\EntityManagerInterface;
-use Doctrine\ORM\NonUniqueResultException;
 use Psr\Log\LoggerInterface;
 
 class BotAlgorithmManager
@@ -92,6 +87,11 @@ class BotAlgorithmManager
     private $configService;
 
     /**
+     * @var AlgoTestResultRepository
+     */
+    private $algoTestResultRepository;
+
+    /**
      * BotAlgorithmManager constructor.
      * @param BotAlgorithmRepository $botAlgorithmRepo
      * @param CurrencyPairRepository $currencyRepo
@@ -102,11 +102,13 @@ class BotAlgorithmManager
      * @param ExternalIndicatorDataRepository $externalIndicatorRepository
      * @param EntityManagerInterface $entityManager
      * @param ConfigService $configService
+     * @param AlgoTestResultRepository $algoTestResultRepository
      */
     public function __construct(BotAlgorithmRepository $botAlgorithmRepo, CurrencyPairRepository $currencyRepo,
                                 CandleRepository $candleRepository, Strategies $strategies, LoggerInterface $algosLogger,
                                 TradeRepository $tradeRepository, ExternalIndicatorDataRepository $externalIndicatorRepository,
-                                EntityManagerInterface $entityManager, ConfigService $configService)
+                                EntityManagerInterface $entityManager, ConfigService $configService,
+                                AlgoTestResultRepository  $algoTestResultRepository)
     {
         $this->botAlgorithmRepo = $botAlgorithmRepo;
         $this->currencyPairRepo = $currencyRepo;
@@ -117,6 +119,7 @@ class BotAlgorithmManager
         $this->entityManager = $entityManager;
         $this->externalIndicatorRepository = $externalIndicatorRepository;
         $this->configService = $configService;
+        $this->algoTestResultRepository = $algoTestResultRepository;
     }
 
     /**
@@ -178,27 +181,52 @@ class BotAlgorithmManager
 
         $periodPricePercentage = (($lastPrice / $initialPrice) - 1) * 100;
 
-        list($strategyName, $entryStrategyConfigPossibleValues) = $this->getStrategyPossibleConfigValues($algo->getEntryStrategyCombination());
+        $entryCombinations = $exitCombinations = [];
 
-        $entryCombinations = [];
+        list($entryStrategyName, $entryStrategyConfigPossibleValues) = $this->getStrategyPossibleConfigValues($algo->getEntryStrategyCombination());
+
         foreach($entryStrategyConfigPossibleValues as $strategyBlock) {
             $entryCombinations = $this->getAllCombinationsOfArrays($strategyBlock);
         }
 
-        /*$exitStrategyConfigPossibleValues = $this->getStrategyPossibleConfigValues($algo->getEntryStrategyCombination());
+        list($exitStrategyName, $exitStrategyConfigPossibleValues) = $this->getStrategyPossibleConfigValues($algo->getExitStrategyCombination());
 
         foreach($exitStrategyConfigPossibleValues as $strategyBlock) {
             $exitCombinations = $this->getAllCombinationsOfArrays($strategyBlock);
-        }*/
+        }
 
-        //ENTRY TESTING: TAKE PROFIT AND STOP LOSS
+        //ENTRY TESTING
         foreach($entryCombinations as $entryCombination) {
-            $testEntryStrategy = $strategyName . "(" . implode(',', $entryCombination) . ")";
+            $testEntryStrategy = $entryStrategyName . "(" . implode(',', $entryCombination) . ")";
             $algo->setEntryStrategyCombination($testEntryStrategy);
             $algo->setInvalidationStrategyCombination('stopLoss(10)');
             $algo->setExitStrategyCombination('takeProfit(10)');
             $this->runTestIteration($algo, TestTypes::LIMITED_ENTRY, $candles, $from, $lastPositionCandles, $periodPricePercentage);
         }
+
+        $algo->setInvalidationStrategyCombination('');
+
+        //EXIT TESTING
+        foreach($exitCombinations as $exitCombination) {
+            $testExitStrategy = $exitStrategyName . "(" . implode(',', $exitCombination) . ")";
+            $algo->setExitStrategyCombination($testExitStrategy);
+            $algo->setEntryStrategyCombination('rsi(30,70,14,1)');
+            $this->runTestIteration($algo, TestTypes::LIMITED_EXIT, $candles, $from, $lastPositionCandles, $periodPricePercentage);
+        }
+
+        //CORE SYSTEM TESTING
+        foreach($entryCombinations as $entryCombination) {
+            $testEntryStrategy = $entryStrategyName . "(" . implode(',', $entryCombination) . ")";
+
+            foreach($exitCombinations as $exitCombination) {
+                $algo->setEntryStrategyCombination($testEntryStrategy);
+
+                $testExitStrategy = $exitStrategyName . "(" . implode(',', $exitCombination) . ")";
+                $algo->setExitStrategyCombination($testExitStrategy);
+                $this->runTestIteration($algo, TestTypes::LIMITED_CORE, $candles, $from, $lastPositionCandles, $periodPricePercentage);
+            }
+        }
+
     }
 
 
@@ -352,7 +380,12 @@ class BotAlgorithmManager
     {
         if($this->logResults()) {
 
-            $testResult = new AlgoTestResult();
+            $this->algoTestResultRepository->newAlgoTestResult($algo, $type, $percentage, $openPositionPercentage,  $percentageWithFees,
+                $periodPercentage, $trades, $invalidatedTrades,  $startTime,  $finishTime);
+
+            // DOCTRINE persists the associated algo as well (it has been temporarily modified for testing)
+
+            /*$testResult = new AlgoTestResult();
             $testResult->setAlgo($algo);
             $testResult->setCurrencyPair($algo->getCurrencyPair());
             $testResult->setPercentage($percentage);
@@ -411,7 +444,7 @@ class BotAlgorithmManager
             $testResult->setObservations(json_encode($extra));
 
             $this->entityManager->persist($testResult);
-            $this->entityManager->flush();
+            $this->entityManager->flush();*/
         }
     }
 

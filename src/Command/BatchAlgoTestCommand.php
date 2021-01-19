@@ -7,7 +7,6 @@ namespace App\Command;
 use App\Entity\Algorithm\BotAlgorithm;
 use App\Entity\Algorithm\TestTypes;
 use App\Entity\Data\Candle;
-use App\Entity\Data\CurrencyPair;
 use App\Entity\Data\TimeFrames;
 use App\Model\BotAlgorithmManager;
 use Doctrine\ORM\EntityManagerInterface;
@@ -87,41 +86,10 @@ class BatchAlgoTestCommand extends Command
             return;
         }
 
-        /** @var CurrencyPair $pair */
-        /*$pair = $this->entityManager
-            ->getRepository(CurrencyPair::class)
-            ->find(1);
-
-        $algo->setCurrencyPair($pair);*/
-
-        $originalTimeFame = $algo->getTimeFrame();
-
         foreach(self::ALL_TIMEFRAMES as $timeFrame) {
             $algo->setTimeFrame($timeFrame);
             $this->algoManager->runTest($algo, TestTypes::STANDARD_TEST, $input->getArgument('start_time'), $input->getArgument('end_time'));
             $this->entityManager->clear(Candle::class);
         }
-
-        // TODO find better way to stop the timeframe from updating
-        $algo->setTimeFrame($originalTimeFame);
-        $this->entityManager->persist($algo);
-        $this->entityManager->flush();
-
-//        /** @var Exchange $binanceExchange */
-//        $binanceExchange = $this->entityManager
-//            ->getRepository(Exchange::class)
-//            ->find(1);
-//
-//        /** @var Currency $currency */
-//        foreach($binanceExchange->getCurrencies() as $currency) {
-//            /** @var CurrencyPair $currencyPair */
-//            foreach($currency->getPairs() as $currencyPair) {
-//                $algo->setCurrencyPair($currencyPair);
-//                foreach(self::ALL_TIMEFRAMES as $timeFrame) {
-//                    $algo->setTimeFrame($timeFrame);
-//                    $this->algoManager->runTest($algo, $input->getArgument('start_time'), $input->getArgument('end_time'));
-//                }
-//            }
-//        }
     }
 }

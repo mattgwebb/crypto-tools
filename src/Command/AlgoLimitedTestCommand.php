@@ -5,9 +5,7 @@ namespace App\Command;
 
 
 use App\Entity\Algorithm\BotAlgorithm;
-use App\Entity\Algorithm\TestTypes;
 use App\Entity\Data\Candle;
-use App\Entity\Data\CurrencyPair;
 use App\Entity\Data\TimeFrames;
 use App\Model\BotAlgorithmManager;
 use Doctrine\ORM\EntityManagerInterface;
@@ -87,24 +85,10 @@ class AlgoLimitedTestCommand extends Command
             return;
         }
 
-        // TODO possibly get random start time
-
-        $originalTimeFame = $algo->getTimeFrame();
-        $originalEntryStrategy = $algo->getEntryStrategyCombination();
-        $originalExitStrategy = $algo->getExitStrategyCombination();
-
         foreach(self::ALL_TIMEFRAMES as $timeFrame) {
             $algo->setTimeFrame($timeFrame);
             $this->algoManager->runLimitedTest($algo, $input->getArgument('start_time'), $input->getArgument('end_time'));
             $this->entityManager->clear(Candle::class);
         }
-
-        // TODO find better way to stop the timeframe from updating
-        $algo->setTimeFrame($originalTimeFame);
-        $algo->setEntryStrategyCombination($originalEntryStrategy);
-        $algo->setExitStrategyCombination($originalExitStrategy);
-
-        $this->entityManager->persist($algo);
-        $this->entityManager->flush();
     }
 }

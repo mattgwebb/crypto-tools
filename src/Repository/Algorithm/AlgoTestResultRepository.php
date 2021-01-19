@@ -3,6 +3,7 @@
 namespace App\Repository\Algorithm;
 
 use App\Entity\Algorithm\AlgoTestResult;
+use App\Entity\Algorithm\BotAlgorithm;
 use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
 use Doctrine\Common\Persistence\ManagerRegistry;
 
@@ -19,32 +20,106 @@ class AlgoTestResultRepository extends ServiceEntityRepository
         parent::__construct($registry, AlgoTestResult::class);
     }
 
-    // /**
-    //  * @return TrendLine[] Returns an array of TrendLine objects
-    //  */
-    /*
-    public function findByExampleField($value)
+    /**
+     * @param BotAlgorithm $algo
+     * @param int $type
+     * @param float $percentage
+     * @param float $openPositionPercentage
+     * @param float $percentageWithFees
+     * @param float $periodPercentage
+     * @param array $trades
+     * @param int $invalidatedTrades
+     * @param int $startTime
+     * @param int $finishTime
+     */
+    public function newAlgoTestResult(BotAlgorithm $algo, int $type, float $percentage, float $openPositionPercentage, float $percentageWithFees, float $periodPercentage,
+                                        array $trades, int $invalidatedTrades, int $startTime, int $finishTime)
     {
-        return $this->createQueryBuilder('t')
-            ->andWhere('t.exampleField = :val')
-            ->setParameter('val', $value)
-            ->orderBy('t.id', 'ASC')
-            ->setMaxResults(10)
-            ->getQuery()
-            ->getResult()
-        ;
-    }
-    */
+        $extra = [
+            "entry_strategies" => $algo->getEntryStrategyCombination(),
+            "market_conditions_entry_strategy" => $algo->getMarketConditionsEntry(),
+            "exit_strategies" => $algo->getExitStrategyCombination(),
+            "market_conditions_exit_strategy" => $algo->getMarketConditionsExit(),
+            "invalidation_strategies" => $algo->getInvalidationStrategyCombination()
+        ];
 
-    /*
-    public function findOneBySomeField($value): ?TrendLine
-    {
-        return $this->createQueryBuilder('t')
-            ->andWhere('t.exampleField = :val')
-            ->setParameter('val', $value)
-            ->getQuery()
-            ->getOneOrNullResult()
-        ;
+        $data = [
+            'algo_id' => $algo->getId(),
+            'currency_pair_id' => $algo->getCurrencyPair()->getId(),
+            'time_frame' => $algo->getTimeFrame(),
+            'timestamp' => time(),
+            'start_time' => $startTime,
+            'end_time' => $finishTime,
+            'percentage' => $percentage,
+            'percentage_with_fees' => $percentageWithFees,
+            'price_change_percentage' => $periodPercentage,
+            'observations' => json_encode($extra),
+            'trades' => count($trades),
+            'invalidated_trades' => $invalidatedTrades,
+            'open_position' => $openPositionPercentage,
+            'test_type' => $type
+        ];
+
+        if($trades) {
+            $winningTrades = [];
+            $losingTrades = [];
+
+            foreach($trades as $trade) {
+                if(isset($trade['percentage'])) {
+                    if($trade['percentage'] > 0) {
+                        $winningTrades[] = $trade['percentage'];
+                    } else if($trade['percentage'] < 0) {
+                        $losingTrades[] = $trade['percentage'];
+                    }
+                }
+            }
+
+            $nWinningTrades = count($winningTrades);
+            $nLosingTrades = count($losingTrades);
+
+            if($nWinningTrades > 0) {
+                $data['best_winner'] = max($winningTrades);
+                $data['average_winner'] = array_sum($winningTrades) / $nWinningTrades;
+            }
+
+            if($nLosingTrades > 0) {
+                $data['worst_loser'] = min($losingTrades);
+                $data['average_loser'] = array_sum($losingTrades) / $nLosingTrades;
+            }
+
+            if(($nWinningTrades + $nLosingTrades) > 0) {
+                $data['win_percentage'] = ($nWinningTrades / ($nWinningTrades + $nLosingTrades)) * 100;
+            }
+
+            $data['standard_deviation'] = $this->calculateStandardDeviation(array_merge($winningTrades, $losingTrades));
+        }
+
+        $this->getEntityManager()->getConnection()->insert('algo_test_result', $data);
     }
-    */
+
+    /**
+     * @param array $a
+     * @param bool $sample
+     * @return float
+     */
+    private function calculateStandardDeviation(array $a, $sample = false)
+    {
+        $n = count($a);
+
+        if($n == 0) {
+            return 0.0;
+        }
+
+        $mean = array_sum($a) / $n;
+        $carry = 0.0;
+
+        foreach ($a as $val) {
+            $d = ((double) $val) - $mean;
+            $carry += $d * $d;
+        }
+        if ($sample) {
+            --$n;
+        }
+        return sqrt($carry / $n);
+    }
 }
