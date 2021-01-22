@@ -183,50 +183,75 @@ class BotAlgorithmManager
 
         $entryCombinations = $exitCombinations = [];
 
-        list($entryStrategyName, $entryStrategyConfigPossibleValues) = $this->getStrategyPossibleConfigValues($algo->getEntryStrategyCombination());
+        $entryStrategyConfigPossibleValues = $this->getStrategyPossibleConfigValues($algo->getEntryStrategyCombination());
 
-        foreach($entryStrategyConfigPossibleValues as $strategyBlock) {
-            $entryCombinations = $this->getAllCombinationsOfArrays($strategyBlock);
-        }
+        $entryCombinations = $this->getAllCombinationsOfArrays($entryStrategyConfigPossibleValues);
 
-        list($exitStrategyName, $exitStrategyConfigPossibleValues) = $this->getStrategyPossibleConfigValues($algo->getExitStrategyCombination());
+        $exitStrategyConfigPossibleValues = $this->getStrategyPossibleConfigValues($algo->getExitStrategyCombination());
 
-        foreach($exitStrategyConfigPossibleValues as $strategyBlock) {
-            $exitCombinations = $this->getAllCombinationsOfArrays($strategyBlock);
-        }
+        $exitCombinations = $this->getAllCombinationsOfArrays($exitStrategyConfigPossibleValues);
+
+        $originalEntryStrategy = $algo->getEntryStrategyCombination();
+        $originalExitStrategy = $algo->getExitStrategyCombination();
 
         //ENTRY TESTING
+        $algo->setInvalidationStrategyCombination('stopLoss(10)');
+        $algo->setExitStrategyCombination('takeProfit(10)');
+
+        // If there are no params we must run 1 iteration
+        if(!$entryCombinations) {
+            $entryCombinations = [[]];
+        }
+
         foreach($entryCombinations as $entryCombination) {
-            $testEntryStrategy = $entryStrategyName . "(" . implode(',', $entryCombination) . ")";
+
+            $testEntryStrategy = $this->setStrategyCombinationParams($originalEntryStrategy, $entryCombination);
+
             $algo->setEntryStrategyCombination($testEntryStrategy);
-            $algo->setInvalidationStrategyCombination('stopLoss(10)');
-            $algo->setExitStrategyCombination('takeProfit(10)');
             $this->runTestIteration($algo, TestTypes::LIMITED_ENTRY, $candles, $from, $lastPositionCandles, $periodPricePercentage);
         }
 
+        //EXIT TESTING
+        $algo->setEntryStrategyCombination('rsi(30,70,14,1)');
+        $algo->setExitStrategyCombination($originalExitStrategy);
         $algo->setInvalidationStrategyCombination('');
 
-        //EXIT TESTING
-        foreach($exitCombinations as $exitCombination) {
-            $testExitStrategy = $exitStrategyName . "(" . implode(',', $exitCombination) . ")";
-            $algo->setExitStrategyCombination($testExitStrategy);
-            $algo->setEntryStrategyCombination('rsi(30,70,14,1)');
-            $this->runTestIteration($algo, TestTypes::LIMITED_EXIT, $candles, $from, $lastPositionCandles, $periodPricePercentage);
+        // If there are no params we must run 1 iteration
+        if(!$exitCombinations) {
+            $exitCombinations = [[]];
         }
+
+        foreach($exitCombinations as $exitCombination) {
+
+            // set params that are defined in the exit strategy
+            $initialTestExitStrategy = $this->setStrategyCombinationParams($originalExitStrategy, $exitCombination);
+
+            foreach($entryCombinations as $entryCombination) {
+                // set params that are defined in the entry strategy but used in the exit as well
+                $testExitStrategy = $this->setStrategyCombinationParams($initialTestExitStrategy, $entryCombination);
+                $algo->setExitStrategyCombination($testExitStrategy);
+                $this->runTestIteration($algo, TestTypes::LIMITED_EXIT, $candles, $from, $lastPositionCandles, $periodPricePercentage);
+            }
+        }
+
+        $algo->setEntryStrategyCombination($originalEntryStrategy);
+        $algo->setExitStrategyCombination($originalExitStrategy);
 
         //CORE SYSTEM TESTING
         foreach($entryCombinations as $entryCombination) {
-            $testEntryStrategy = $entryStrategyName . "(" . implode(',', $entryCombination) . ")";
+
+            $testEntryStrategy = $this->setStrategyCombinationParams($originalEntryStrategy, $entryCombination);
+            $algo->setEntryStrategyCombination($testEntryStrategy);
+
+            $initalTestExitStrategy = $this->setStrategyCombinationParams($originalExitStrategy, $entryCombination);
 
             foreach($exitCombinations as $exitCombination) {
-                $algo->setEntryStrategyCombination($testEntryStrategy);
 
-                $testExitStrategy = $exitStrategyName . "(" . implode(',', $exitCombination) . ")";
+                $testExitStrategy = $this->setStrategyCombinationParams($initalTestExitStrategy, $exitCombination);
                 $algo->setExitStrategyCombination($testExitStrategy);
                 $this->runTestIteration($algo, TestTypes::LIMITED_CORE, $candles, $from, $lastPositionCandles, $periodPricePercentage);
             }
         }
-
     }
 
 
@@ -647,46 +672,99 @@ class BotAlgorithmManager
         $strategyList = $strategy->getStrategyConfigList();
 
         /** @var StrategyConfig $config */
-        foreach($strategyList as $configKey => $config) {
+        foreach($strategyList as $config) {
             foreach($config->getConfigParams() as $configParamKey => $configParam) {
-                if($configParam[0] == '[' && $configParam[strlen($configParam)-1] == ']') {
-                    $values = substr(substr($configParam, 1),0, -1);
-                    $strategyConfigPossibleValues[$configKey][$configParamKey] = explode('|', $values);
-                } else {
-                    $strategyConfigPossibleValues[$configKey][$configParamKey] = [$configParam];
+                if(strpos($configParam, '{') !== false && strpos($configParam, '}') !== false) {
+                    $configParam = substr(substr($configParam, 1),0, -1);
+                    list($paramName,$paramValues) = explode("=", $configParam);
+
+                    $paramValues = substr(substr($paramValues, 1),0, -1);
+                    $strategyConfigPossibleValues[$paramName] = explode('|', $paramValues);
                 }
             }
         }
-        return [$strategyList[0]->getStrategy()->getName(), $strategyConfigPossibleValues];
+        return $strategyConfigPossibleValues;
     }
 
     /**
      * @param $arrays
-     * @param int $i
+     * @param string $key
      * @return array
      */
-    private function getAllCombinationsOfArrays($arrays, $i = 0) {
-        if (!isset($arrays[$i])) {
-            return array();
+    private function getAllCombinationsOfArrays($arrays, $key = '')
+    {
+        if(!$arrays) {
+            return $arrays;
         }
-        if ($i == count($arrays) - 1) {
-            return $arrays[$i];
+
+        if(!$key) {
+            $key = key($arrays);
+        }
+
+        $foundCurrent = $nextKey = false;
+
+        foreach($arrays as $arrayKey => $value) {
+            if($foundCurrent) {
+                $nextKey = $arrayKey;
+                break;
+            }
+            if($arrayKey == $key) {
+                $foundCurrent = true;
+            }
+        }
+
+
+        /*if (!isset($arrays[$key])) {
+            return array();
+        }*/
+        if (!$nextKey) {
+            return $arrays[$key];
         }
 
         // get combinations from subsequent arrays
-        $tmp = $this->getAllCombinationsOfArrays($arrays, $i + 1);
+        $tmp = $this->getAllCombinationsOfArrays($arrays, $nextKey);
 
         $result = array();
 
         // concat each array from tmp with each element from $arrays[$i]
-        foreach ($arrays[$i] as $v) {
+        foreach ($arrays[$key] as $v) {
             foreach ($tmp as $t) {
                 $result[] = is_array($t) ?
-                    array_merge(array($v), $t) :
-                    array($v, $t);
+                    array_merge(array($key => $v), $t) :
+                    array($key => $v, $nextKey => $t);
             }
         }
 
         return $result;
+    }
+
+    /**
+     * @param $strategyString
+     * @param $paramName
+     * @param $paramValue
+     * @return string
+     */
+    private function replaceParamNameWithValue($strategyString, $paramName, $paramValue)
+    {
+        $strategyString = preg_replace('/{'.$paramName.'=\[[^{,[]*\]}/', $paramValue, $strategyString);
+        $strategyString = preg_replace('/\$'.$paramName.'/', $paramValue, $strategyString);
+        return $strategyString;
+    }
+
+    /**
+     * @param string $strategy
+     * @param array $params
+     * @return string
+     */
+    private function setStrategyCombinationParams(string $strategy, array $params)
+    {
+        if(!$params) {
+            return $strategy;
+        }
+
+        foreach($params as $paramName => $paramValue) {
+            $strategy = $this->replaceParamNameWithValue($strategy, $paramName, $paramValue);
+        }
+        return $strategy;
     }
 }

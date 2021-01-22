@@ -80,15 +80,23 @@ class AlgoTestResultRepository extends ServiceEntityRepository
             if($nWinningTrades > 0) {
                 $data['best_winner'] = max($winningTrades);
                 $data['average_winner'] = array_sum($winningTrades) / $nWinningTrades;
+            } else {
+                $data['best_winner'] = 0;
+                $data['average_winner'] = 0;
             }
 
             if($nLosingTrades > 0) {
                 $data['worst_loser'] = min($losingTrades);
                 $data['average_loser'] = array_sum($losingTrades) / $nLosingTrades;
+            } else {
+                $data['worst_loser'] = 0;
+                $data['average_loser'] = 0;
             }
 
             if(($nWinningTrades + $nLosingTrades) > 0) {
                 $data['win_percentage'] = ($nWinningTrades / ($nWinningTrades + $nLosingTrades)) * 100;
+            } else {
+                $data['win_percentage'] = 0;
             }
 
             $data['standard_deviation'] = $this->calculateStandardDeviation(array_merge($winningTrades, $losingTrades));
