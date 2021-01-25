@@ -187,6 +187,8 @@ class BotAlgorithmManager
 
         $entryCombinations = $this->getAllCombinationsOfArrays($entryStrategyConfigPossibleValues);
 
+        $exitCombinationsFromEntry = $this->getExitParamCombinationsFromEntry($algo->getExitStrategyCombination(), $entryStrategyConfigPossibleValues);
+
         $exitStrategyConfigPossibleValues = $this->getStrategyPossibleConfigValues($algo->getExitStrategyCombination());
 
         $exitCombinations = $this->getAllCombinationsOfArrays($exitStrategyConfigPossibleValues);
@@ -226,7 +228,7 @@ class BotAlgorithmManager
             // set params that are defined in the exit strategy
             $initialTestExitStrategy = $this->setStrategyCombinationParams($originalExitStrategy, $exitCombination);
 
-            foreach($entryCombinations as $entryCombination) {
+            foreach($exitCombinationsFromEntry as $entryCombination) {
                 // set params that are defined in the entry strategy but used in the exit as well
                 $testExitStrategy = $this->setStrategyCombinationParams($initialTestExitStrategy, $entryCombination);
                 $algo->setExitStrategyCombination($testExitStrategy);
@@ -766,5 +768,20 @@ class BotAlgorithmManager
             $strategy = $this->replaceParamNameWithValue($strategy, $paramName, $paramValue);
         }
         return $strategy;
+    }
+
+    /**
+     * @param string $exitStrategy
+     * @param array $entryStrategyConfigPossibleValues
+     * @return array
+     */
+    private function getExitParamCombinationsFromEntry(string $exitStrategy, array $entryStrategyConfigPossibleValues)
+    {
+        foreach(array_keys($entryStrategyConfigPossibleValues) as $paramName) {
+            if(strpos($exitStrategy, "$".$paramName) === false) {
+                unset($entryStrategyConfigPossibleValues[$paramName]);
+            }
+        }
+        return $this->getAllCombinationsOfArrays($entryStrategyConfigPossibleValues);
     }
 }
