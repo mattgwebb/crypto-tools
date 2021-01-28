@@ -245,11 +245,11 @@ class BotAlgorithmManager
             $testEntryStrategy = $this->setStrategyCombinationParams($originalEntryStrategy, $entryCombination);
             $algo->setEntryStrategyCombination($testEntryStrategy);
 
-            $initalTestExitStrategy = $this->setStrategyCombinationParams($originalExitStrategy, $entryCombination);
+            $initialTestExitStrategy = $this->setStrategyCombinationParams($originalExitStrategy, $entryCombination);
 
             foreach($exitCombinations as $exitCombination) {
 
-                $testExitStrategy = $this->setStrategyCombinationParams($initalTestExitStrategy, $exitCombination);
+                $testExitStrategy = $this->setStrategyCombinationParams($initialTestExitStrategy, $exitCombination);
                 $algo->setExitStrategyCombination($testExitStrategy);
                 $this->runTestIteration($algo, TestTypes::LIMITED_CORE, $candles, $from, $lastPositionCandles, $periodPricePercentage);
             }
