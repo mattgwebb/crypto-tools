@@ -289,6 +289,8 @@ class BotAlgorithmManager
 
         list($trades, $profitPercentage) = $this->runTestIteration($algo, TestTypes::LIMITED_CORE, $candles, $from, $lastPositionCandles, $periodPricePercentage);
 
+        $tradeCount = count($trades);
+
         $longTrades = $shortTrades = [];
 
         foreach($trades as $trade) {
@@ -299,8 +301,8 @@ class BotAlgorithmManager
             }
         }
 
-        $monkeyEntryProfitPercentages = $monkeyExitProfitPercentages = [];
-        $monkeyEntryBetterIterations = $monkeyExitBetterIterations = 0;
+        $monkeyEntryProfitPercentages = $monkeyExitProfitPercentages = $monkeyCompleteProfitPercentages = [];
+        $monkeyEntryBetterIterations = $monkeyExitBetterIterations = $monkeyCompleteBetterIterations = 0;
 
         // MONKEY ENTRY
         for($i = 0; $i < self::MONKEY_ITERATIONS; $i++) {
@@ -325,6 +327,18 @@ class BotAlgorithmManager
         $monkeyExitAverageProfitPercentage = array_sum($monkeyExitProfitPercentages) / count($monkeyExitProfitPercentages);
 
         $this->logger->info("entry average: $monkeyExitAverageProfitPercentage, better iterations: $monkeyExitBetterIterations");
+
+        // MONKEY ENTRY AND EXIT
+        for($i = 0; $i < self::MONKEY_ITERATIONS; $i++) {
+            $monkeyProfitPercentage = $this->runMonkeyCompleteTest($candles, $from, $to, $tradeCount, $algo->getTimeFrame());
+            $monkeyCompleteProfitPercentages[] = $monkeyProfitPercentage;
+
+            if($monkeyProfitPercentage > $profitPercentage) $monkeyCompleteBetterIterations ++;
+        }
+
+        $monkeyCompleteAverageProfitPercentage = array_sum($monkeyCompleteProfitPercentages) / count($monkeyCompleteProfitPercentages);
+
+        $this->logger->info("entry average: $monkeyCompleteAverageProfitPercentage, better iterations: $monkeyCompleteBetterIterations");
     }
 
 
@@ -860,7 +874,7 @@ class BotAlgorithmManager
      * @param array $candles
      * @param int $from
      * @param int $to
-     * @return Candle
+     * @return int
      */
     private function getRandomCandle(array $candles, int $from, int $to)
     {
@@ -920,6 +934,7 @@ class BotAlgorithmManager
     }
 
     /**
+     * @param array $candles
      * @param array $longTrades
      * @return float
      */
@@ -958,5 +973,49 @@ class BotAlgorithmManager
         $compoundedPercentageWithFees = ($compoundedProfit - $accumulatedFees - 1) * 100;
 
         return $compoundedPercentageWithFees;
+    }
+
+    /**
+     * @param array $candles
+     * @param int $startTime
+     * @param int $endTime
+     * @param int $tradeCount
+     * @param int $timeFrame
+     * @return float
+     */
+    private function runMonkeyCompleteTest(array $candles, int $startTime, int $endTime, int $tradeCount, int $timeFrame)
+    {
+        $longTradesNeeded = (int)floor($tradeCount / 2);
+        $longTrades = [];
+
+        for($i = 0; $i < $longTradesNeeded; $i++) {
+            $candleFound = false;
+
+            while(!$candleFound) {
+                $randomCandle = $this->getRandomCandle($candles, $startTime, $endTime);
+
+                //TODO find cleaner way
+                $closeTime = $randomCandle->getCloseTime();
+                $previousCandleCloseTime = $closeTime - ($timeFrame * 60);
+                $nextCandleCloseTime = $closeTime + ($timeFrame * 60);
+                $secondPreviousCandleCloseTime = $closeTime - (($timeFrame * 60) * 2);
+                $secondNextCandleCloseTime = $closeTime + (($timeFrame * 60) * 2);
+
+                if(!isset($longTrades[$closeTime]) && !isset($longTrades[$previousCandleCloseTime]) &&
+                    !isset($longTrades[$nextCandleCloseTime]) && !isset($longTrades[$secondPreviousCandleCloseTime]) &&
+                    !isset($longTrades[$secondPreviousCandleCloseTime])) {
+                    $longTrades[$randomCandle->getCloseTime()] = [
+                        'timestamp' => $randomCandle->getCloseTime() * 1000,
+                        'price' => $randomCandle->getClosePrice()
+                    ];
+                    $candleFound = true;
+                }
+            }
+        }
+        ksort($longTrades);
+
+        $longTrades = array_values($longTrades);
+
+        return $this->runMonkeyExitTestFromEntryTrades($candles, $longTrades);
     }
 }
