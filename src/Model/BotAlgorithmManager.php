@@ -834,7 +834,7 @@ class BotAlgorithmManager
     private function replaceParamNameWithValue($strategyString, $paramName, $paramValue)
     {
         $strategyString = preg_replace('/{'.$paramName.'=\[[^{,[]*\]}/', $paramValue, $strategyString);
-        $strategyString = preg_replace('/\$'.$paramName.'/', $paramValue, $strategyString);
+        $strategyString = preg_replace('~\$'.$paramName.'~', $paramValue, $strategyString);
         return $strategyString;
     }
 
