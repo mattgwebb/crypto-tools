@@ -7,7 +7,7 @@ use Doctrine\ORM\Mapping as ORM;
 /**
  * @ORM\Entity(repositoryClass="App\Repository\Algorithm\AlgoTestResultRepository")
  */
-class AlgoTestResult
+class AlgoTestResult implements \JsonSerializable
 {
 
     /**
@@ -76,7 +76,7 @@ class AlgoTestResult
      * @ORM\Column(type="integer")
      * @var int
      */
-    private $trades;
+    private $tradeCount;
 
     /**
      * @ORM\Column(type="integer")
@@ -136,6 +136,11 @@ class AlgoTestResult
      * @var int
      */
     private $testType = TestTypes::STANDARD_TEST;
+
+    /**
+     * @var array
+     */
+    private $trades;
 
     /**
      * @return BotAlgorithm
@@ -236,17 +241,17 @@ class AlgoTestResult
     /**
      * @return int
      */
-    public function getTrades(): int
+    public function getTradeCount(): int
     {
-        return $this->trades;
+        return $this->tradeCount;
     }
 
     /**
      * @param int $trades
      */
-    public function setTrades(int $trades): void
+    public function setTradeCount(int $trades): void
     {
-        $this->trades = $trades;
+        $this->tradeCount = $trades;
     }
 
     /**
@@ -455,5 +460,50 @@ class AlgoTestResult
     public function setTestType(int $testType): void
     {
         $this->testType = $testType;
+    }
+
+    /**
+     * @return array
+     */
+    public function getTrades(): array
+    {
+        return $this->trades;
+    }
+
+    /**
+     * @param array $trades
+     */
+    public function setTrades(array $trades): void
+    {
+        $this->trades = $trades;
+    }
+
+    /**
+     * @return array
+     */
+    public function jsonSerialize()
+    {
+        return [
+            'algo_id' => $this->getAlgo()->getId(),
+            'currency_pair_id' => $this->getAlgo()->getCurrencyPair()->getId(),
+            'time_frame' => $this->getAlgo()->getTimeFrame(),
+            'timestamp' => time(),
+            'start_time' => $this->getStartTime(),
+            'end_time' => $this->getEndTime(),
+            'percentage' => $this->getPercentage(),
+            'percentage_with_fees' => $this->getPercentageWithFees(),
+            'price_change_percentage' => $this->getPriceChangePercentage(),
+            'observations' => $this->getObservations(),
+            'trade_count' => $this->getTradeCount(),
+            'invalidated_trades' => $this->getInvalidatedTrades(),
+            'best_winner' => $this->getBestWinner() ? $this->getBestWinner() : 0,
+            'worst_loser' => $this->getWorstLoser() ? $this->getWorstLoser() : 0,
+            'average_winner' => $this->getAverageWinner() ? $this->getAverageWinner() : 0,
+            'average_loser' => $this->getAverageLoser() ? $this->getAverageLoser() : 0,
+            'win_percentage' => $this->getWinPercentage() ? $this->getWinPercentage() : 0,
+            'standard_deviation' => $this->getStandardDeviation() ? $this->getStandardDeviation() : 0,
+            'open_position' => $this->getOpenPosition(),
+            'test_type' => $this->getTestType()
+        ];
     }
 }

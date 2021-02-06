@@ -45,7 +45,7 @@ class AlgoLimitedTestCommand extends Command
 
 
     /**
-     * BatchAlgoTestCommand constructor.
+     * AlgoLimitedTestCommand constructor.
      * @param EntityManagerInterface $entityManager
      * @param BotAlgorithmManager $algoManager
      */

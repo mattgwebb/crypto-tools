@@ -4,6 +4,7 @@
 namespace App\Model;
 
 
+use App\Entity\Algorithm\AlgoTestResult;
 use App\Entity\Algorithm\BotAccount;
 use App\Entity\Algorithm\BotAlgorithm;
 use App\Entity\Algorithm\StrategyConfig;
@@ -155,9 +156,9 @@ class BotAlgorithmManager
 
         $periodPricePercentage = (($lastPrice / $initialPrice) - 1) * 100;
 
-        list($trades, $profitPercentage) = $this->runTestIteration($algo, $type, $candles, $from, $lastPositionCandles, $periodPricePercentage);
+        $testResult = $this->runTestIteration($algo, $type, $candles, $from, $lastPositionCandles, $periodPricePercentage);
 
-        return $trades;
+        return $testResult->getTrades();
     }
 
     /**
@@ -185,8 +186,6 @@ class BotAlgorithmManager
         list($initialPrice, $lastPrice) = $this->getFirstAndLastClosePrices($candles, $lastPositionCandles);
 
         $periodPricePercentage = (($lastPrice / $initialPrice) - 1) * 100;
-
-        $entryCombinations = $exitCombinations = [];
 
         $entryStrategyConfigPossibleValues = $this->getStrategyPossibleConfigValues($algo->getEntryStrategyCombination());
 
@@ -287,7 +286,10 @@ class BotAlgorithmManager
 
         $periodPricePercentage = (($lastPrice / $initialPrice) - 1) * 100;
 
-        list($trades, $profitPercentage) = $this->runTestIteration($algo, TestTypes::LIMITED_CORE, $candles, $from, $lastPositionCandles, $periodPricePercentage);
+        $testResult = $this->runTestIteration($algo, TestTypes::LIMITED_CORE, $candles, $from, $lastPositionCandles, $periodPricePercentage);
+
+        $trades = $testResult->getTrades();
+        $profitPercentage = $testResult->getPercentageWithFees();
 
         $tradeCount = count($trades);
 
@@ -486,78 +488,74 @@ class BotAlgorithmManager
      * @param int $invalidatedTrades
      * @param int $startTime
      * @param int $finishTime
+     * @return AlgoTestResult
      */
     private function saveAlgoTestResult(BotAlgorithm $algo, int $type, float $percentage, float $openPositionPercentage, float $percentageWithFees, float $periodPercentage,
                                         array $trades, int $invalidatedTrades, int $startTime, int $finishTime)
     {
-        if($this->logResults()) {
+        $testResult = new AlgoTestResult();
+        $testResult->setAlgo($algo);
+        $testResult->setCurrencyPair($algo->getCurrencyPair());
+        $testResult->setPercentage($percentage);
+        $testResult->setPercentageWithFees($percentageWithFees);
+        $testResult->setPriceChangePercentage($periodPercentage);
+        $testResult->setTimestamp(time());
+        $testResult->setTrades($trades);
+        $testResult->setTradeCount(count($trades));
+        $testResult->setStartTime($startTime);
+        $testResult->setEndTime($finishTime);
+        $testResult->setTimeFrame($algo->getTimeFrame());
+        $testResult->setInvalidatedTrades($invalidatedTrades);
+        $testResult->setOpenPosition($openPositionPercentage);
+        $testResult->setTestType($type);
 
-            $this->algoTestResultRepository->newAlgoTestResult($algo, $type, $percentage, $openPositionPercentage,  $percentageWithFees,
-                $periodPercentage, $trades, $invalidatedTrades,  $startTime,  $finishTime);
+        if($trades) {
+            $winningTrades = [];
+            $losingTrades = [];
 
-            // DOCTRINE persists the associated algo as well (it has been temporarily modified for testing)
-
-            /*$testResult = new AlgoTestResult();
-            $testResult->setAlgo($algo);
-            $testResult->setCurrencyPair($algo->getCurrencyPair());
-            $testResult->setPercentage($percentage);
-            $testResult->setPercentageWithFees($percentageWithFees);
-            $testResult->setPriceChangePercentage($periodPercentage);
-            $testResult->setTimestamp(time());
-            $testResult->setTrades(count($trades));
-            $testResult->setStartTime($startTime);
-            $testResult->setEndTime($finishTime);
-            $testResult->setTimeFrame($algo->getTimeFrame());
-            $testResult->setInvalidatedTrades($invalidatedTrades);
-            $testResult->setOpenPosition($openPositionPercentage);
-            $testResult->setTestType($type);
-
-            if($trades) {
-                $winningTrades = [];
-                $losingTrades = [];
-
-                foreach($trades as $trade) {
-                    if(isset($trade['percentage'])) {
-                        if($trade['percentage'] > 0) {
-                            $winningTrades[] = $trade['percentage'];
-                        } else if($trade['percentage'] < 0) {
-                            $losingTrades[] = $trade['percentage'];
-                        }
+            foreach($trades as $trade) {
+                if(isset($trade['percentage'])) {
+                    if($trade['percentage'] > 0) {
+                        $winningTrades[] = $trade['percentage'];
+                    } else if($trade['percentage'] < 0) {
+                        $losingTrades[] = $trade['percentage'];
                     }
                 }
-
-                $nWinningTrades = count($winningTrades);
-                $nLosingTrades = count($losingTrades);
-
-                if($nWinningTrades > 0) {
-                    $testResult->setBestWinner(max($winningTrades));
-                    $testResult->setAverageWinner(array_sum($winningTrades) / $nWinningTrades);
-                }
-
-                if($nLosingTrades > 0) {
-                    $testResult->setWorstLoser(min($losingTrades));
-                    $testResult->setAverageLoser(array_sum($losingTrades) / $nLosingTrades);
-                }
-
-                if(($nWinningTrades + $nLosingTrades) > 0) {
-                    $testResult->setWinPercentage(($nWinningTrades / ($nWinningTrades + $nLosingTrades)) * 100);
-                }
-
-                $testResult->setStandardDeviation($this->calculateStandardDeviation(array_merge($winningTrades, $losingTrades)));
             }
 
-            $extra = [
-                "entry_strategies" => $algo->getEntryStrategyCombination(),
-                "market_conditions_entry_strategy" => $algo->getMarketConditionsEntry(),
-                "exit_strategies" => $algo->getExitStrategyCombination(),
-                "market_conditions_exit_strategy" => $algo->getMarketConditionsExit(),
-                "invalidation_strategies" => $algo->getInvalidationStrategyCombination()
-            ];
-            $testResult->setObservations(json_encode($extra));
+            $nWinningTrades = count($winningTrades);
+            $nLosingTrades = count($losingTrades);
 
-            $this->entityManager->persist($testResult);
-            $this->entityManager->flush();*/
+            if($nWinningTrades > 0) {
+                $testResult->setBestWinner(max($winningTrades));
+                $testResult->setAverageWinner(array_sum($winningTrades) / $nWinningTrades);
+            }
+
+            if($nLosingTrades > 0) {
+                $testResult->setWorstLoser(min($losingTrades));
+                $testResult->setAverageLoser(array_sum($losingTrades) / $nLosingTrades);
+            }
+
+            if(($nWinningTrades + $nLosingTrades) > 0) {
+                $testResult->setWinPercentage(($nWinningTrades / ($nWinningTrades + $nLosingTrades)) * 100);
+            }
+
+            $testResult->setStandardDeviation($this->calculateStandardDeviation(array_merge($winningTrades, $losingTrades)));
         }
+
+        $extra = [
+            "entry_strategies" => $algo->getEntryStrategyCombination(),
+            "market_conditions_entry_strategy" => $algo->getMarketConditionsEntry(),
+            "exit_strategies" => $algo->getExitStrategyCombination(),
+            "market_conditions_exit_strategy" => $algo->getMarketConditionsExit(),
+            "invalidation_strategies" => $algo->getInvalidationStrategyCombination()
+        ];
+        $testResult->setObservations(json_encode($extra));
+
+        if($this->logResults()) {
+            $this->algoTestResultRepository->newAlgoTestResult($testResult);
+        }
+        return $testResult;
     }
 
     /**
@@ -630,7 +628,7 @@ class BotAlgorithmManager
      * @param int $from
      * @param int $candlesToLoad
      * @param float $periodPricePercentage
-     * @return array
+     * @return AlgoTestResult
      * @throws StrategyNotFoundException
      */
     private function runTestIteration(BotAlgorithm $algo, int $type, array $candles, int $from, int $candlesToLoad, float $periodPricePercentage)
@@ -734,7 +732,7 @@ class BotAlgorithmManager
                 $openPositionPercentage = 0;
             }
 
-            $this->saveAlgoTestResult($algo, $type, $compoundedPercentage, $openPositionPercentage, $compoundedPercentageWithFees, $periodPricePercentage,
+            $algoTestResult = $this->saveAlgoTestResult($algo, $type, $compoundedPercentage, $openPositionPercentage, $compoundedPercentageWithFees, $periodPricePercentage,
                 $trades, $invalidatedTrades, $from, $currentCandle->getCloseTime());
         }
 
@@ -742,7 +740,7 @@ class BotAlgorithmManager
         //$trades[] = $trade;
         $this->logger->info($trade);
 
-        return [$trades, $compoundedPercentageWithFees];
+        return $algoTestResult;
     }
 
     /**
@@ -834,7 +832,8 @@ class BotAlgorithmManager
     private function replaceParamNameWithValue($strategyString, $paramName, $paramValue)
     {
         $strategyString = preg_replace('/{'.$paramName.'=\[[^{,[]*\]}/', $paramValue, $strategyString);
-        $strategyString = preg_replace('~\$'.$paramName.'~', $paramValue, $strategyString);
+        $replaceString = '~\$'.$paramName.'~';
+        $strategyString = preg_replace($replaceString, $paramValue, $strategyString);
         return $strategyString;
     }
 
