@@ -343,6 +343,97 @@ class BotAlgorithmManager
         $this->logger->info("entry average: $monkeyCompleteAverageProfitPercentage, better iterations: $monkeyCompleteBetterIterations");
     }
 
+    /**
+     * @param BotAlgorithm $algo
+     * @param int $from
+     * @param int $inPeriodLength
+     * @param int $outPeriodLength
+     * @param int $candlesToLoad
+     */
+    public function runWalkForwardTest(BotAlgorithm $algo, int $from, int $inPeriodLength, int $outPeriodLength,
+                                   int $candlesToLoad = self::CANDLES_TO_LOAD)
+    {
+        if($algo->getTestingPhase() != TestingPhases::WALK_FORWARD_TESTING) {
+            throw new IncorrectTestingPhaseException();
+        }
+
+        $this->logger->info("********************* New limited test  ************************");
+        $this->logger->info(json_encode($algo));
+
+        $lastPositionCandles = $candlesToLoad - 1;
+
+        $inPeriodTo = $from + $inPeriodLength;
+        $outPeriodFrom = $inPeriodTo;
+        $outPeriodTo = $outPeriodFrom + $outPeriodLength;
+
+        $inPeriodCandles = $this->getCandlesForTest($algo, $from, $inPeriodTo, $candlesToLoad);
+
+        list($inPeriodInitialPrice, $inPeriodLastPrice) = $this->getFirstAndLastClosePrices($inPeriodCandles, $lastPositionCandles);
+
+        $inPeriodLastPricePeriodPricePercentage = (($inPeriodLastPrice / $inPeriodInitialPrice) - 1) * 100;
+
+        $entryStrategyConfigPossibleValues = $this->getStrategyPossibleConfigValues($algo->getEntryStrategyCombination());
+
+        $outPeriodCandles = $this->getCandlesForTest($algo, $outPeriodFrom, $outPeriodTo, $candlesToLoad);
+
+        list($outPeriodInitialPrice, $outPeriodLastPrice) = $this->getFirstAndLastClosePrices($outPeriodCandles, $lastPositionCandles);
+
+        $outPeriodLastPricePeriodPricePercentage = (($outPeriodLastPrice / $outPeriodInitialPrice) - 1) * 100;
+
+        $entryStrategyConfigPossibleValues = $this->getStrategyPossibleConfigValues($algo->getEntryStrategyCombination());
+
+        $entryCombinations = $this->getAllCombinationsOfArrays($entryStrategyConfigPossibleValues);
+
+        // If there are no params we must run 1 iteration
+        if(!$entryCombinations) {
+            $entryCombinations = [[]];
+        }
+
+        $exitStrategyConfigPossibleValues = $this->getStrategyPossibleConfigValues($algo->getExitStrategyCombination());
+
+        $exitCombinations = $this->getAllCombinationsOfArrays($exitStrategyConfigPossibleValues);
+
+        // If there are no params we must run 1 iteration
+        if(!$exitCombinations) {
+            $exitCombinations = [[]];
+        }
+
+        $originalEntryStrategy = $algo->getEntryStrategyCombination();
+        $originalExitStrategy = $algo->getExitStrategyCombination();
+
+        $bestProfit = false;
+        $bestEntryCombination = $bestExitCombination = '';
+
+        // In-period optimization
+        foreach($entryCombinations as $entryCombination) {
+
+            $testEntryStrategy = $this->setStrategyCombinationParams($originalEntryStrategy, $entryCombination);
+            $algo->setEntryStrategyCombination($testEntryStrategy);
+
+            $initialTestExitStrategy = $this->setStrategyCombinationParams($originalExitStrategy, $entryCombination);
+
+            foreach($exitCombinations as $exitCombination) {
+
+                $testExitStrategy = $this->setStrategyCombinationParams($initialTestExitStrategy, $exitCombination);
+                $algo->setExitStrategyCombination($testExitStrategy);
+
+                $testResult = $this->runTestIteration($algo, TestTypes::WALK_FORWARD_IN, $inPeriodCandles, $from, $lastPositionCandles, $inPeriodLastPricePeriodPricePercentage);
+
+                if($bestProfit === false || $bestProfit < $testResult->getPercentageWithFees()) {
+                    $bestProfit = $testResult->getPercentageWithFees();
+                    $bestEntryCombination = $testEntryStrategy;
+                    $bestExitCombination = $testExitStrategy;
+                }
+            }
+        }
+
+        // Out-period evaluation
+        $algo->setEntryStrategyCombination($bestEntryCombination);
+        $algo->setExitStrategyCombination($bestExitCombination);
+
+        $testResult = $this->runTestIteration($algo, TestTypes::WALK_FORWARD_OUT, $outPeriodCandles, $outPeriodFrom, $lastPositionCandles, $outPeriodLastPricePeriodPricePercentage);
+    }
+
 
     /**
      * @param ExternalIndicatorDataType $type
