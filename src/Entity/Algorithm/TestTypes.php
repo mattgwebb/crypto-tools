@@ -12,4 +12,5 @@ class TestTypes
     const LIMITED_CORE = 3;
     const WALK_FORWARD_IN = 4;
     const WALK_FORWARD_OUT = 5;
+    const MONTE_CARLO = 6;
 }

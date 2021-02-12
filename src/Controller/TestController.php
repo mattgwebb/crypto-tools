@@ -170,11 +170,11 @@ class TestController extends AbstractController
             ]);
         }
 
-        $trades = $this->manager->runTest($algo, TestTypes::STANDARD_TEST, $startTime, $endTime);
+        $testResult = $this->manager->runTest($algo, TestTypes::STANDARD_TEST, $startTime, $endTime);
 
         return $this->render('algo_test_result.html.twig', [
             "pair" => $algo->getCurrencyPair(),
-            "trades" => $trades
+            "trades" => $testResult->getTrades()
         ]);
     }
 

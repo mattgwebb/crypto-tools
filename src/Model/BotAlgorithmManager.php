@@ -45,7 +45,12 @@ class BotAlgorithmManager
     /**
      * Monkey iterations
      */
-    const MONKEY_ITERATIONS = 1000;
+    const MONKEY_ITERATIONS = 2000;
+
+    /**
+     * Monte Carlo iterations
+     */
+    const MONTE_CARLO_ITERATIONS = 10;
 
     /**
      * @var BotAlgorithmRepository
@@ -134,7 +139,7 @@ class BotAlgorithmManager
      * @param int $from
      * @param int $to
      * @param int $candlesToLoad
-     * @return array
+     * @return AlgoTestResult
      * @throws StrategyNotFoundException
      * @throws IncorrectTestingPhaseException
      */
@@ -158,7 +163,7 @@ class BotAlgorithmManager
 
         $testResult = $this->runTestIteration($algo, $type, $candles, $from, $lastPositionCandles, $periodPricePercentage);
 
-        return $testResult->getTrades();
+        return $testResult;
     }
 
     /**
@@ -432,6 +437,67 @@ class BotAlgorithmManager
         $algo->setExitStrategyCombination($bestExitCombination);
 
         $testResult = $this->runTestIteration($algo, TestTypes::WALK_FORWARD_OUT, $outPeriodCandles, $outPeriodFrom, $lastPositionCandles, $outPeriodLastPricePeriodPricePercentage);
+    }
+
+    /**
+     * @param BotAlgorithm $algo
+     * @param int $from
+     * @param int $to
+     * @param int $candlesToLoad
+     * @throws IncorrectTestingPhaseException
+     * @throws StrategyNotFoundException
+     */
+    public function runMonteCarloTest(BotAlgorithm $algo, int $from = 0, int $to = 0,
+                                      int $candlesToLoad = self::CANDLES_TO_LOAD)
+    {
+        $testResult = $this->runTest($algo, TestTypes::MONTE_CARLO, $from, $to, $candlesToLoad);
+
+        $feeTotalPercentage = $testResult->getPercentage() - $testResult->getPercentageWithFees();
+        $feeMultiplier = (100 - $feeTotalPercentage) / 100;
+
+        $shortTrades = [];
+
+        foreach($testResult->getTrades() as $trade) {
+            if($trade['trade'] == 'short') {
+                $shortTrades[] = $trade;
+            }
+        }
+
+        $totalShortTrades = count($shortTrades);
+
+        $profits = $maxDrawdowns = [];
+
+        for($i = 0; $i < self::MONTE_CARLO_ITERATIONS; $i++) {
+
+            $compoundProfit = 1;
+
+            $peakProfit = 1;
+            $maxDrawdown = 0;
+
+            for($j = 0; $j < $totalShortTrades; $j++) {
+                $nextTrade = $shortTrades[array_rand($shortTrades)];
+
+                $profit = (100 + $nextTrade['percentage']) / 100;
+                $compoundProfit *= $profit;
+
+                $peakProfit = max($peakProfit, $compoundProfit);
+
+                $currentDrawdown = ($peakProfit - $compoundProfit) / $peakProfit;
+
+                $maxDrawdown = max($maxDrawdown, $currentDrawdown);
+            }
+
+            $compoundProfit *= $feeMultiplier;
+
+            $profits[] = $compoundProfit;
+            $maxDrawdowns[] = $maxDrawdown;
+        }
+
+        $medianDrawdownPercentage = $this->getMedianFromArray($maxDrawdowns) * 100;
+        $medianProfitPercentage = ($this->getMedianFromArray($profits) - 1) * 100;
+
+        // TODO save results?
+        $this->logger->info("Monte Carlo test results: median drawdown $medianDrawdownPercentage %, median profit $medianProfitPercentage %");
     }
 
 
@@ -1107,5 +1173,23 @@ class BotAlgorithmManager
         $longTrades = array_values($longTrades);
 
         return $this->runMonkeyExitTestFromEntryTrades($candles, $longTrades);
+    }
+
+    /**
+     * @param array $array
+     * @return float
+     */
+    private function getMedianFromArray(array $array)
+    {
+        sort($array);
+
+        $count = sizeof($array);
+        $index = floor($count/2);
+
+        if ($count & 1) {
+            return $array[$index];
+        } else {
+            return ($array[$index-1] + $array[$index]) / 2;
+        }
     }
 }
