@@ -15,6 +15,7 @@ use App\Entity\Algorithm\StrategyResult;
 use App\Entity\Data\CurrencyPair;
 use App\Entity\Data\ExternalIndicatorData;
 use App\Entity\Data\ExternalIndicatorDataType;
+use App\Entity\Data\TimeFrames;
 use App\Entity\TechnicalAnalysis\TrendLine;
 use App\Entity\Trade\TradeTypes;
 use App\Exceptions\Algorithm\IncorrectTestingPhaseException;
@@ -645,10 +646,12 @@ class BotAlgorithmManager
      * @param int $invalidatedTrades
      * @param int $startTime
      * @param int $finishTime
+     * @param array $equityCurve
      * @return AlgoTestResult
+     * @throws \Doctrine\DBAL\Exception
      */
     private function saveAlgoTestResult(BotAlgorithm $algo, int $type, float $percentage, float $openPositionPercentage, float $percentageWithFees, float $periodPercentage,
-                                        array $trades, int $invalidatedTrades, int $startTime, int $finishTime)
+                                        array $trades, int $invalidatedTrades, int $startTime, int $finishTime, array $equityCurve)
     {
         $testResult = new AlgoTestResult();
         $testResult->setAlgo($algo);
@@ -665,6 +668,8 @@ class BotAlgorithmManager
         $testResult->setInvalidatedTrades($invalidatedTrades);
         $testResult->setOpenPosition($openPositionPercentage);
         $testResult->setTestType($type);
+        $testResult->setEquityCurve($equityCurve);
+        $testResult->setMaxDrawdown($this->getMaxDrawdownFromEquityCurve($equityCurve));
 
         if($trades) {
             $winningTrades = [];
@@ -795,7 +800,7 @@ class BotAlgorithmManager
         $openTradePrice = $accumulatedFees = $invalidatedTrades = 0;
         $compoundedProfit = 1;
 
-        $trades = [];
+        $trades = $equityCurve = [];
 
         $currentTradeStatus = TradeTypes::TRADE_SELL;
 
@@ -809,6 +814,11 @@ class BotAlgorithmManager
             //array_shift($candles);
 
             $currentCandle = $auxData[count($auxData) - 1];
+
+            if(($currentCandle->getCloseTime() + 1) % (TimeFrames::TIMEFRAME_1D * 60) == 0) {
+                $currentEquity = $this->getCurrentEquity($openTradePrice, $compoundedProfit, $currentCandle->getClosePrice()) - $accumulatedFees;
+                $equityCurve[$currentCandle->getCloseTime() + 1] = $currentEquity;
+            }
 
             $this->strategies->setData($auxData);
             $this->strategies->setCurrentTradePrice($openTradePrice);
@@ -890,7 +900,7 @@ class BotAlgorithmManager
             }
 
             $algoTestResult = $this->saveAlgoTestResult($algo, $type, $compoundedPercentage, $openPositionPercentage, $compoundedPercentageWithFees, $periodPricePercentage,
-                $trades, $invalidatedTrades, $from, $currentCandle->getCloseTime());
+                $trades, $invalidatedTrades, $from, $currentCandle->getCloseTime(), $equityCurve);
         }
 
         $trade = "percentage $compoundedPercentage";
@@ -898,6 +908,21 @@ class BotAlgorithmManager
         $this->logger->info($trade);
 
         return $algoTestResult;
+    }
+
+    /**
+     * @param float $openTradePrice
+     * @param float $compoundedProfit
+     * @param float $lastClosePrice
+     * @return float
+     */
+    private function getCurrentEquity(float $openTradePrice, float $compoundedProfit, float $lastClosePrice)
+    {
+        if($openTradePrice == 0) {
+            return $compoundedProfit;
+        } else {
+            return ($lastClosePrice / $openTradePrice) * $compoundedProfit;
+        }
     }
 
     /**
@@ -1096,7 +1121,7 @@ class BotAlgorithmManager
      */
     private function runMonkeyExitTestFromEntryTrades(array $candles, array $longTrades)
     {
-        $lastTradeTimestamp = $accumulatedFees = 0;
+        $accumulatedFees = 0;
         $compoundedProfit = 1;
         $monkeyExitTrades = [];
 
@@ -1124,8 +1149,6 @@ class BotAlgorithmManager
 
             $monkeyExitTrades[] = $shortTrade;
         }
-
-        $compoundedPercentage = ($compoundedProfit - 1) * 100;
         $compoundedPercentageWithFees = ($compoundedProfit - $accumulatedFees - 1) * 100;
 
         return $compoundedPercentageWithFees;
@@ -1191,5 +1214,25 @@ class BotAlgorithmManager
         } else {
             return ($array[$index-1] + $array[$index]) / 2;
         }
+    }
+
+    /**
+     * @param array $equityCurve
+     * @return float
+     */
+    private function getMaxDrawdownFromEquityCurve(array $equityCurve)
+    {
+        $peakEquity = 1.00;
+        $maxDrawdown = 0.00;
+
+        foreach($equityCurve as $timestamp => $equity) {
+
+            $peakEquity = max($peakEquity, $equity);
+
+            $currentDrawdown = ($peakEquity - $equity) / $peakEquity;
+
+            $maxDrawdown = max($maxDrawdown, $currentDrawdown);
+        }
+        return $maxDrawdown;
     }
 }

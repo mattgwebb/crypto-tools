@@ -139,6 +139,18 @@ class AlgoTestResult implements \JsonSerializable
 
     /**
      * @var array
+     * @ORM\Column(type="json")
+     */
+    private $equityCurve = null;
+
+    /**
+     * @ORM\Column(type="float")
+     * @var float
+     */
+    private $maxDrawdown = 0.0;
+
+    /**
+     * @var array
      */
     private $trades;
 
@@ -481,6 +493,38 @@ class AlgoTestResult implements \JsonSerializable
     /**
      * @return array
      */
+    public function getEquityCurve(): ?array
+    {
+        return $this->equityCurve;
+    }
+
+    /**
+     * @param array $equityCurve
+     */
+    public function setEquityCurve(?array $equityCurve): void
+    {
+        $this->equityCurve = $equityCurve;
+    }
+
+    /**
+     * @return float
+     */
+    public function getMaxDrawdown(): float
+    {
+        return $this->maxDrawdown;
+    }
+
+    /**
+     * @param float $maxDrawdown
+     */
+    public function setMaxDrawdown(float $maxDrawdown): void
+    {
+        $this->maxDrawdown = $maxDrawdown;
+    }
+
+    /**
+     * @return array
+     */
     public function jsonSerialize()
     {
         return [
@@ -503,7 +547,9 @@ class AlgoTestResult implements \JsonSerializable
             'win_percentage' => $this->getWinPercentage() ? $this->getWinPercentage() : 0,
             'standard_deviation' => $this->getStandardDeviation() ? $this->getStandardDeviation() : 0,
             'open_position' => $this->getOpenPosition(),
-            'test_type' => $this->getTestType()
+            'test_type' => $this->getTestType(),
+            'equity_curve' => json_encode($this->getEquityCurve()),
+            'max_drawdown' => $this->getMaxDrawdown()
         ];
     }
 }
