@@ -1159,7 +1159,7 @@ class BotAlgorithmManager
 
                 if(!isset($longTrades[$closeTime]) && !isset($longTrades[$previousCandleCloseTime]) &&
                     !isset($longTrades[$nextCandleCloseTime]) && !isset($longTrades[$secondPreviousCandleCloseTime]) &&
-                    !isset($longTrades[$secondPreviousCandleCloseTime])) {
+                    !isset($longTrades[$secondNextCandleCloseTime])) {
                     $longTrades[$randomCandle->getCloseTime()] = [
                         'timestamp' => $randomCandle->getCloseTime() * 1000,
                         'price' => $randomCandle->getClosePrice()
