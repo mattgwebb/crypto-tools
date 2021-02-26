@@ -19,6 +19,12 @@ class AlgoTestResult implements \JsonSerializable
     private $id;
 
     /**
+     * @ORM\Column(type="integer", nullable=true)
+     * @var int
+     */
+    private $testRun;
+
+    /**
      * @ORM\ManyToOne(targetEntity="App\Entity\Algorithm\BotAlgorithm")
      * @var BotAlgorithm
      */
@@ -523,6 +529,22 @@ class AlgoTestResult implements \JsonSerializable
     }
 
     /**
+     * @return int|null
+     */
+    public function getTestRun()
+    {
+        return $this->testRun;
+    }
+
+    /**
+     * @param int $testRun
+     */
+    public function setTestRun(int $testRun): void
+    {
+        $this->testRun = $testRun;
+    }
+
+    /**
      * @return array
      */
     public function jsonSerialize()
@@ -549,7 +571,8 @@ class AlgoTestResult implements \JsonSerializable
             'open_position' => $this->getOpenPosition(),
             'test_type' => $this->getTestType(),
             'equity_curve' => json_encode($this->getEquityCurve()),
-            'max_drawdown' => $this->getMaxDrawdown()
+            'max_drawdown' => $this->getMaxDrawdown(),
+            'test_run' => $this->getTestRun()
         ];
     }
 }

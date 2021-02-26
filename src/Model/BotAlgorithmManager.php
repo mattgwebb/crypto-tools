@@ -207,6 +207,7 @@ class BotAlgorithmManager
         $originalExitStrategy = $algo->getExitStrategyCombination();
 
         //ENTRY TESTING
+        $entryTestRun = time();
         $algo->setInvalidationStrategyCombination('stopLoss(10)');
         $algo->setExitStrategyCombination('takeProfit(10)');
 
@@ -220,10 +221,11 @@ class BotAlgorithmManager
             $testEntryStrategy = $this->setStrategyCombinationParams($originalEntryStrategy, $entryCombination);
 
             $algo->setEntryStrategyCombination($testEntryStrategy);
-            $this->runTestIteration($algo, TestTypes::LIMITED_ENTRY, $candles, $from, $lastPositionCandles, $periodPricePercentage);
+            $this->runTestIteration($algo, TestTypes::LIMITED_ENTRY, $candles, $from, $lastPositionCandles, $periodPricePercentage, $entryTestRun);
         }
 
         //EXIT TESTING
+        $exitTestRun = time();
         $algo->setEntryStrategyCombination('rsi(30,70,14,1)');
         $algo->setExitStrategyCombination($originalExitStrategy);
         $algo->setInvalidationStrategyCombination('');
@@ -242,7 +244,7 @@ class BotAlgorithmManager
                 // set params that are defined in the entry strategy but used in the exit as well
                 $testExitStrategy = $this->setStrategyCombinationParams($initialTestExitStrategy, $entryCombination);
                 $algo->setExitStrategyCombination($testExitStrategy);
-                $this->runTestIteration($algo, TestTypes::LIMITED_EXIT, $candles, $from, $lastPositionCandles, $periodPricePercentage);
+                $this->runTestIteration($algo, TestTypes::LIMITED_EXIT, $candles, $from, $lastPositionCandles, $periodPricePercentage, $exitTestRun);
             }
         }
 
@@ -250,6 +252,7 @@ class BotAlgorithmManager
         $algo->setExitStrategyCombination($originalExitStrategy);
 
         //CORE SYSTEM TESTING
+        $coreTestRun = time();
         foreach($entryCombinations as $entryCombination) {
 
             $testEntryStrategy = $this->setStrategyCombinationParams($originalEntryStrategy, $entryCombination);
@@ -261,7 +264,7 @@ class BotAlgorithmManager
 
                 $testExitStrategy = $this->setStrategyCombinationParams($initialTestExitStrategy, $exitCombination);
                 $algo->setExitStrategyCombination($testExitStrategy);
-                $this->runTestIteration($algo, TestTypes::LIMITED_CORE, $candles, $from, $lastPositionCandles, $periodPricePercentage);
+                $this->runTestIteration($algo, TestTypes::LIMITED_CORE, $candles, $from, $lastPositionCandles, $periodPricePercentage, $coreTestRun);
             }
         }
     }
@@ -647,11 +650,12 @@ class BotAlgorithmManager
      * @param int $startTime
      * @param int $finishTime
      * @param array $equityCurve
+     * @param int $testRun
      * @return AlgoTestResult
      * @throws \Doctrine\DBAL\Exception
      */
     private function saveAlgoTestResult(BotAlgorithm $algo, int $type, float $percentage, float $openPositionPercentage, float $percentageWithFees, float $periodPercentage,
-                                        array $trades, int $invalidatedTrades, int $startTime, int $finishTime, array $equityCurve)
+                                        array $trades, int $invalidatedTrades, int $startTime, int $finishTime, array $equityCurve, int $testRun)
     {
         $testResult = new AlgoTestResult();
         $testResult->setAlgo($algo);
@@ -670,6 +674,7 @@ class BotAlgorithmManager
         $testResult->setTestType($type);
         $testResult->setEquityCurve($equityCurve);
         $testResult->setMaxDrawdown($this->getMaxDrawdownFromEquityCurve($equityCurve));
+        $testResult->setTestRun($testRun);
 
         if($trades) {
             $winningTrades = [];
@@ -790,10 +795,13 @@ class BotAlgorithmManager
      * @param int $from
      * @param int $candlesToLoad
      * @param float $periodPricePercentage
+     * @param int|null $testRun
      * @return AlgoTestResult
      * @throws StrategyNotFoundException
+     * @throws \Doctrine\DBAL\Exception
      */
-    private function runTestIteration(BotAlgorithm $algo, int $type, array $candles, int $from, int $candlesToLoad, float $periodPricePercentage)
+    private function runTestIteration(BotAlgorithm $algo, int $type, array $candles, int $from, int $candlesToLoad,
+                                      float $periodPricePercentage, int $testRun = null)
     {
         $lastPositionCandles = $candlesToLoad - 1;
 
@@ -900,7 +908,7 @@ class BotAlgorithmManager
             }
 
             $algoTestResult = $this->saveAlgoTestResult($algo, $type, $compoundedPercentage, $openPositionPercentage, $compoundedPercentageWithFees, $periodPricePercentage,
-                $trades, $invalidatedTrades, $from, $currentCandle->getCloseTime(), $equityCurve);
+                $trades, $invalidatedTrades, $from, $currentCandle->getCloseTime(), $equityCurve, $testRun);
         }
 
         $trade = "percentage $compoundedPercentage";
