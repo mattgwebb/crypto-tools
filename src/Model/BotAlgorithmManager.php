@@ -976,6 +976,16 @@ class BotAlgorithmManager
             $key = key($arrays);
         }
 
+        if(count($arrays) == 1) {
+            $singleParamArray = [];
+            foreach($arrays[$key] as $value) {
+                $singleParamArray[] = [
+                    $key => $value
+                ];
+            }
+            return $singleParamArray;
+        }
+
         $foundCurrent = $nextKey = false;
 
         foreach($arrays as $arrayKey => $value) {
