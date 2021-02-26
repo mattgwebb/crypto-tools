@@ -149,9 +149,9 @@ class Strategies
      * @param bool $crossOnly
      * @return StrategyResult
      */
-    public function rsi(float $rsiSell = 70.00, float $rsiBuy = 30.00, int $period = 14, bool $crossOnly = false) : StrategyResult
+    public function rsi(float $rsiBuy = 30.00, float $rsiSell = 70.00, int $period = 14, bool $crossOnly = false) : StrategyResult
     {
-        return $this->oscillatorStrategies->rsi($this->data, $rsiSell, $rsiBuy, $period, $crossOnly);
+        return $this->oscillatorStrategies->rsi($this->data, $rsiBuy, $rsiSell, $period, $crossOnly);
     }
 
     /**

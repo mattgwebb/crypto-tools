@@ -16,7 +16,7 @@ class OscillatorStrategies extends AbstractStrategyService
      * @param bool $crossOnly
      * @return StrategyResult
      */
-    public function rsi(array $data, float $rsiSell = 70.00, float $rsiBuy = 30.00, int $period = 14, bool $crossOnly = false) : StrategyResult
+    public function rsi(array $data, float $rsiBuy = 30.00, float $rsiSell = 70.00, int $period = 14, bool $crossOnly = false) : StrategyResult
     {
         $result = new StrategyResult();
         $rsi = $this->indicators->rsi($data, $period);
