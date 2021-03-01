@@ -418,6 +418,8 @@ class BotAlgorithmManager
         $originalEntryStrategy = $algo->getEntryStrategyCombination();
         $originalExitStrategy = $algo->getExitStrategyCombination();
 
+        $testRun = time();
+
         $bestProfit = false;
         $bestEntryCombination = $bestExitCombination = '';
 
@@ -434,7 +436,7 @@ class BotAlgorithmManager
                 $testExitStrategy = $this->setStrategyCombinationParams($initialTestExitStrategy, $exitCombination);
                 $algo->setExitStrategyCombination($testExitStrategy);
 
-                $testResult = $this->runTestIteration($algo, TestTypes::WALK_FORWARD_IN, $inPeriodCandles, $from, $lastPositionCandles, $inPeriodLastPricePeriodPricePercentage);
+                $testResult = $this->runTestIteration($algo, TestTypes::WALK_FORWARD_IN, $inPeriodCandles, $from, $lastPositionCandles, $inPeriodLastPricePeriodPricePercentage, $testRun);
 
                 if($bestProfit === false || $bestProfit < $testResult->getPercentageWithFees()) {
                     $bestProfit = $testResult->getPercentageWithFees();
@@ -448,7 +450,7 @@ class BotAlgorithmManager
         $algo->setEntryStrategyCombination($bestEntryCombination);
         $algo->setExitStrategyCombination($bestExitCombination);
 
-        $testResult = $this->runTestIteration($algo, TestTypes::WALK_FORWARD_OUT, $outPeriodCandles, $outPeriodFrom, $lastPositionCandles, $outPeriodLastPricePeriodPricePercentage);
+        $testResult = $this->runTestIteration($algo, TestTypes::WALK_FORWARD_OUT, $outPeriodCandles, $outPeriodFrom, $lastPositionCandles, $outPeriodLastPricePeriodPricePercentage, $testRun);
     }
 
     /**
