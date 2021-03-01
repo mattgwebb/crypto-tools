@@ -51,7 +51,7 @@ class BotAlgorithmManager
     /**
      * Monte Carlo iterations
      */
-    const MONTE_CARLO_ITERATIONS = 10;
+    const MONTE_CARLO_ITERATIONS = 1000;
 
     /**
      * @var BotAlgorithmRepository
@@ -458,6 +458,7 @@ class BotAlgorithmManager
      * @param int $from
      * @param int $to
      * @param int $candlesToLoad
+     * @return float[]
      * @throws IncorrectTestingPhaseException
      * @throws StrategyNotFoundException
      */
@@ -510,8 +511,7 @@ class BotAlgorithmManager
         $medianDrawdownPercentage = $this->getMedianFromArray($maxDrawdowns) * 100;
         $medianProfitPercentage = ($this->getMedianFromArray($profits) - 1) * 100;
 
-        // TODO save results?
-        $this->logger->info("Monte Carlo test results: median drawdown $medianDrawdownPercentage %, median profit $medianProfitPercentage %");
+        return [$medianDrawdownPercentage, $medianProfitPercentage];
     }
 
 

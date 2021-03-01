@@ -91,7 +91,15 @@ class AlgoMonteCarloTestCommand extends Command
 
         foreach(self::ALL_TIMEFRAMES as $timeFrame) {
             $algo->setTimeFrame($timeFrame);
-            $this->algoManager->runMonteCarloTest($algo, $input->getArgument('start_time'), $input->getArgument('end_time'));
+
+            list($medianDrawdownPercentage, $medianProfitPercentage) = $this->algoManager->runMonteCarloTest($algo, $input->getArgument('start_time'), $input->getArgument('end_time'));
+
+            $output->writeln([
+                "MONTE CARLO TEST",
+                "Median drawdown $medianDrawdownPercentage %",
+                "Median profit $medianProfitPercentage %"
+            ]);
+
             $this->entityManager->clear(Candle::class);
         }
     }
