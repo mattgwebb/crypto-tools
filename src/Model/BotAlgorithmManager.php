@@ -274,6 +274,7 @@ class BotAlgorithmManager
      * @param int $from
      * @param int $to
      * @param int $candlesToLoad
+     * @return array
      * @throws StrategyNotFoundException
      * @throws IncorrectTestingPhaseException
      */
@@ -302,7 +303,9 @@ class BotAlgorithmManager
 
         $tradeCount = count($trades);
 
-        $longTrades = $shortTrades = [];
+        $longTrades = $shortTrades = $results = [];
+
+        $results[] = "TEST RUN percentage $profitPercentage";
 
         foreach($trades as $trade) {
             if($trade['trade'] == 'long') {
@@ -324,8 +327,9 @@ class BotAlgorithmManager
         }
 
         $monkeyEntryAverageProfitPercentage = array_sum($monkeyEntryProfitPercentages) / count($monkeyEntryProfitPercentages);
+        $betterIterations = $monkeyEntryBetterIterations / self::MONKEY_ITERATIONS;
 
-        $this->logger->info("entry average: $monkeyEntryAverageProfitPercentage, better iterations: $monkeyEntryBetterIterations");
+        $results[] = "MONKEY ENTRY average profit: $monkeyEntryAverageProfitPercentage, better iterations: $betterIterations %";
 
         // MONKEY EXIT
         for($i = 0; $i < self::MONKEY_ITERATIONS; $i++) {
@@ -336,8 +340,9 @@ class BotAlgorithmManager
         }
 
         $monkeyExitAverageProfitPercentage = array_sum($monkeyExitProfitPercentages) / count($monkeyExitProfitPercentages);
+        $betterIterations = $monkeyExitBetterIterations / self::MONKEY_ITERATIONS;
 
-        $this->logger->info("entry average: $monkeyExitAverageProfitPercentage, better iterations: $monkeyExitBetterIterations");
+        $results[] = "MONKEY EXIT average profit: $monkeyExitAverageProfitPercentage, better iterations: $betterIterations %";
 
         // MONKEY ENTRY AND EXIT
         for($i = 0; $i < self::MONKEY_ITERATIONS; $i++) {
@@ -348,8 +353,11 @@ class BotAlgorithmManager
         }
 
         $monkeyCompleteAverageProfitPercentage = array_sum($monkeyCompleteProfitPercentages) / count($monkeyCompleteProfitPercentages);
+        $betterIterations = $monkeyCompleteBetterIterations / self::MONKEY_ITERATIONS;
 
-        $this->logger->info("entry average: $monkeyCompleteAverageProfitPercentage, better iterations: $monkeyCompleteBetterIterations");
+        $results[] = "MONKEY COMPLETE average profit: $monkeyCompleteAverageProfitPercentage, better iterations: $betterIterations %";
+
+        return $results;
     }
 
     /**
@@ -801,7 +809,7 @@ class BotAlgorithmManager
      * @throws \Doctrine\DBAL\Exception
      */
     private function runTestIteration(BotAlgorithm $algo, int $type, array $candles, int $from, int $candlesToLoad,
-                                      float $periodPricePercentage, int $testRun = null)
+                                      float $periodPricePercentage, int $testRun = 0)
     {
         $lastPositionCandles = $candlesToLoad - 1;
 
@@ -1185,6 +1193,9 @@ class BotAlgorithmManager
         $longTradesNeeded = (int)floor($tradeCount / 2);
         $longTrades = [];
 
+        //remove last candle for long trades
+        $lastCandle = array_pop($candles);
+
         for($i = 0; $i < $longTradesNeeded; $i++) {
             $candleFound = false;
 
@@ -1212,6 +1223,8 @@ class BotAlgorithmManager
         ksort($longTrades);
 
         $longTrades = array_values($longTrades);
+
+        $candles[] = $lastCandle;
 
         return $this->runMonkeyExitTestFromEntryTrades($candles, $longTrades);
     }

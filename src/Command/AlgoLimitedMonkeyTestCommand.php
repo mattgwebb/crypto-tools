@@ -87,7 +87,9 @@ class AlgoLimitedMonkeyTestCommand extends Command
 
         foreach(self::ALL_TIMEFRAMES as $timeFrame) {
             $algo->setTimeFrame($timeFrame);
-            $this->algoManager->runMonkeyTest($algo, $input->getArgument('start_time'), $input->getArgument('end_time'));
+            $results = $this->algoManager->runMonkeyTest($algo, $input->getArgument('start_time'), $input->getArgument('end_time'));
+            $output->writeln($results);
+
             $this->entityManager->clear(Candle::class);
         }
     }
