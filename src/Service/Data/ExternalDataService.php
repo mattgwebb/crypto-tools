@@ -219,7 +219,7 @@ class ExternalDataService
         $this->entityManager->flush();
         //$this->closeJSON($json);
 
-        $this->technicalAnalysisDataService->loadNewData($pair);
+        //$this->technicalAnalysisDataService->loadNewData($pair);
 
         return [$totalCandles, $lastCandle, $candle->getClosePrice()];
     }

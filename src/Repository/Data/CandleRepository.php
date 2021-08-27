@@ -165,4 +165,17 @@ class CandleRepository extends ServiceEntityRepository
     {
         return $this->findOneBy(["currencyPair" => $currencyPair], ["openTime" => "asc"]);
     }
+
+    /**
+     * @param int $timestamp
+     */
+    public function deleteCandlesBeforeTimestamp(int $timestamp)
+    {
+        $this->createQueryBuilder('c')
+            ->delete()
+            ->where('c.openTime < :timestamp')
+            ->setParameter('timestamp', $timestamp)
+            ->getQuery()
+            ->execute();
+    }
 }
