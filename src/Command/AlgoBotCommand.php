@@ -241,10 +241,10 @@ class AlgoBotCommand extends Command
     private function calculateQuantity(int $tradeType, float $price, float $balance)
     {
         if($tradeType == TradeTypes::TRADE_BUY) {
-            $quantity = ($balance / $price) * 0.97;
-            return floor($quantity * 1000000) / 1000000;
+            $quantity = ($balance / $price) * 0.99;
+            return floor($quantity * 100000) / 100000;
         } else {
-            return floor($balance * 1000000) / 1000000;
+            return floor($balance * 100000) / 100000;
         }
     }
 
