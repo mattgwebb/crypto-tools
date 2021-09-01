@@ -59,7 +59,14 @@ class TradeService
             throw new APINotFoundException();
         }
 
-        return $api->marketTrade($currencyPair, $side, $quantity);
+        if($botAccount->isMargin()) {
+            if($side == TradeTypes::TRADE_BUY) {
+                $quantity *= $botAccount->getLeverage();
+            }
+            return $api->marketMarginTrade($currencyPair, $side, $quantity);
+        } else {
+            return $api->marketTrade($currencyPair, $side, $quantity);
+        }
     }
 
     /**
@@ -72,6 +79,10 @@ class TradeService
      */
     public function newTestTrade(BotAccount $botAccount, int $side, float $currentPrice, float $amount)
     {
+        if($botAccount->isMargin()) {
+            $amount *= $botAccount->getLeverage();
+        }
+
         if(!$this->checkSide($side)) {
             throw new \Exception();
         }

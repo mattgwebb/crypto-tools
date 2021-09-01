@@ -84,7 +84,12 @@ class ExternalDataService
         $api = ApiFactory::getApi($currency->getExchange());
         $api->setBotAccountId($botAccount->getId());
 
-        $rawBalances = $api->getUserBalance();
+        if($botAccount->isMargin()) {
+            $rawBalances = $api->getUserMarginBalance();
+        } else {
+            $rawBalances = $api->getUserBalance();
+        }
+
         if(isset($rawBalances[$currency->getSymbol()])) {
             $balance = $rawBalances[$currency->getSymbol()];
         }

@@ -45,6 +45,11 @@ class BotAccount
     private $mode = AlgoModes::NOT_ACTIVE;
 
     /**
+     * @ORM\Column(type="smallint")
+     */
+    private $leverage = 1;
+
+    /**
      * @return mixed
      */
     public function getId()
@@ -158,4 +163,27 @@ class BotAccount
         return $this->tradeStatus;
     }
 
+    /**
+     * @return int
+     */
+    public function getLeverage(): int
+    {
+        return $this->leverage;
+    }
+
+    /**
+     * @param int $leverage
+     */
+    public function setLeverage(int $leverage): void
+    {
+        $this->leverage = $leverage;
+    }
+
+    /**
+     * @return bool
+     */
+    public function isMargin() : bool
+    {
+        return $this->leverage > 1;
+    }
 }

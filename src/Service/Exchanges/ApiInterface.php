@@ -77,6 +77,11 @@ abstract class ApiInterface extends ThirdPartyAPI
     protected abstract function getAPIBaseRoute() : string;
 
     /**
+     * @return string
+     */
+    protected abstract function getMarginAPIBaseRoute() : string;
+
+    /**
      * @param CurrencyPair $currencyPair
      * @param $timeFrame
      * @param $startTime
@@ -97,6 +102,11 @@ abstract class ApiInterface extends ThirdPartyAPI
     public abstract function getUserBalance() : array;
 
     /**
+     * @return array
+     */
+    public abstract function getUserMarginBalance() : array;
+
+    /**
      * @param CurrencyPair $currencyPair
      * @param int $side
      * @param float $quantity
@@ -104,6 +114,15 @@ abstract class ApiInterface extends ThirdPartyAPI
      * @return Trade
      */
     public abstract function marketTrade(CurrencyPair $currencyPair, int $side, float $quantity) : Trade;
+
+    /**
+     * @param CurrencyPair $currencyPair
+     * @param int $side
+     * @param float $quantity
+     * @throws APIException
+     * @return Trade
+     */
+    public abstract function marketMarginTrade(CurrencyPair $currencyPair, int $side, float $quantity) : Trade;
 
     /**
      * @param CurrencyPair $currencyPair

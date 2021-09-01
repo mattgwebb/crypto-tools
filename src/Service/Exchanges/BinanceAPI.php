@@ -33,6 +33,11 @@ class BinanceAPI extends ApiInterface
         TradeTypes::TRADE_SELL => 'SELL'
     ];
 
+    private $marginSideEffectTypes = [
+        TradeTypes::TRADE_BUY => 'MARGIN_BUY',
+        TradeTypes::TRADE_SELL => 'AUTO_REPAY'
+    ];
+
     private $tradeStatuses = [
         TradeStatusTypes::NEW => "NEW",
         TradeStatusTypes::PARTIALLY_FILLED => "PARTIALLY_FILLED",
@@ -81,6 +86,14 @@ class BinanceAPI extends ApiInterface
     protected function getAPIBaseRoute() : string
     {
         return "https://api.binance.com/api/v3/";
+    }
+
+    /**
+     * @return string
+     */
+    protected function getMarginAPIBaseRoute() : string
+    {
+        return "https://api.binance.com/sapi/v1/margin/";
     }
 
     /**
@@ -149,6 +162,44 @@ class BinanceAPI extends ApiInterface
     }
 
     /**
+     * @return array
+     * @throws \Symfony\Contracts\HttpClient\Exception\ClientExceptionInterface
+     * @throws \Symfony\Contracts\HttpClient\Exception\DecodingExceptionInterface
+     * @throws \Symfony\Contracts\HttpClient\Exception\RedirectionExceptionInterface
+     * @throws \Symfony\Contracts\HttpClient\Exception\ServerExceptionInterface
+     * @throws \Symfony\Contracts\HttpClient\Exception\TransportExceptionInterface
+     */
+    public function getUserMarginBalance(): array
+    {
+        $timestamp = time() * 1000;
+
+        $query = [
+            'timestamp' => $timestamp
+        ];
+
+        $query = $this->addSignature($query);
+
+        try {
+            $response = $this->httpClient->request('GET', $this->getMarginAPIBaseRoute()."account",
+                [
+                    'query' => $query,
+                    'headers' => $this->getKeyHeader()
+                ]);
+            $data = $response->toArray();
+        } catch (\Exception $e) {
+            throw $e;
+        }
+
+        $balance = [];
+        if(isset($data['userAssets'])) {
+            foreach($data['userAssets'] as $currencyBalance) {
+                $balance[$currencyBalance['asset']] = $currencyBalance['free'];
+            }
+        }
+        return $balance;
+    }
+
+    /**
      * @param CurrencyPair $currencyPair
      * @param int $side
      * @param float $quantity
@@ -177,6 +228,41 @@ class BinanceAPI extends ApiInterface
         ];
 
         $trade = $this->newOrder($query);
+        $trade->setType($side);
+        return $trade;
+    }
+
+    /**
+     * @param CurrencyPair $currencyPair
+     * @param int $side
+     * @param float $quantity
+     * @return Trade
+     * @throws \Symfony\Contracts\HttpClient\Exception\ClientExceptionInterface
+     * @throws \Symfony\Contracts\HttpClient\Exception\DecodingExceptionInterface
+     * @throws \Symfony\Contracts\HttpClient\Exception\RedirectionExceptionInterface
+     * @throws \Symfony\Contracts\HttpClient\Exception\ServerExceptionInterface
+     * @throws \Symfony\Contracts\HttpClient\Exception\TransportExceptionInterface
+     * @throws APIException
+     */
+    public function marketMarginTrade(CurrencyPair $currencyPair, int $side, float $quantity): Trade
+    {
+        $type = $this->tradeTypes[TradeTypes::MARKET];
+        $apiSide = $this->tradeSides[$side];
+        $sideEffectType = $this->marginSideEffectTypes[$side];
+        //$timestamp = time() * 1000;
+        $timestamp = (int)round(microtime(true) * 1000);
+
+        $query = [
+            'symbol' => $currencyPair->getSymbol(),
+            'side' => $apiSide,
+            'type' => $type,
+            'quantity' => $quantity,
+            'sideEffectType' => $sideEffectType,
+            'timestamp' => $timestamp,
+            'recvWindow' => 10000
+        ];
+
+        $trade = $this->newOrder($query, true);
         $trade->setType($side);
         return $trade;
     }
@@ -312,6 +398,7 @@ class BinanceAPI extends ApiInterface
 
     /**
      * @param array $query
+     * @param bool $margin
      * @return Trade
      * @throws APIException
      * @throws \Symfony\Contracts\HttpClient\Exception\ClientExceptionInterface
@@ -320,10 +407,12 @@ class BinanceAPI extends ApiInterface
      * @throws \Symfony\Contracts\HttpClient\Exception\ServerExceptionInterface
      * @throws \Symfony\Contracts\HttpClient\Exception\TransportExceptionInterface
      */
-    private function newOrder(array $query)
+    private function newOrder(array $query, bool $margin = false)
     {
+        $baseAPI = $margin ? $this->getMarginAPIBaseRoute() : $this->getAPIBaseRoute();
+
         $query = $this->addSignature($query);
-        $response = $this->httpClient->request('POST', $this->getAPIBaseRoute()."order",
+        $response = $this->httpClient->request('POST', $baseAPI."order",
                 [
                     'query' => $query,
                     'headers' => $this->getKeyHeader()

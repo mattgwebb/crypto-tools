@@ -64,6 +64,14 @@ class KrakenAPI extends ApiInterface
     }
 
     /**
+     * @return string
+     */
+    protected function getMarginAPIBaseRoute() : string
+    {
+        return "https://api.kraken.com/0/public/";
+    }
+
+    /**
      * @param CurrencyPair $currencyPair
      * @param $rawData
      * @return Candle
@@ -88,6 +96,12 @@ class KrakenAPI extends ApiInterface
         return [];
     }
 
+    public function getUserMarginBalance(): array
+    {
+        // TODO: Implement getUserMarginBalance() method.
+        return [];
+    }
+
     /**
      * @param CurrencyPair $currencyPair
      * @param int $side
@@ -97,6 +111,18 @@ class KrakenAPI extends ApiInterface
     public function marketTrade(CurrencyPair $currencyPair, int $side, float $quantity): Trade
     {
         // TODO: Implement marketTrade() method.
+        return new Trade();
+    }
+
+    /**
+     * @param CurrencyPair $currencyPair
+     * @param int $side
+     * @param float $quantity
+     * @return Trade
+     */
+    public function marketMarginTrade(CurrencyPair $currencyPair, int $side, float $quantity): Trade
+    {
+        // TODO: Implement marketMarginTrade() method.
         return new Trade();
     }
 
