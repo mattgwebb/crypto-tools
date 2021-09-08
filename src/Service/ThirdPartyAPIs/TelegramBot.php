@@ -61,7 +61,7 @@ class TelegramBot
         $message = "NEW SIGNAL \n";
         $message .= "Symbol: $symbol \n";
         $message .= "Signal type: $tradeType \n";
-        $message .= "Price: {$trade->getPrice()} \n";
+        $message .= "Price: {$trade->getFillPrice()} \n";
         $message .= "Algo: {$algo->getName()} \n";
 
         $this->send($userID, $message);
