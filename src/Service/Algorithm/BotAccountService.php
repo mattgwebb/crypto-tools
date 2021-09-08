@@ -34,4 +34,12 @@ class BotAccountService
     {
         return $this->repo->find($id);
     }
+
+    /**
+     * @return BotAccount[]
+     */
+    public function getAllBotAccounts()
+    {
+        return $this->repo->findAll();
+    }
 }

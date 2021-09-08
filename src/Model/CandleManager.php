@@ -6,6 +6,7 @@ namespace App\Model;
 
 use App\Entity\Algorithm\BotAlgorithm;
 use App\Entity\Data\Candle;
+use App\Entity\Data\CurrencyPair;
 use App\Repository\Data\CandleRepository;
 use App\Repository\Data\CurrencyPairRepository;
 
@@ -53,5 +54,14 @@ class CandleManager
     public function getCandle(int $id)
     {
         return $this->candleRepo->find($id);
+    }
+
+    /**
+     * @param CurrencyPair $pair
+     * @return Candle|null
+     */
+    public function getLatestCandle(CurrencyPair $pair)
+    {
+        return $this->candleRepo->findLast($pair);
     }
 }

@@ -2,6 +2,7 @@
 
 namespace App\Repository\Trade;
 
+use App\Entity\Algorithm\BotAccount;
 use App\Entity\Algorithm\BotAlgorithm;
 use App\Entity\Trade\Trade;
 use App\Entity\Trade\TradeTypes;
@@ -22,22 +23,18 @@ class TradeRepository extends ServiceEntityRepository
     }
 
     /**
-     * @param BotAlgorithm $algo
-     * @param int $tradeSide
-     * @return mixed
+     * @param BotAccount $account
+     * @return Trade|null
      * @throws \Doctrine\ORM\NonUniqueResultException
      */
-    public function getAlgoLastBuyTradePrice(BotAlgorithm $algo)
+    public function getBotAccountLastTrade(BotAccount $account)
     {
         return $this->createQueryBuilder('c')
-            ->select('c.price')
-            ->where('c.algo = :algo')
-            ->andWhere('c.type = :type')
-            ->setParameter('algo', $algo)
-            ->setParameter('type', TradeTypes::TRADE_BUY)
+            ->where('c.botAccount = :account')
+            ->setParameter('account', $account)
             ->orderBy('c.timeStamp', 'DESC')
             ->setMaxResults(1)
             ->getQuery()
-            ->getSingleScalarResult();
+            ->getOneOrNullResult();
     }
 }
