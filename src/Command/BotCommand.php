@@ -10,6 +10,7 @@ use App\Entity\Algorithm\BotAlgorithm;
 use App\Entity\Data\Candle;
 use App\Entity\Data\CurrencyPair;
 use App\Service\Data\ExternalDataService;
+use App\Service\System\UtilsService;
 use Doctrine\ORM\EntityManagerInterface;
 use Psr\Log\LoggerInterface;
 use Symfony\Component\Console\Command\Command;
@@ -46,19 +47,26 @@ class BotCommand extends Command
     private $logger;
 
     /**
+     * @var UtilsService
+     */
+    private $utils;
+
+    /**
      * BotCommand constructor.
      * @param EntityManagerInterface $entityManager
      * @param ExternalDataService $dataService
      * @param KernelInterface $kernel
      * @param LoggerInterface $botsLogger
+     * @param UtilsService $utils
      */
     public function __construct(EntityManagerInterface $entityManager, ExternalDataService $dataService, KernelInterface $kernel,
-                                LoggerInterface $botsLogger)
+                                LoggerInterface $botsLogger, UtilsService $utils)
     {
         $this->entityManager= $entityManager;
         $this->dataService = $dataService;
         $this->projectDir = $kernel->getProjectDir();
         $this->logger = $botsLogger;
+        $this->utils = $utils;
 
         parent::__construct();
     }
@@ -131,6 +139,7 @@ class BotCommand extends Command
                 sleep(1);
             }
         }
+        $this->utils->checkTemperature();
     }
 
     /**
