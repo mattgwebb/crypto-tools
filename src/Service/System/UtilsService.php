@@ -30,7 +30,7 @@ class UtilsService
         if(strpos(php_uname(), 'Linux') !== false) {
             $output = shell_exec("cat /sys/class/thermal/thermal_zone0/temp");
             if($output) {
-                $temperature = $output / 1000;
+                $temperature = (int)$output / 1000;
                 if($temperature > self::TEMPERATURE_THRESHOLD) {
                     $this->telegramBot->send($_ENV['TELEGRAM_USER_ID'], "WARNING: CPU temperature at $temperature °C");
                 }
