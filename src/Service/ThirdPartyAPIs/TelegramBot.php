@@ -57,15 +57,16 @@ class TelegramBot
     {
         $symbol = $algo->getCurrencyPair()->getSymbol();
 
-        $cost = $trade->getFillPrice() * $trade->getAmount();
+        $price = round($trade->getFillPrice(), 2);
+        $cost = round($trade->getFillPrice() * $trade->getAmount(), 2);
 
         $tradeType = $trade->getType() == TradeTypes::TRADE_BUY ? "BUY" : "SELL";
         $message = "NEW SIGNAL \n";
         $message .= "Symbol: $symbol \n";
         $message .= "Signal type: $tradeType \n";
-        $message .= "Price: {$trade->getFillPrice()} \n";
+        $message .= "Price: $price \n";
         $message .= "Amount: {$trade->getAmount()} \n";
-        $message .= "Cost: {$cost} \n";
+        $message .= "Cost: $cost {$algo->getCurrencyPair()->getSecondCurrency()->getSymbol()}\n";
         $message .= "Algo: {$algo->getName()} \n";
 
         $this->send($userID, $message);
