@@ -86,7 +86,7 @@ class BotAccountHistoricalPortfolio
      */
     public function setTotalValue($totalValue): void
     {
-        $this->totalValue = $totalValue;
+        $this->totalValue = round($totalValue, 2);
     }
 
     /**
@@ -102,7 +102,7 @@ class BotAccountHistoricalPortfolio
      */
     public function setPnlPercentage(float $pnlPercentage): void
     {
-        $this->pnlPercentage = $pnlPercentage;
+        $this->pnlPercentage = round($pnlPercentage, 2);
     }
 
     /**
@@ -118,6 +118,6 @@ class BotAccountHistoricalPortfolio
      */
     public function setPnlAmount(float $pnlAmount): void
     {
-        $this->pnlAmount = $pnlAmount;
+        $this->pnlAmount = round($pnlAmount, 2);
     }
 }
