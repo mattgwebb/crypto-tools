@@ -17,7 +17,7 @@ class Trade
     private $id;
 
     /**
-     * @ORM\Column(type="bigint")
+     * @ORM\Column(type="string")
      */
     private $orderId;
 
@@ -54,7 +54,7 @@ class Trade
     /**
      * @ORM\Column(type="smallint")
      */
-    private $status = TradeTypes::TRADE_SELL;
+    private $status = TradeStatusTypes::UNKNOWN;
 
     /**
      * @ORM\Column(type="smallint")

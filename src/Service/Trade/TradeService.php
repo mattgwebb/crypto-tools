@@ -99,7 +99,7 @@ class TradeService
         $trade->setFillPrice($currentPrice);
         $trade->setType($side);
         $trade->setBotAccount($botAccount);
-        $trade->setOrderId(999);
+        $trade->setOrderId('999');
         $trade->setAmount($amount);
         $trade->setTimeStamp(time());
         $trade->setStatus(TradeStatusTypes::FILLED);
