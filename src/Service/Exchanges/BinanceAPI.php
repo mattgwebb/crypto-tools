@@ -107,9 +107,10 @@ class BinanceAPI extends ApiInterface
     /**
      * @param CurrencyPair $currencyPair
      * @param $rawData
+     * @param int $timeframe
      * @return Candle
      */
-    protected function getCandleFromRawData(CurrencyPair $currencyPair, $rawData): Candle
+    protected function getCandleFromRawData(CurrencyPair $currencyPair, $rawData, int $timeframe): Candle
     {
         $candle = new Candle();
         $candle->setOpenTime((int)($rawData[0]/1000));

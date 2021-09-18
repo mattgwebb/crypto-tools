@@ -74,9 +74,10 @@ class KrakenAPI extends ApiInterface
     /**
      * @param CurrencyPair $currencyPair
      * @param $rawData
+     * @param int $timeframe
      * @return Candle
      */
-    protected function getCandleFromRawData(CurrencyPair $currencyPair, $rawData): Candle
+    protected function getCandleFromRawData(CurrencyPair $currencyPair, $rawData, int $timeframe): Candle
     {
         $candle = new Candle();
         $candle->setOpenTime($rawData[0]);
@@ -85,7 +86,7 @@ class KrakenAPI extends ApiInterface
         $candle->setLowPrice($rawData[3]);
         $candle->setClosePrice($rawData[4]);
         $candle->setVolume($rawData[6]);
-        $candle->setCloseTime($rawData[0] + 14399);
+        $candle->setCloseTime($rawData[0] + ($timeframe * 60) - 1);
         $candle->setCurrencyPair($currencyPair);
         return $candle;
     }

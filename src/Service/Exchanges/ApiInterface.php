@@ -64,7 +64,7 @@ abstract class ApiInterface extends ThirdPartyAPI
         $candles = new ArrayCollection();
 
         foreach($rawData as $rawCandle) {
-            $candle = $this->getCandleFromRawData($currencyPair, $rawCandle);
+            $candle = $this->getCandleFromRawData($currencyPair, $rawCandle, $timeFrame);
             $candles->add($candle);
         }
 
@@ -92,9 +92,10 @@ abstract class ApiInterface extends ThirdPartyAPI
     /**
      * @param CurrencyPair $currencyPair
      * @param $rawData
+     * @param int $timeframe
      * @return Candle
      */
-    protected abstract function getCandleFromRawData(CurrencyPair $currencyPair, $rawData) : Candle;
+    protected abstract function getCandleFromRawData(CurrencyPair $currencyPair, $rawData, int $timeframe) : Candle;
 
     /**
      * @return array
