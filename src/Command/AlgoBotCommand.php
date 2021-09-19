@@ -220,8 +220,7 @@ class AlgoBotCommand extends Command
                 $trade->setPrice($currentPrice);
                 $this->tradeService->saveTrade($trade);
 
-                /** TODO check order has been filled before */
-                $this->telegramBot->sendNewTradeMessage($_ENV['TELEGRAM_USER_ID'], $algo, $trade);
+                $this->telegramBot->sendNewTradeMessage($botAccount, $algo, $trade);
 
                 $this->entityManager->persist($botAccount);
 

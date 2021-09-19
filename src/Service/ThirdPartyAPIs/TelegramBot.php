@@ -3,6 +3,7 @@
 
 namespace App\Service\ThirdPartyAPIs;
 
+use App\Entity\Algorithm\BotAccount;
 use App\Entity\Algorithm\BotAlgorithm;
 use App\Entity\Trade\Trade;
 use App\Entity\Trade\TradeTypes;
@@ -49,12 +50,13 @@ class TelegramBot
     }
 
     /**
-     * @param $userID
+     * @param BotAccount $botAccount
      * @param BotAlgorithm $algo
      * @param Trade $trade
      */
-    public function sendNewTradeMessage($userID, BotAlgorithm $algo, Trade $trade)
+    public function sendNewTradeMessage(BotAccount $botAccount, BotAlgorithm $algo, Trade $trade)
     {
+        $userID = $_ENV["TELEGRAM_USER_ID_BOT_{$botAccount->getId()}"];
         $symbol = $algo->getCurrencyPair()->getSymbol();
 
         $price = round($trade->getFillPrice(), 2);
