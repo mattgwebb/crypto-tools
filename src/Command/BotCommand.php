@@ -102,9 +102,9 @@ class BotCommand extends Command
         /** @var int $lastPrice */
         list($newCandles, $lastCandle, $lastPrice) = $this->dataService->loadPairNewCandles($pair);
 
-        $this->log("NEW CANDLES: $newCandles");
-        $this->log("LATEST CANDLE: ".json_encode($lastCandle));
-        $this->log("LATEST PRICE: $lastPrice");
+        $this->log($pair->getSymbol()." NEW CANDLES: $newCandles");
+        $this->log($pair->getSymbol()." LATEST CANDLE: ".json_encode($lastCandle));
+        $this->log($pair->getSymbol()." LATEST PRICE: $lastPrice");
 
         $botAccounts = $this->entityManager
             ->getRepository(BotAccount::class)
