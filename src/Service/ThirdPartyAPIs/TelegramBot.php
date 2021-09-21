@@ -75,17 +75,37 @@ class TelegramBot
     }
 
     /**
+     * @param BotAccount $botAccount
+     * @param Trade $trade
+     */
+    public function sendNewDCATradeMessage(BotAccount $botAccount, Trade $trade)
+    {
+        $strategy = $botAccount->getDcaStrategy();
+
+        $userID = $_ENV["TELEGRAM_USER_ID_BOT_{$botAccount->getId()}"];
+        $symbol = $strategy->getCurrencyPair()->getSymbol();
+
+        $price = round($trade->getFillPrice(), 2);
+        $cost = round($trade->getFillPrice() * $trade->getAmount(), 2);
+
+        $message = "NEW DCA BUY \n";
+        $message .= "Symbol: $symbol \n";
+        $message .= "Price: $price \n";
+        $message .= "Amount: {$trade->getAmount()} \n";
+        $message .= "Cost: $cost {$strategy->getCurrencyPair()->getSecondCurrency()->getSymbol()}\n";
+
+        $this->send($userID, $message);
+    }
+
+    /**
      * @param $userID
-     * @param BotAlgorithm $algo
+     * @param string $description
      * @param APIException $exception
      */
-    public function sendNewErrorMessage($userID, BotAlgorithm $algo, APIException $exception)
+    public function sendNewErrorMessage($userID, string $description, APIException $exception)
     {
-        $symbol = $algo->getCurrencyPair()->getSymbol();
-
         $message = "TRADE ERROR \n";
-        $message .= "Symbol: $symbol \n";
-        $message .= "Algo: {$algo->getName()} \n";
+        $message .= "Description: $description \n";
         $message .= "$exception \n";
 
         $this->send($userID, $message);

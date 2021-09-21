@@ -226,7 +226,7 @@ class AlgoBotCommand extends Command
 
             } catch (APIException $apiException) {
                 $this->log($botAccount, "ERROR MAKING TRADE: $apiException");
-                $this->telegramBot->sendNewErrorMessage($_ENV['TELEGRAM_USER_ID'], $algo, $apiException);
+                $this->telegramBot->sendNewErrorMessage($_ENV['TELEGRAM_USER_ID'], $algo->getName(), $apiException);
             }
         }
     }

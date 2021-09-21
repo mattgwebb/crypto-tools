@@ -116,16 +116,18 @@ class BotCommand extends Command
         foreach($botAccounts as $botAccount) {
 
             $algo = $botAccount->getAlgo();
-            if(!$algo || $algo->getCurrencyPair() != $pair){
-                continue;
+            if($algo && $algo->getCurrencyPair() == $pair && $botAccount->getMode() != AlgoModes::NOT_ACTIVE){
+                $process = new Process(["php", $this->projectDir."/bin/console", "app:bot:run", $botAccount->getId(), $lastPrice, $lastCandle->getId(), "--no-debug"]);
+                $process->start();
+                $runningProcesses[] = $process;
             }
 
-            if($botAccount->getMode() == AlgoModes::NOT_ACTIVE) {
-                continue;
+            $dcaStrategy = $botAccount->getDcaStrategy();
+            if($dcaStrategy && $dcaStrategy->getCurrencyPair() == $pair && $dcaStrategy->getMode() != AlgoModes::NOT_ACTIVE) {
+                $process = new Process(["php", $this->projectDir."/bin/console", "app:bot:dca", $botAccount->getId(), $lastPrice, "--no-debug"]);
+                $process->start();
+                $runningProcesses[] = $process;
             }
-            $process = new Process(["php", $this->projectDir."/bin/console", "app:bot:run", $botAccount->getId(), $lastPrice, $lastCandle->getId(), "--no-debug"]);
-            $process->start();
-            $runningProcesses[] = $process;
         }
 
         while (count($runningProcesses)) {

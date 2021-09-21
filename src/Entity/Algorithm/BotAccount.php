@@ -50,6 +50,11 @@ class BotAccount
     private $leverage = 1;
 
     /**
+     * @ORM\OneToOne(targetEntity="App\Entity\Algorithm\DCAStrategy", mappedBy="botAccount")
+     */
+    private $dcaStrategy;
+
+    /**
      * @return mixed
      */
     public function getId()
@@ -185,5 +190,13 @@ class BotAccount
     public function isMargin() : bool
     {
         return $this->leverage > 1;
+    }
+
+    /**
+     * @return DCAStrategy|null
+     */
+    public function getDcaStrategy()
+    {
+        return $this->dcaStrategy;
     }
 }

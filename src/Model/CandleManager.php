@@ -64,4 +64,14 @@ class CandleManager
     {
         return $this->candleRepo->findLast($pair);
     }
+
+    /**
+     * @param CurrencyPair $currencyPair
+     * @param int $timestamp
+     * @return Candle|null
+     */
+    public function getCandleByTime(CurrencyPair $currencyPair, int $timestamp)
+    {
+        return $this->candleRepo->getCandleByTime($currencyPair, $timestamp);
+    }
 }
