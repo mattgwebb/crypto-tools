@@ -144,7 +144,7 @@ class DCABotCommand extends Command
 
             $strategy->setLastTrade($trade);
             $this->entityManager->persist($strategy);
-            $this->entityManager->persist($botAccount);
+            $this->tradeService->saveTrade($trade);
         } else if($strategy->getMode() == AlgoModes::LIVE) {
             try {
                 $trade = $this->tradeService->newMarketTrade($botAccount, $strategy->getCurrencyPair(), TradeTypes::TRADE_BUY, $quantity);
@@ -154,7 +154,6 @@ class DCABotCommand extends Command
 
                 $strategy->setLastTrade($trade);
                 $this->entityManager->persist($strategy);
-                $this->entityManager->persist($botAccount);
                 $this->tradeService->saveTrade($trade);
 
                 $this->telegramBot->sendNewDCATradeMessage($botAccount, $trade);

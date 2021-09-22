@@ -105,8 +105,6 @@ class TradeService
         $trade->setStatus(TradeStatusTypes::FILLED);
         $trade->setMode(AlgoModes::TESTING);
 
-        $this->saveTrade($trade);
-
         return $trade;
     }
 

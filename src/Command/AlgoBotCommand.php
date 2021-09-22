@@ -208,7 +208,8 @@ class AlgoBotCommand extends Command
         $this->log($botAccount, "QUANTITY: $quantity, PRICE: $currentPrice");
 
         if($botAccount->getMode() == AlgoModes::TESTING) {
-            $this->tradeService->newTestTrade($botAccount, $tradeType, $currentPrice, $quantity);
+            $trade = $this->tradeService->newTestTrade($botAccount, $tradeType, $currentPrice, $quantity);
+            $this->tradeService->saveTrade($trade);
 
             $this->entityManager->persist($botAccount);
         } else if($botAccount->getMode() == AlgoModes::LIVE) {
