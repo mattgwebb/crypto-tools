@@ -43,7 +43,9 @@ class TelegramBot
     public function send($userID, string $message)
     {
         try {
-            $this->bot->send(SendMessageMethod::create($userID, $message));
+            $message = SendMessageMethod::create($userID, $message);
+            $message->parseMode = 'html';
+            $this->bot->send($message);
         } catch (\Exception $exception) {
             $test = 0;
         }
@@ -63,7 +65,7 @@ class TelegramBot
         $cost = round($trade->getFillPrice() * $trade->getAmount(), 2);
 
         $tradeType = $trade->getType() == TradeTypes::TRADE_BUY ? "BUY" : "SELL";
-        $message = "NEW SIGNAL \n";
+        $message = "\xE2\x9A\xAB <b>NEW SIGNAL</b> \n";
         $message .= "Symbol: $symbol \n";
         $message .= "Signal type: $tradeType \n";
         $message .= "Price: $price \n";
@@ -88,7 +90,7 @@ class TelegramBot
         $price = round($trade->getFillPrice(), 2);
         $cost = round($trade->getFillPrice() * $trade->getAmount(), 2);
 
-        $message = "NEW DCA BUY \n";
+        $message = "\xE2\x9A\xAB <b>NEW DCA BUY</b> \n";
         $message .= "Symbol: $symbol \n";
         $message .= "Price: $price \n";
         $message .= "Amount: {$trade->getAmount()} \n";
