@@ -149,7 +149,7 @@ class DCABotCommand extends Command
             try {
                 $trade = $this->tradeService->newMarketTrade($botAccount, $strategy->getCurrencyPair(), TradeTypes::TRADE_BUY, $quantity);
                 $trade->setBotAccount($botAccount);
-                $trade->setMode($botAccount->getMode());
+                $trade->setMode($strategy->getMode());
                 $trade->setPrice($currentPrice);
 
                 $strategy->setLastTrade($trade);
