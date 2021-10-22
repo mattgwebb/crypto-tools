@@ -4,9 +4,12 @@
 namespace App\Command;
 
 
+use App\Entity\Algorithm\AlgoModes;
+use App\Entity\Data\CurrencyPair;
+use App\Entity\Trade\BotAccountHistoricalPortfolio;
 use App\Model\CandleManager;
 use App\Service\Algorithm\BotAccountService;
-use App\Service\Trade\TradeService;
+use App\Service\Data\ExternalDataService;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
@@ -19,9 +22,9 @@ class BotAccountHistoricalPortfolioCommand extends Command
     protected static $defaultName = 'app:bot:portfolio';
 
     /**
-     * @var TradeService
+     * @var ExternalDataService
      */
-    private $tradeService;
+    private $externalDataService;
 
     /**
      * @var BotAccountService
@@ -35,12 +38,13 @@ class BotAccountHistoricalPortfolioCommand extends Command
 
     /**
      * BotAccountHistoricalPortfolioCommand constructor.
-     * @param TradeService $tradeService
+     * @param ExternalDataService $externalDataService
      * @param BotAccountService $botAccountService
+     * @param CandleManager $candleManager
      */
-    public function __construct(TradeService $tradeService, BotAccountService $botAccountService, CandleManager $candleManager)
+    public function __construct(ExternalDataService $externalDataService, BotAccountService $botAccountService, CandleManager $candleManager)
     {
-        $this->tradeService = $tradeService;
+        $this->externalDataService = $externalDataService;
         $this->botAccountService = $botAccountService;
         $this->candleManager = $candleManager;
 
@@ -58,9 +62,31 @@ class BotAccountHistoricalPortfolioCommand extends Command
         $botAccounts = $this->botAccountService->getAllBotAccounts();
 
         foreach($botAccounts as $botAccount) {
+            if($botAccount->getMode() <> AlgoModes::LIVE) {
+                continue;
+            }
+            /** @var CurrencyPair $pair */
             $pair = $botAccount->getAlgo()->getCurrencyPair();
             $latestCandle = $this->candleManager->getLatestCandle($pair);
-            $this->tradeService->calculateBotAccountPnL($botAccount, $latestCandle->getClosePrice());
+
+            $firstAsset = $pair->getFirstCurrency();
+            $secondAsset = $pair->getSecondCurrency();
+
+            $netBalanceUSDT = 0.00;
+            $balances = $this->externalDataService->loadBalances($botAccount);
+
+            foreach($balances as $asset => $balance) {
+                if($asset == $firstAsset->getSymbol()) {
+                    $netBalanceUSDT += (float)$balance['netAsset'] * $latestCandle->getClosePrice();
+                } else if($asset == $secondAsset->getSymbol()) {
+                    $netBalanceUSDT += (float)$balance['netAsset'];
+                }
+            }
+            $dailyPortfolioData = new BotAccountHistoricalPortfolio();
+            $dailyPortfolioData->setBotAccount($botAccount);
+            $dailyPortfolioData->setTimeStamp(time());
+            $dailyPortfolioData->setTotalValue($netBalanceUSDT);
+            $this->botAccountService->saveHistoricalPortfolioValue($dailyPortfolioData);
         }
     }
 }

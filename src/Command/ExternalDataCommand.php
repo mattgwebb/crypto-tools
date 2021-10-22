@@ -44,6 +44,5 @@ class ExternalDataCommand extends Command
                 "New $pair candles: $newCandles"
             ]);
         }
-        //$this->dataService->loadAllBalances();
     }
 }

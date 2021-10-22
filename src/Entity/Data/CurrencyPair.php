@@ -105,7 +105,7 @@ class CurrencyPair
     }
 
     /**
-     * @return mixed
+     * @return Currency
      */
     public function getFirstCurrency()
     {

@@ -50,27 +50,21 @@ class ExternalDataService
     }
 
     /**
-     *
+     * @param BotAccount $botAccount
+     * @return array
      */
-    public function loadAllBalances()
+    public function loadBalances(BotAccount $botAccount)
     {
-        $exchanges = $this->getAllExchanges();
+        $api = ApiFactory::getApi($botAccount->getExchange());
+        $api->setBotAccountId($botAccount->getId());
 
-        foreach($exchanges as $exchange) {
-            $api = ApiFactory::getApi($exchange);
-            $rawBalances = $api->getUserBalance();
-
-            $currencies = $exchange->getCurrencies();
-
-            /** @var Currency $currency */
-            foreach($currencies as $currency) {
-                if(isset($rawBalances[$currency->getSymbol()])) {
-                    $currency->setBalance($rawBalances[$currency->getSymbol()]);
-                    $this->entityManager->persist($currency);
-                }
-            }
+        if($botAccount->isMargin()) {
+            $balances = $api->getUserMarginBalance();
+        } else {
+            $balances = $api->getUserBalance();
         }
-        $this->entityManager->flush();
+
+        return $balances;
     }
 
     /**
@@ -91,7 +85,7 @@ class ExternalDataService
         }
 
         if(isset($rawBalances[$currency->getSymbol()])) {
-            $balance = $rawBalances[$currency->getSymbol()];
+            $balance = $rawBalances[$currency->getSymbol()]['free'];
         }
         return $balance;
     }
@@ -201,7 +195,7 @@ class ExternalDataService
             ->findLast($pair);
 
         if(!$lastCandle) {
-            $lastTime = time() - 10368000; //100 days
+            $lastTime = time() - 2592000; //30 days
         } else {
             $lastTime = $lastCandle->getCloseTime();
         }

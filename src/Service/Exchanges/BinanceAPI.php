@@ -156,7 +156,10 @@ class BinanceAPI extends ApiInterface
         $balance = [];
         if(isset($data['balances'])) {
             foreach($data['balances'] as $currencyBalance) {
-                $balance[$currencyBalance['asset']] = $currencyBalance['free'];
+                $balance[$currencyBalance['asset']] = [
+                    "free" => $currencyBalance['free'],
+                    "netAsset" => $currencyBalance['free']
+                ];
             }
         }
         return $balance;
@@ -194,7 +197,10 @@ class BinanceAPI extends ApiInterface
         $balance = [];
         if(isset($data['userAssets'])) {
             foreach($data['userAssets'] as $currencyBalance) {
-                $balance[$currencyBalance['asset']] = $currencyBalance['free'];
+                $balance[$currencyBalance['asset']] = [
+                    "free" => $currencyBalance['free'],
+                    "netAsset" => $currencyBalance['netAsset']
+                ];
             }
         }
         return $balance;

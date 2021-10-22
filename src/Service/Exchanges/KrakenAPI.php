@@ -133,7 +133,17 @@ class KrakenAPI extends ApiInterface
 
         $data = $response->toArray();
 
-        return $data['result'] ?? [];
+        $balances = [];
+
+        if(isset($data['result'])) {
+            foreach($data['result'] as $asset => $balance) {
+                $balances[$asset] = [
+                    "free" => $balance,
+                    "netAsset" => $balance
+                ];
+            }
+        }
+        return $balances;
     }
 
     public function getUserMarginBalance(): array
