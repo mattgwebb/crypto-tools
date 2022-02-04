@@ -6,7 +6,7 @@ namespace App\Service\Trade;
 
 use App\Entity\Algorithm\AlgoModes;
 use App\Entity\Algorithm\BotAccount;
-use App\Entity\Algorithm\BotAlgorithm;
+use App\Entity\Algorithm\DCAStrategy;
 use App\Entity\Data\CurrencyPair;
 use App\Entity\Trade\BotAccountHistoricalPortfolio;
 use App\Entity\Trade\Trade;
@@ -15,8 +15,10 @@ use App\Entity\Trade\TradeTypes;
 use App\Exceptions\API\APIException;
 use App\Exceptions\API\APINotFoundException;
 use App\Repository\Trade\TradeRepository;
+use App\Service\Data\ExternalDataService;
 use App\Service\Exchanges\ApiFactory;
 use App\Service\Exchanges\ApiInterface;
+use App\Service\Exchanges\BinanceAPI;
 use Doctrine\ORM\EntityManagerInterface;
 
 class TradeService
@@ -37,15 +39,24 @@ class TradeService
     private $tradeRepository;
 
     /**
+     * @var ExternalDataService
+     */
+    private $dataService;
+
+    /**
      * TradeService constructor.
      * @param ApiFactory $apiFactory
      * @param EntityManagerInterface $entityManager
+     * @param TradeRepository $tradeRepository
+     * @param ExternalDataService $dataService
      */
-    public function __construct(ApiFactory $apiFactory, EntityManagerInterface $entityManager, TradeRepository $tradeRepository)
+    public function __construct(ApiFactory $apiFactory, EntityManagerInterface $entityManager, TradeRepository $tradeRepository,
+                                ExternalDataService $dataService)
     {
         $this->apiFactory = $apiFactory;
         $this->entityManager = $entityManager;
         $this->tradeRepository = $tradeRepository;
+        $this->dataService = $dataService;
     }
 
     /**
@@ -165,6 +176,28 @@ class TradeService
             }
             $this->entityManager->persist($dailyPortfolioData);
             $this->entityManager->flush();
+        }
+    }
+
+    /**
+     * @param DCAStrategy $strategy
+     * @throws \Symfony\Contracts\HttpClient\Exception\TransportExceptionInterface
+     */
+    public function freeFundsIfNeededForDCA(DCAStrategy $strategy)
+    {
+        $api = $this->getAPI($strategy->getBotAccount(), $strategy->getCurrencyPair());
+        if(!$api) {
+            throw new \Exception();
+        }
+
+        if($api instanceof BinanceAPI) {
+            $currencyToUse = $strategy->getCurrencyPair()->getSecondCurrency();
+            $balance = $this->dataService->loadBalance($strategy->getBotAccount(), $currencyToUse);
+            if($balance < $strategy->getTradeAmount()) {
+                // TODO save productIDs?
+                $api->redeemFundsFromSavings('USDT001', $strategy->getTradeAmount());
+                sleep(10);
+            }
         }
     }
 

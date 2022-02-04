@@ -147,6 +147,7 @@ class DCABotCommand extends Command
             $this->tradeService->saveTrade($trade);
         } else if($strategy->getMode() == AlgoModes::LIVE) {
             try {
+                $this->tradeService->freeFundsIfNeededForDCA($strategy);
                 $trade = $this->tradeService->newMarketTrade($botAccount, $strategy->getCurrencyPair(), TradeTypes::TRADE_BUY, $quantity);
                 $trade->setBotAccount($botAccount);
                 $trade->setMode($strategy->getMode());

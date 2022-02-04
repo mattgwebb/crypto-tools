@@ -105,6 +105,14 @@ class BinanceAPI extends ApiInterface
     }
 
     /**
+     * @return string
+     */
+    protected function getSavingsBaseRoute() : string
+    {
+        return "https://api.binance.com/sapi/v1/lending/";
+    }
+
+    /**
      * @param CurrencyPair $currencyPair
      * @param $rawData
      * @param int $timeframe
@@ -398,6 +406,37 @@ class BinanceAPI extends ApiInterface
                 ]);
             $data = $response->toArray();
             return $data['openInterest'];
+        } catch (\Exception $e) {
+            throw $e;
+        }
+    }
+
+
+    /**
+     * @param string $productId
+     * @param float $amount
+     * @throws \Symfony\Contracts\HttpClient\Exception\TransportExceptionInterface
+     */
+    public function redeemFundsFromSavings(string $productId, float $amount)
+    {
+        $timestamp = (int)round(microtime(true) * 1000);
+
+        $query = [
+            'productId' => $productId,
+            'amount' => $amount,
+            'type' => 'FAST',
+            'timestamp' => $timestamp,
+            'recvWindow' => 10000
+        ];
+
+        $query = $this->addSignature($query);
+
+        try {
+            $this->httpClient->request('POST', $this->getSavingsBaseRoute()."daily/redeem",
+                [
+                    'query' => $query,
+                    'headers' => $this->getKeyHeader()
+                ]);
         } catch (\Exception $e) {
             throw $e;
         }
