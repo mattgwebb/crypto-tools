@@ -415,7 +415,7 @@ class BinanceAPI extends ApiInterface
     /**
      * @param string $productId
      * @param float $amount
-     * @throws \Symfony\Contracts\HttpClient\Exception\TransportExceptionInterface
+     * @throws APIException
      */
     public function redeemFundsFromSavings(string $productId, float $amount)
     {
@@ -431,15 +431,13 @@ class BinanceAPI extends ApiInterface
 
         $query = $this->addSignature($query);
 
-        try {
-            $this->httpClient->request('POST', $this->getSavingsBaseRoute()."daily/redeem",
-                [
-                    'query' => $query,
-                    'headers' => $this->getKeyHeader()
-                ]);
-        } catch (\Exception $e) {
-            throw $e;
-        }
+        $response = $this->httpClient->request('POST', $this->getSavingsBaseRoute()."daily/redeem",
+        [
+            'query' => $query,
+            'headers' => $this->getKeyHeader()
+        ]);
+
+        $this->checkForError($response);
     }
 
     /**
