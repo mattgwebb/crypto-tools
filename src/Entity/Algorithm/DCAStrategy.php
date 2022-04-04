@@ -221,7 +221,7 @@ class DCAStrategy
         } else if($this->getFrequency() == DCAFrequencies::WEEKLY) {
             $periodEnd = $periodEnd->modify('Sunday this week');
         }
-        $periodEnd->setTime(23, 49, 59);
+        $periodEnd->setTime(23, 29, 59);
         return $periodEnd->getTimestamp();
     }
 }
