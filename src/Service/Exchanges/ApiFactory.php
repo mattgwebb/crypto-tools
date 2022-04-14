@@ -19,6 +19,8 @@ class ApiFactory
             return new BinanceAPI();
         } else if($exchange->getName() == 'kraken') {
             return new KrakenAPI();
+        } else if($exchange->getName() == 'kucoin') {
+            return new KucoinAPI();
         } else return false;
     }
 }
