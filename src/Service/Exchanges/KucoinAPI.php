@@ -16,6 +16,9 @@ use Symfony\Contracts\HttpClient\ResponseInterface;
 class KucoinAPI extends ApiInterface
 {
 
+    const API_TRIES = 10;
+
+
     private $tradeTypes = [
         TradeTypes::LIMIT => 'limit',
         TradeTypes::MARKET => 'market',
@@ -48,30 +51,31 @@ class KucoinAPI extends ApiInterface
      * @param CurrencyPair $currencyPair
      * @param $timeFrame
      * @param $startTime
-     * @return array
+     * @return array|false
      * @throws \Symfony\Contracts\HttpClient\Exception\ClientExceptionInterface
      * @throws \Symfony\Contracts\HttpClient\Exception\DecodingExceptionInterface
      * @throws \Symfony\Contracts\HttpClient\Exception\RedirectionExceptionInterface
      * @throws \Symfony\Contracts\HttpClient\Exception\ServerExceptionInterface
      * @throws \Symfony\Contracts\HttpClient\Exception\TransportExceptionInterface
-     * TODO api sometimes returns error, make request again
      */
     protected function getCandlesData(CurrencyPair $currencyPair, $timeFrame, $startTime) : array
     {
-        try {
-            $response = $this->httpClient->request('GET', $this->getAPIBaseRoute()."/api/v1/market/candles",
-                ['query' => [
-                    'type' => $timeFrame,
-                    'symbol' => $currencyPair->getSymbol(),
-                    'startAt' => $startTime,
-                ]
-                ]);
-            $rawCandles = $response->toArray();
-        } catch (\Exception $e) {
-            throw $e;
+        for($i = 0; $i < self::API_TRIES; $i++) {
+            try {
+                $response = $this->httpClient->request('GET', $this->getAPIBaseRoute()."/api/v1/market/candles",
+                    ['query' => [
+                        'type' => $timeFrame,
+                        'symbol' => $currencyPair->getSymbol(),
+                        'startAt' => $startTime,
+                    ]
+                    ]);
+                $rawCandles = $response->toArray();
+                return $rawCandles['data'];
+            } catch (\Exception $e) {
+                sleep(1);
+            }
         }
-
-        return $rawCandles['data'];
+        return false;
     }
 
     /**

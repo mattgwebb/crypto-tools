@@ -63,9 +63,11 @@ abstract class ApiInterface extends ThirdPartyAPI
         $rawData = $this->getCandlesData($currencyPair, $specificTimeFrame, $startTime);
         $candles = new ArrayCollection();
 
-        foreach($rawData as $rawCandle) {
-            $candle = $this->getCandleFromRawData($currencyPair, $rawCandle, $timeFrame);
-            $candles->add($candle);
+        if($rawData) {
+            foreach($rawData as $rawCandle) {
+                $candle = $this->getCandleFromRawData($currencyPair, $rawCandle, $timeFrame);
+                $candles->add($candle);
+            }
         }
 
         return $candles;
