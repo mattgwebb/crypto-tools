@@ -46,9 +46,7 @@ class TelegramBot
             $message = SendMessageMethod::create($userID, $message);
             $message->parseMode = 'html';
             $this->bot->send($message);
-        } catch (\Exception $exception) {
-            $test = 0;
-        }
+        } catch (\Exception $exception) {}
     }
 
     /**
@@ -61,8 +59,10 @@ class TelegramBot
         $userID = $_ENV["TELEGRAM_USER_ID_BOT_{$botAccount->getId()}"];
         $symbol = $algo->getCurrencyPair()->getSymbol();
 
-        $price = round($trade->getFillPrice(), 2);
-        $cost = round($trade->getFillPrice() * $trade->getAmount(), 2);
+        $fillPrice = $trade->getFillPrice() ?? $trade->getPrice();
+
+        $price = round($fillPrice, 2);
+        $cost = round($fillPrice * $trade->getAmount(), 2);
 
         $tradeType = $trade->getType() == TradeTypes::TRADE_BUY ? "BUY" : "SELL";
         $message = "\xE2\x9A\xAB <b>NEW SIGNAL</b> \n";
