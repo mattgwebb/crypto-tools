@@ -99,6 +99,23 @@ class TelegramBot
         $this->send($userID, $message);
     }
 
+
+    /**
+     * @param BotAccount $botAccount
+     * @param string $productId
+     * @param float $amount
+     */
+    public function sendNewStakingSubscribeMessage(BotAccount $botAccount, string $productId, float $amount)
+    {
+        $userID = $_ENV["TELEGRAM_USER_ID_BOT_{$botAccount->getId()}"];
+
+        $message = "\xE2\x9A\xAB <b>NEW STAKING SUBSCRIBE</b> \n";
+        $message .= "ProductId: $productId \n";
+        $message .= "Amount: $amount \n";
+
+        $this->send($userID, $message);
+    }
+
     /**
      * @param $userID
      * @param string $description

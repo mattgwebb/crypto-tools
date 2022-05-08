@@ -18,6 +18,8 @@ use Symfony\Contracts\HttpClient\ResponseInterface;
 class BinanceAPI extends ApiInterface
 {
 
+    const LOCKED_STAKING_PRODUCT = 'STAKING';
+
     private $tradeTypes = [
         TradeTypes::LIMIT => 'LIMIT',
         TradeTypes::MARKET => 'MARKET',
@@ -110,6 +112,14 @@ class BinanceAPI extends ApiInterface
     protected function getSavingsBaseRoute() : string
     {
         return "https://api.binance.com/sapi/v1/lending/";
+    }
+
+    /**
+     * @return string
+     */
+    protected function getStakingBaseRoute() : string
+    {
+        return "https://api.binance.com/sapi/v1/staking/";
     }
 
     /**
@@ -436,6 +446,34 @@ class BinanceAPI extends ApiInterface
             'query' => $query,
             'headers' => $this->getKeyHeader()
         ]);
+
+        $this->checkForError($response);
+    }
+
+    /**
+     * @param string $productId
+     * @param float $amount
+     * @throws APIException
+     */
+    public function subscribeToStaking(string $productId, float $amount)
+    {
+        $timestamp = (int)round(microtime(true) * 1000);
+
+        $query = [
+            'product' => self::LOCKED_STAKING_PRODUCT,
+            'productId' => $productId,
+            'amount' => $amount,
+            'timestamp' => $timestamp,
+            'recvWindow' => 10000
+        ];
+
+        $query = $this->addSignature($query);
+
+        $response = $this->httpClient->request('POST', $this->getStakingBaseRoute()."purchase",
+            [
+                'query' => $query,
+                'headers' => $this->getKeyHeader()
+            ]);
 
         $this->checkForError($response);
     }

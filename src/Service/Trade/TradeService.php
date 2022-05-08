@@ -203,6 +203,26 @@ class TradeService
 
     /**
      * @param BotAccount $botAccount
+     * @param string $productId
+     * @param float $amount
+     * @throws APIException
+     */
+    public function subscribeToBinanceStaking(BotAccount $botAccount, string $productId, float $amount)
+    {
+        $api = $this->apiFactory->getApi($botAccount->getExchange());
+        $api->setBotAccountId($botAccount->getId());
+
+        if(!$api) {
+            throw new \Exception();
+        }
+
+        if($api instanceof BinanceAPI) {
+            $api->subscribeToStaking($productId, $amount);
+        }
+    }
+
+    /**
+     * @param BotAccount $botAccount
      * @param CurrencyPair $pair
      * @return ApiInterface|bool
      */
