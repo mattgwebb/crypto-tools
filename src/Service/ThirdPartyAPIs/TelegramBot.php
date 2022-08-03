@@ -59,7 +59,7 @@ class TelegramBot
         $userID = $_ENV["TELEGRAM_USER_ID_BOT_{$botAccount->getId()}"];
         $symbol = $algo->getCurrencyPair()->getSymbol();
 
-        $fillPrice = $trade->getFillPrice() ?? $trade->getPrice();
+        $fillPrice = $trade->getFillPrice() ? $trade->getFillPrice() : $trade->getPrice();
 
         $price = round($fillPrice, 2);
         $cost = round($fillPrice * $trade->getAmount(), 2);
@@ -87,7 +87,9 @@ class TelegramBot
         $userID = $_ENV["TELEGRAM_USER_ID_BOT_{$botAccount->getId()}"];
         $symbol = $strategy->getCurrencyPair()->getSymbol();
 
-        $price = round($trade->getFillPrice(), 2);
+        $fillPrice = $trade->getFillPrice() ? $trade->getFillPrice() : $trade->getPrice();
+
+        $price = round($fillPrice, 2);
         $cost = round($trade->getFillPrice() * $trade->getAmount(), 2);
 
         $message = "\xE2\x9A\xAB <b>NEW DCA BUY</b> \n";
