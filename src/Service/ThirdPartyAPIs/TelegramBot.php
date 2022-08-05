@@ -90,7 +90,7 @@ class TelegramBot
         $fillPrice = $trade->getFillPrice() ? $trade->getFillPrice() : $trade->getPrice();
 
         $price = round($fillPrice, 2);
-        $cost = round($trade->getFillPrice() * $trade->getAmount(), 2);
+        $cost = round($fillPrice * $trade->getAmount(), 2);
 
         $message = "\xE2\x9A\xAB <b>NEW DCA BUY</b> \n";
         $message .= "Symbol: $symbol \n";
