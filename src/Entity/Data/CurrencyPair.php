@@ -53,6 +53,12 @@ class CurrencyPair
      */
     private $loadData;
 
+    /**
+     * @var float
+     * @ORM\Column(type="float")
+     */
+    private $minimumLotSize;
+
 
     public function __construct()
     {
@@ -174,5 +180,13 @@ class CurrencyPair
     public function setLoadData($loadData): void
     {
         $this->loadData = $loadData;
+    }
+
+    /**
+     * @return float
+     */
+    public function getMinimumLotSize()
+    {
+        return $this->minimumLotSize;
     }
 }

@@ -6,6 +6,7 @@ namespace App\Command;
 
 use App\Entity\Algorithm\AlgoModes;
 use App\Entity\Algorithm\BotAccount;
+use App\Entity\Data\CurrencyPair;
 use App\Entity\Data\TimeFrames;
 use App\Entity\Trade\TradeTypes;
 use App\Exceptions\API\APIException;
@@ -135,7 +136,7 @@ class DCABotCommand extends Command
 
         $strategy = $botAccount->getDcaStrategy();
 
-        $quantity = $this->calculateQuantity($currentPrice, $strategy->getTradeAmount());
+        $quantity = $this->calculateQuantity($strategy->getCurrencyPair(), $currentPrice, $strategy->getTradeAmount());
 
         $this->log($botAccount, "QUANTITY: $quantity, PRICE: $currentPrice");
 
@@ -184,14 +185,16 @@ class DCABotCommand extends Command
 
 
     /**
+     * @param CurrencyPair $currencyPair
      * @param float $price
      * @param float $balance
      * @return float
      */
-    private function calculateQuantity(float $price, float $balance)
+    private function calculateQuantity(CurrencyPair $currencyPair, float $price, float $balance)
     {
+        $multiplier = floor(1 / $currencyPair->getMinimumLotSize());
         $quantity = ($balance / $price);
-        return floor($quantity * 100000) / 100000;
+        return floor($quantity * $multiplier) / $multiplier;
     }
 
     /**
