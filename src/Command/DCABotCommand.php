@@ -192,7 +192,7 @@ class DCABotCommand extends Command
      */
     private function calculateQuantity(CurrencyPair $currencyPair, float $price, float $balance)
     {
-        $multiplier = floor(1 / $currencyPair->getMinimumLotSize());
+        $multiplier = (int)round(1 / $currencyPair->getMinimumLotSize());
         $quantity = ($balance / $price);
         return floor($quantity * $multiplier) / $multiplier;
     }
