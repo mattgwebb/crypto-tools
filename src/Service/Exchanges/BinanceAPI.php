@@ -111,7 +111,7 @@ class BinanceAPI extends ApiInterface
      */
     protected function getSavingsBaseRoute() : string
     {
-        return "https://api.binance.com/sapi/v1/lending/";
+        return "https://api.binance.com/sapi/v1/simple-earn/flexible";
     }
 
     /**
@@ -441,7 +441,7 @@ class BinanceAPI extends ApiInterface
 
         $query = $this->addSignature($query);
 
-        $response = $this->httpClient->request('POST', $this->getSavingsBaseRoute()."daily/redeem",
+        $response = $this->httpClient->request('POST', $this->getSavingsBaseRoute()."/redeem",
         [
             'query' => $query,
             'headers' => $this->getKeyHeader()
